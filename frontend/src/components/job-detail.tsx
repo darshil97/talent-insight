@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CatalogLoading, CatalogNotFound, CatalogUnavailable, useCatalog } from "@/components/catalog-resource";
 import { decodeJob, type RequirementCategory } from "@/lib/catalog";
+import { ResumeUpload } from "@/components/resume-upload";
 
 const categories: { key: RequirementCategory; label: string }[] = [
   { key: "mandatory", label: "Mandatory requirements" },
@@ -57,7 +58,8 @@ export function JobDetailView({ jobId }: { jobId: string }) {
           </section>
         </div>
       </div>
-      <p className="mt-7 rounded-xl border border-dashed border-[#cbd3c3] p-5 text-sm leading-7 text-[#59665d]">You can review this job’s synthetic candidate pool. Resume uploads and assessments are still in development. People make the final hiring decisions.</p>
+      <ResumeUpload key={job.id} />
+      <p className="mt-7 rounded-xl border border-dashed border-[#cbd3c3] p-5 text-sm leading-7 text-[#59665d]">You can review this job’s synthetic candidate pool or inspect text from a temporary resume upload. Assessments remain in development. People make the final hiring decisions.</p>
     </>
   );
 }

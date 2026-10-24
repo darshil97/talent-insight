@@ -1,16 +1,21 @@
 """Application composition without import-time environment loading."""
 
+from collections import deque
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.candidates import router as candidates_router
+from app.api.extraction import extraction_error_handler
+from app.api.extraction import router as extraction_router
 from app.api.health import router as health_router
 from app.api.jobs import router as jobs_router
+from app.api.resumes import router as resumes_router
 from app.config import Settings, load_settings
 from app.database import create_database_engine
 from app.errors import SafeErrorsMiddleware, register_error_handlers
+from app.extraction_contracts import ExtractionFailure
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -39,17 +44,23 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = settings
     app.state.database_engine = None
+    app.state.resume_active = 0
+    app.state.ai_active = 0
+    app.state.ai_requests = deque()
     register_error_handlers(app)
+    app.add_exception_handler(ExtractionFailure, extraction_error_handler)
     app.include_router(health_router)
     app.include_router(jobs_router)
     app.include_router(candidates_router)
+    app.include_router(resumes_router)
+    app.include_router(extraction_router)
     app.add_middleware(SafeErrorsMiddleware)
     # Added last to wrap the error boundary, including sanitized HTTP 500s.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(settings.cors_allowed_origins),
         allow_credentials=False,
-        allow_methods=["GET"],
+        allow_methods=["GET", "POST"],
         allow_headers=["Content-Type"],
     )
     return app

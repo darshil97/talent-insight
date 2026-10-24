@@ -1,6 +1,6 @@
 # Frontend layout and navigation
 
-Module 5 introduced presentation and navigation using the installed Next.js App Router, React, TypeScript and Tailwind stack. Module 6 extends that shell with [jobs listing/details](jobs.md), and module 7 adds [candidate pools/profiles](candidates.md). No dependencies were added; upload, matching and screening remain pending.
+Module 5 introduced presentation and navigation using the installed Next.js App Router, React, TypeScript and Tailwind stack. Module 6 extends that shell with [jobs listing/details](jobs.md), module 7 adds [candidate pools/profiles](candidates.md), and module 8 adds [temporary PDF text review](resumes.md). No frontend dependencies were added; matching and screening remain pending.
 
 ## Routes and shared shell
 
@@ -38,4 +38,4 @@ These are focused manual browser/DOM checks, not an automated browser test suite
 
 ## Next review gate
 
-Modules 5 and 6 are approved. Module 7 is complete and awaiting review; see [verification and the next review gate](candidates.md). Upload is module 8 and requires explicit approval.
+Modules 5–7 are approved. Module 8 is complete and awaiting review; see [PDF extraction](resumes.md) and `PROJECT_CONTEXT.md` for verification and the next review gate.

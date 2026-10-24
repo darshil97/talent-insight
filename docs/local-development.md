@@ -1,6 +1,6 @@
 # Local development
 
-Modules 2–7 provide the responsive frontend, read-only jobs and job-scoped candidate APIs/views, and the initialized Neon demo catalog. Upload and matching remain pending. Backend health and the overview need no credentials; job/candidate browsing uses the existing Neon project `talent-insight`. Local and hosted runs share that database. No local PostgreSQL server is used.
+Modules 2–9 provide the frontend, read-only job/candidate APIs, Neon demo catalog, temporary PDF text review and backend structured-extraction APIs. Matching/scoring and the assessment UI remain pending. Health/plain PDF parsing need no credentials; catalog browsing uses the existing Neon database. Structured extraction requires an explicit provider choice; Bedrock mode uses private backend AWS settings. Local and hosted catalog runs share the same Neon database; no local PostgreSQL server is used.
 
 ## 1. Create and activate the Conda environment
 
@@ -56,6 +56,7 @@ The examples contain no secrets. Both projects run without copying them; without
 | `frontend/.env.example` | `NEXT_PUBLIC_API_BASE_URL` | FastAPI origin used by the browser jobs client; defaults to `http://127.0.0.1:8000` when absent |
 | `backend/.env.example` | `DOCS_ENABLED`, `CORS_ALLOWED_ORIGINS` | Loaded and validated at app creation; explicit docs visibility and permitted frontend origins |
 | `backend/.env.example` | `DATABASE_URL`, `DIRECT_DATABASE_URL` | Placeholder examples for the same Neon database; the ignored local `backend/.env` is already configured privately on this machine; see [database setup](database.md) |
+| `backend/.env.example` | `AI_MODE`, `AWS_REGION`, `BEDROCK_MODEL_ID`, `AWS_BEARER_TOKEN_BEDROCK` | Explicit mock/Bedrock provider selection and private credentials; [structured extraction](structured-extraction.md) documents the verified local model and limits |
 
 Next.js loads `.env.local` automatically. The jobs client validates the API setting as an origin with no credentials, path, query or fragment; remote origins require HTTPS and loopback may use HTTP. Invalid settings show the safe unavailable state. Public settings are bundled into production builds, so rebuild after changing them. The backend reads `backend/.env` from its package location, independently of the current directory. Process variables override file values; restart the backend after changes. Unknown `.env` keys and malformed settings fail startup with a safe diagnostic. The CORS list is a JSON array; it accepts exact origins, not URL paths or wildcards. The example permits both `http://localhost:3000` and `http://127.0.0.1:3000`, which are distinct browser origins. See [the configuration contract](backend-foundation.md).
 
@@ -92,7 +93,7 @@ cd frontend
 npm run dev
 ```
 
-Open [the local frontend](http://127.0.0.1:3000). The overview (`/`) and guide (`/guide`) need no backend; jobs (`/jobs`), job details and nested candidate pools/profiles require FastAPI, matching CORS origins and the existing Neon configuration. From a job detail, choose **Review demo candidates**. See [jobs](jobs.md) and [candidate checks](candidates.md). Unknown routes show a recovery link. Press Ctrl+C to stop.
+Open [the local frontend](http://127.0.0.1:3000). The overview (`/`) and guide (`/guide`) need no backend; jobs (`/jobs`), job details and nested candidate pools/profiles require FastAPI, matching CORS origins and the existing Neon configuration. From a job detail, choose **Review demo candidates**, or select a text-based resume PDF under **Review a resume PDF**. See [jobs](jobs.md), [candidate checks](candidates.md) and [upload limits/privacy](resumes.md). Unknown routes show a recovery link. Press Ctrl+C to stop.
 
 To build and serve the production bundle locally:
 
@@ -142,7 +143,7 @@ python -m app.seed --validate-only
 
 From the repository root, also run `bash -n run_local.sh`, `python -m unittest discover -s scripts -p 'test_*.py'`, `python -m ruff check scripts` and `python -m ruff format --check scripts`. Launcher unit tests mock process ownership and ports; they do not start servers. Frontend `npm test` uses Node 24's built-in test runner for job/candidate API contracts, public URL validation, evidence/Unicode validation and failure/cancellation behavior, without network calls or additional dependencies.
 
-Configuration and HTTP tests exercise settings, health/docs, CORS and errors through HTTPX's in-process ASGI transport. These tests require no database, providers or HTTP server, and isolate settings from the developer's real `.env`. Frontend type generation runs before TypeScript checks, so a fresh checkout does not depend on stale generated route types. Next.js build does not replace the separate lint command.
+Configuration and HTTP tests exercise settings, health/docs, CORS and errors through HTTPX's in-process ASGI transport. They require no database, provider or HTTP server and isolate real dotenv/AWS configuration. Structured-extraction tests use synthetic PDFs, explicit mock mode and AWS SDK Stubber; they never invoke paid Bedrock. The transitive LangSmith pytest plugin is disabled to keep test tracing off. Frontend type generation runs before TypeScript checks, so a fresh checkout does not depend on stale generated route types. Next.js build does not replace the separate lint command.
 
 The default suite also validates seed evidence and previews migration SQL without connecting. To include the shared Neon catalog checks, explicitly run `python -m pytest --neon -W error`. These checks use read-only transactions for migration revision, schema/model parity, membership and source evidence. They never migrate, seed or reset shared data. No local database fixture is started. See [database verification](database.md) for details.
 

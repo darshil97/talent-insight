@@ -65,7 +65,7 @@ export default function Home() {
         <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-full bg-[#e8ecdf] text-sm font-semibold text-[#526548]">i</span>
         <div>
           <h2 id="availability-heading" className="text-sm font-semibold">A workspace taking shape</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-[#59665d]">You can browse synthetic demo jobs, review their candidate pools and inspect source resume evidence. Resume upload, matching and screening are still in development and unavailable here.</p>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-[#59665d]">You can browse synthetic demo jobs, review their candidate pools and inspect source resume evidence. Open a job to upload a temporary text-based PDF and review its extracted text. Matching and screening remain in development.</p>
         </div>
       </section>
     </>

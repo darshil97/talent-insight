@@ -14,7 +14,7 @@ const stages = [
   },
   {
     title: "Review candidate evidence",
-    description: "Open a job’s synthetic candidate pool, then inspect a profile and its source resume excerpts. Candidate review is available now. Temporary resume uploads will come later.",
+    description: "Open a job’s synthetic candidate pool, then inspect a profile and its source resume excerpts. You can also upload a temporary text-based PDF on the job page to review its extracted text.",
   },
   {
     title: "Explore the match",
@@ -31,7 +31,7 @@ export default function Guide() {
     <>
       <p className="eyebrow">HOW IT WORKS</p>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">From requirements to better questions.</h1>
-      <p className="mt-4 max-w-2xl text-base leading-7 text-[#59665d]">Browse demo jobs and candidate evidence today, then explore the planned assessment workflow below. Resume uploads, matching and screening are still in development.</p>
+      <p className="mt-4 max-w-2xl text-base leading-7 text-[#59665d]">Browse demo jobs and candidate evidence, or inspect text from a temporary resume PDF. Matching and screening are still in development.</p>
 
       <section aria-labelledby="journey-heading" className="mt-9 rounded-2xl border border-[#dce1d7] bg-white p-6 sm:p-8">
         <h2 id="journey-heading" className="text-lg font-semibold">The planned recruiting journey</h2>
@@ -54,7 +54,7 @@ export default function Guide() {
         <ul className="mt-5 grid list-disc gap-3 pl-5 text-sm leading-7 text-[#475a49]">
           <li>Assess job-related evidence. Do not infer protected traits, personality or performance from names, photos or voice.</li>
           <li>Keep evidence, interpretation and score calculation distinct. A match score will support review, not make a hiring decision.</li>
-          <li>Uploaded resumes and results are planned to be temporary, with frontend results cleared on refresh. Uploads are not available yet; this site currently accepts no candidate data.</li>
+          <li>The application does not save uploaded PDFs or extracted text. Results clear on refresh, leaving the job, or Clear. Use documents you have permission to process, and check extraction accuracy against the original PDF.</li>
         </ul>
       </section>
       <Link href="/" className="mt-7 inline-flex min-h-12 items-center gap-3 rounded-lg px-1 text-sm font-semibold text-[#315943] underline decoration-[#9aac8b] underline-offset-4 hover:text-[#203e31]">Back to overview <Icon name="arrow" /></Link>

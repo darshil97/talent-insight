@@ -1,6 +1,6 @@
 # Jobs listing and details — module 6
 
-Module 6 is approved. The browser reads the shared Neon catalog through FastAPI. The frontend contains presentation and request-state handling; validation and database access stay in the backend. Module 7 now adds [candidate APIs/views](candidates.md); upload, scoring and provider integration remain pending.
+Module 6 is approved. The browser reads the shared Neon catalog through FastAPI. The frontend contains presentation and request-state handling; validation and database access stay in the backend. Module 7 adds [candidate APIs/views](candidates.md), and module 8 adds [temporary PDF text review](resumes.md) to job details. Scoring and provider integration remain pending.
 
 ## Editable job definitions
 
@@ -60,4 +60,4 @@ Module 6 checks in the dedicated Conda environment:
 
 No migration, seed, external infrastructure change, AI/voice call, deployment or commit occurred. The opt-in Neon regression suite was not repeated; live verification here was limited to the read-only application jobs path. Browser checks are manual, not an automated browser suite or screen-reader audit. Hosted deployment, other browser engines and cross-platform launcher behavior remain unverified.
 
-Module 6 was approved and module 7 is complete, awaiting review. See [candidate module verification](candidates.md). Upload remains module 8 and requires explicit approval.
+Modules 6 and 7 are approved. Module 8 is complete and awaiting review; see [PDF extraction](resumes.md). Structured AI extraction remains module 9 and requires explicit approval.

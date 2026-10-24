@@ -1,6 +1,6 @@
 # Provider research and architecture constraints
 
-Reviewed official documentation on 2026-10-24 (Asia/Kolkata). AI/voice findings are documentation research, not account capability checks or successful integration tests. Neon was subsequently initialized and verified as recorded below. Recheck documentation and selected SDK versions when implementing each integration.
+Reviewed official documentation on 2026-10-24 (Asia/Kolkata). Neon is verified. Module 9 subsequently verified one source-validated Bedrock extraction using synthetic text, as recorded below; other AI/voice findings remain research rather than verified integrations. Recheck documentation, account access and selected SDK versions for each integration.
 
 ## Deepgram authentication
 
@@ -28,7 +28,13 @@ Before voice implementation, investigate whether a supported server-managed conf
 
 [AWS structured-output documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/structured-output.html) describes schema-constrained Converse output and strict tool use, with model/profile and schema-subset restrictions. Confirm compatibility of the account, region, selected model or inference profile and pinned SDK. Always apply Pydantic validation and evidence checks, even when native schema enforcement is available. If unsupported, use a documented validated tool-output path or return a clear capability error; never accept arbitrary JSON unchecked.
 
-No model ID has been selected. `BEDROCK_MODEL_ID` must come from verified account access; documentation examples do not establish availability. Keep call timeouts, bounded retries and token limits explicit. Never retry indefinitely or log resume payloads.
+Module 9 user selection: `openai.gpt-oss-120b-1:0` in `ap-southeast-2` (Sydney), using the user-provided `AWS_BEARER_TOKEN_BEDROCK` from the ignored backend dotenv. The [AWS model card](https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-oss-120b.html) documents this model's Converse endpoint and in-region Sydney availability. Documentation alone did not establish account access; bounded synthetic calls then confirmed the key could invoke the model. No IAM permissions or infrastructure were changed. [AWS's API-key guide](https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys.html) documents bearer-key authentication; the pinned `boto3==1.43.118`, `botocore==1.43.118` and `langchain-aws==1.9.0` support it.
+
+Actual module 9 checks: six small synthetic-only Converse calls, each capped at 2,048 output tokens with one SDK attempt and no service retry. Three explored native JSON requests: the first two outputs failed local validation; the final request included the exact schema in the system prompt as well as `outputConfig`, and returned two facts that passed Pydantic and exact source-quote verification. Three tool-output checks returned no accepted structured tool result. This does not establish a success rate, an accuracy score or provider-enforced schema guarantees. No real resume or transcript was sent. Raw responses/reasoning, source content and credentials were not written into application files or routine logs.
+
+The saved method is explicitly `BEDROCK_STRUCTURED_METHOD=json_schema`, with the full schema also stated in the server prompt. Do not automatically fall back between JSON, tool or mock paths. Native output configuration is not a reason to skip local validation. The parser independently rejects incomplete/fenced JSON that a generic JSON parser might repair; schema, quotes, phrase provenance and page ranges are checked again before returning facts. The selected model's reasoning blocks are discarded. [AWS tool-use documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use-client-side.html) distinguishes automatic tool selection from model-specific forced choices; a tool method must be verified for the actual selected model/profile before use.
+
+LangSmith is a transitive dependency of the chosen adapter, but tracing is explicitly disabled in every disposable Bedrock worker and its pytest plugin is disabled in project test options. No prompt cache is requested. AWS invocation-logging/retention settings and real-document privacy remain unverified; application non-persistence does not establish those policies. See [structured extraction](structured-extraction.md) for the exact API, bounds, provenance semantics and limitations.
 
 ## Neon Postgres
 

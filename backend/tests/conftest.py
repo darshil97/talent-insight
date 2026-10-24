@@ -24,8 +24,22 @@ def isolate_configuration(
         "CORS_ALLOWED_ORIGINS",
         "DATABASE_URL",
         "DIRECT_DATABASE_URL",
+        "RESUME_MAX_BYTES",
+        "RESUME_MAX_PAGES",
+        "RESUME_MAX_CHARACTERS",
+        "RESUME_TIMEOUT_SECONDS",
+        "RESUME_UPLOAD_TIMEOUT_SECONDS",
+        "RESUME_MAX_CONCURRENT",
     ):
         monkeypatch.delenv(name, raising=False)
+    for field in Settings.model_fields.values():
+        if isinstance(field.validation_alias, str):
+            monkeypatch.delenv(field.validation_alias, raising=False)
+    monkeypatch.setenv("AWS_EC2_METADATA_DISABLED", "true")
+    monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(tmp_path / "no-credentials"))
+    monkeypatch.setenv("AWS_CONFIG_FILE", str(tmp_path / "no-aws-config"))
+    for name in ("LANGSMITH_TRACING", "LANGCHAIN_TRACING_V2", "LANGCHAIN_TRACING"):
+        monkeypatch.setenv(name, "false")
     # Tests must never read a developer's backend/.env.
     monkeypatch.setitem(Settings.model_config, "env_file", tmp_path / "absent.env")
 

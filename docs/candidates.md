@@ -41,4 +41,4 @@ Loading, empty pool, missing job/profile and service failure are distinct. Error
 
 No AI/voice integration, uploaded-candidate persistence, deployment or commit was introduced. Hosted behavior, other browsers and other operating systems remain unverified.
 
-After review and explicit approval, the next module is **8 — resume upload and PDF extraction**: bounded stateless upload, file/content validation, clear extraction failures and temporary frontend results. Structured AI extraction and matching remain modules 9–11.
+Module 7 is approved. Module 8 adds [temporary PDF extraction](resumes.md) without changing demo candidate records or these read-only APIs. Structured AI extraction and matching remain modules 9–11, each requiring explicit approval.

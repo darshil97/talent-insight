@@ -54,8 +54,16 @@ def test_openapi_describes_health_contract(
         "/jobs/{job_id}",
         "/jobs/{job_id}/candidates",
         "/jobs/{job_id}/candidates/{candidate_id}",
+        "/resumes/limits",
+        "/resumes/extract",
+        "/jobs/{job_id}/resumes/structure",
+        "/jobs/{job_id}/candidates/{candidate_id}/structure",
     }
-    assert all(set(path) == {"get"} for path in schema["paths"].values())
+    assert all(
+        set(path)
+        == ({"post"} if name == "/resumes/extract" or name.endswith("/structure") else {"get"})
+        for name, path in schema["paths"].items()
+    )
     assert (
         schema["components"]["schemas"]["HealthResponse"]["properties"]["status"]["const"] == "ok"
     )

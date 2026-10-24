@@ -47,14 +47,14 @@ def test_allows_get_preflight_with_content_type(api_request: Callable[..., httpx
     )
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
-    assert response.headers["access-control-allow-methods"] == "GET"
+    assert response.headers["access-control-allow-methods"] == "GET, POST"
 
 
 @pytest.mark.parametrize(
     "overrides",
     [
         {"Origin": "https://untrusted.example"},
-        {"Access-Control-Request-Method": "POST"},
+        {"Access-Control-Request-Method": "DELETE"},
         {"Access-Control-Request-Headers": "X-Unapproved-Header"},
     ],
 )
