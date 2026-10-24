@@ -1,0 +1,39 @@
+# Secrets and machine-local configuration; examples are safe to track.
+.env
+.env.*
+!.env.example
+!**/.env.example
+.aws/
+*.pem
+*.key
+
+# JavaScript build and dependency output.
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+
+# Python environment, caches and build output.
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# Local files and editor state.
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# Future local uploaded data must never be committed.
+uploads/
+tmp/

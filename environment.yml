@@ -1,0 +1,7 @@
+name: talent-insight
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - nodejs=24
+  - pip

@@ -1,0 +1,794 @@
+{
+  "jobs": [
+    {
+      "id": "demo_ds",
+      "title": "Data Scientist",
+      "client": "Northstar Commerce (Demo)",
+      "description": "Synthetic role: partner with a product team to design experiments, analyze customer behavior and communicate uncertainty. Own reproducible Python and SQL analyses, not only dashboards. Expected experience: at least 3 years of relevant applied analysis.",
+      "skills": [
+        "Python",
+        "SQL",
+        "statistics",
+        "A/B testing",
+        "dbt"
+      ],
+      "screening_criteria": [
+        "Build reproducible data analysis in Python.",
+        "Write SQL joins, aggregations and analytical queries.",
+        "Design and interpret controlled experiments with statistical uncertainty.",
+        "At least 3 years of relevant applied analysis experience."
+      ],
+      "questions": [
+        {
+          "id": "demo_ds_q1",
+          "text": "Walk through an experiment you designed. How did you define success and handle uncertainty?",
+          "requirement_ids": [
+            "demo_ds_experiments"
+          ]
+        },
+        {
+          "id": "demo_ds_q2",
+          "text": "Describe a Python and SQL analysis you owned and how you checked its correctness.",
+          "requirement_ids": [
+            "demo_ds_python",
+            "demo_ds_sql"
+          ]
+        },
+        {
+          "id": "demo_ds_q3",
+          "text": "What was your personal contribution, and how long did you work in applied analysis?",
+          "requirement_ids": [
+            "demo_ds_experience"
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "id": "demo_ds_python",
+          "category": "mandatory",
+          "description": "Build reproducible data analysis in Python.",
+          "minimum_years": null
+        },
+        {
+          "id": "demo_ds_sql",
+          "category": "mandatory",
+          "description": "Write SQL joins, aggregations and analytical queries.",
+          "minimum_years": null
+        },
+        {
+          "id": "demo_ds_experiments",
+          "category": "mandatory",
+          "description": "Design and interpret controlled experiments with statistical uncertainty.",
+          "minimum_years": null
+        },
+        {
+          "id": "demo_ds_experience",
+          "category": "experience",
+          "description": "At least 3 years of relevant applied analysis experience.",
+          "minimum_years": 3
+        },
+        {
+          "id": "demo_ds_dbt",
+          "category": "preferred",
+          "description": "Experience with dbt or reproducible warehouse transformations.",
+          "minimum_years": null
+        },
+        {
+          "id": "demo_ds_degree",
+          "category": "qualification",
+          "description": "A quantitative degree or equivalent documented applied study.",
+          "minimum_years": null
+        }
+      ],
+      "is_demo": true
+    },
+    {
+      "id": "demo_mle",
+      "title": "Machine Learning Engineer",
+      "client": "Vector Works (Demo)",
+      "description": "Synthetic role: deliver reliable model-serving systems with an application team. Own Python services, containerized deployment and model monitoring. Expected experience: at least 4 years of relevant ML engineering; research-only experience needs clarification.",
+      "skills": [
+        "Python",
+        "Docker",
+        "model serving",
+        "monitoring",
+        "AWS"
+      ],
+      "screening_criteria": [
+        "Develop maintainable Python machine learning services.",
+        "Deploy containerized models and describe production serving ownership.",
+        "Monitor model quality and operational behavior after deployment.",
+        "At least 4 years of relevant ML engineering experience."
+      ],
+      "questions": [
+        {
+          "id": "demo_mle_q1",
+          "text": "Describe a model-serving incident and what you personally changed.",
+          "requirement_ids": [
+            "demo_mle_serving",
+            "demo_mle_monitoring"
+          ]
+        },
+        {
+          "id": "demo_mle_q2",
+          "text": "How would you package and test a Python model service before release?",
+          "requirement_ids": [
+            "demo_mle_python",
+            "demo_mle_serving"
+          ]
+        },
+        {
+          "id": "demo_mle_q3",
+          "text": "Which monitoring signals did you own, and what ML engineering experience supports that work?",
+          "requirement_ids": [
+            "demo_mle_monitoring",
+            "demo_mle_experience"
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "id": "demo_mle_python",
+          "category": "mandatory",
+          "description": "Develop maintainable Python machine learning services.",
+          "minimum_years": null
+        },
+        {
+          "id": "demo_mle_serving",
+          "category": "mandatory",
+          "description": "Deploy containerized models and describe production serving ownership.",
+          "minimum_years": null
+        },
+        {
+          "id": "demo_mle_monitoring",
+          "category": "mandatory",
+          "description": "Monitor model quality and operational behavior after deployment.",
+          "minimum_years": null
+        },
+        {
+          "id": "demo_mle_experience",
+          "category": "experience",
+          "description": "At least 4 years of relevant ML engineering experience.",
+          "minimum_years": 4
+        },
+        {
+          "id": "demo_mle_aws",
+          "category": "preferred",
+          "description": "Operate ML workloads on AWS.",
+          "minimum_years": null
+        },
+        {
+          "id": "demo_mle_degree",
+          "category": "qualification",
+          "description": "Computing or engineering degree, certification or equivalent applied study.",
+          "minimum_years": null
+        }
+      ],
+      "is_demo": true
+    },
+    {
+      "id": "demo_ai",
+      "title": "AI / LLM Engineer",
+      "client": "Lumen Knowledge (Demo)",
+      "description": "Synthetic role: build grounded document assistants with retrieval and measurable evaluation. Demonstrate Python engineering, RAG design, handling unsupported answers and evaluation of failure cases. Expected experience: at least 2 years of relevant AI application engineering.",
+      "skills": [
+        "Python",
+        "RAG",
+        "evaluation",
+        "retrieval",
+        "AWS Bedrock"
+      ],
+      "screening_criteria": [
+        "Build and test Python AI application services.",
+        "Implement retrieval-augmented generation and explain evidence grounding.",
+        "Evaluate LLM output quality, unsupported answers and instruction attacks.",
+        "At least 2 years of relevant AI application engineering."
+      ],
+      "questions": [
+        {
+          "id": "demo_ai_q1",
+          "text": "How did you choose retrieval and chunking methods for a document assistant?",
+          "requirement_ids": [
+            "demo_ai_rag"
+          ]
+        },
+        {
+          "id": "demo_ai_q2",
+          "text": "How would you test unsupported answers and instructions embedded in documents?",
+          "requirement_ids": [
+            "demo_ai_evaluation"
+          ]
+        },
+        {
+          "id": "demo_ai_q3",
+          "text": "Describe your Python ownership and the duration of your AI application work.",
+          "requirement_ids": [
+            "demo_ai_python",
+            "demo_ai_experience"
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "id": "demo_ai_python",
+          "category": "mandatory",
+          "description": "Build and test Python AI application services.",
+          "minimum_years": null
+        },
+        {
+          "id": "demo_ai_rag",
+          "category": "mandatory",
+          "description": "Implement retrieval-augmented generation and explain evidence grounding.",
+          "minimum_years": null
+        },
+        {
+          "id": "demo_ai_evaluation",
+          "category": "mandatory",
+          "description": "Evaluate LLM output quality, unsupported answers and instruction attacks.",
+          "minimum_years": null
+        },
+        {
+          "id": "demo_ai_experience",
+          "category": "experience",
+          "description": "At least 2 years of relevant AI application engineering.",
+          "minimum_years": 2
+        },
+        {
+          "id": "demo_ai_bedrock",
+          "category": "preferred",
+          "description": "Experience deploying AI workloads with AWS Bedrock.",
+          "minimum_years": null
+        },
+        {
+          "id": "demo_ai_degree",
+          "category": "qualification",
+          "description": "Computing degree, relevant certification or equivalent documented applied study.",
+          "minimum_years": null
+        }
+      ],
+      "is_demo": true
+    },
+    {
+      "id": "demo_backend",
+      "title": "Backend Engineer",
+      "client": "Harbor Systems (Demo)",
+      "description": "Synthetic role: build dependable Python APIs backed by PostgreSQL. Explain transactions, request validation and operational diagnosis. Expected experience: at least 3 years of backend engineering; experience in another language can be transferable.",
+      "skills": [
+        "Python",
+        "PostgreSQL",
+        "HTTP APIs",
+        "transactions",
+        "observability"
+      ],
+      "screening_criteria": [
+        "Implement and test Python backend services.",
+        "Design PostgreSQL queries, indexes and transaction boundaries.",
+        "Design HTTP APIs with validation and explicit failure handling.",
+        "At least 3 years of backend engineering experience."
+      ],
+      "questions": [
+        {
+          "id": "demo_backend_q1",
+          "text": "Describe an API you owned and how you validated requests and represented failures.",
+          "requirement_ids": [
+            "demo_backend_python",
+            "demo_backend_api"
+          ]
+        },
+        {
+          "id": "demo_backend_q2",
+          "text": "Explain a PostgreSQL transaction or query problem you investigated.",
+          "requirement_ids": [
+            "demo_backend_postgres"
+          ]
+        },
+        {
+          "id": "demo_backend_q3",
+          "text": "Which backend responsibilities did you own, for how long, and how did you diagnose failures?",
+          "requirement_ids": [
+            "demo_backend_experience",
+            "demo_backend_observability"
+          ]
+        }
+      ],
+      "requirements": [
+        {
+          "id": "demo_backend_python",
+          "category": "mandatory",
+          "description": "Implement and test Python backend services.",
+          "minimum_years": null
+        },
+        {
+          "id": "demo_backend_postgres",
+          "category": "mandatory",
+          "description": "Design PostgreSQL queries, indexes and transaction boundaries.",
+          "minimum_years": null
+        },
+        {
+          "id": "demo_backend_api",
+          "category": "mandatory",
+          "description": "Design HTTP APIs with validation and explicit failure handling.",
+          "minimum_years": null
+        },
+        {
+          "id": "demo_backend_experience",
+          "category": "experience",
+          "description": "At least 3 years of backend engineering experience.",
+          "minimum_years": 3
+        },
+        {
+          "id": "demo_backend_observability",
+          "category": "preferred",
+          "description": "Use service observability to investigate operational failures.",
+          "minimum_years": null
+        },
+        {
+          "id": "demo_backend_degree",
+          "category": "qualification",
+          "description": "Computing qualification or equivalent documented engineering study.",
+          "minimum_years": null
+        }
+      ],
+      "is_demo": true
+    }
+  ],
+  "candidates": [
+    {
+      "id": "demo_ds_avery",
+      "display_name": "Avery Chen",
+      "headline": "Product Data Scientist",
+      "summary": "Owns product experiments and reproducible analytical work.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nAvery Chen\nProduct Data Scientist\nOwns product experiments and reproducible analytical work.\n4 years of applied product analysis at a synthetic commerce team.\nUsed Python and SQL to prepare reproducible analyses with peer-reviewed query checks.\nDesigned A/B testing plans, calculated uncertainty intervals and documented inconclusive results.\nBuilt dbt transformations with data quality checks.\nEducation: BSc Statistics.",
+      "claims": [
+        {
+          "kind": "experience",
+          "label": "4 years",
+          "quote": "4 years of applied product analysis at a synthetic commerce team."
+        },
+        {
+          "kind": "skill",
+          "label": "Python",
+          "quote": "Used Python and SQL to prepare reproducible analyses with peer-reviewed query checks."
+        },
+        {
+          "kind": "skill",
+          "label": "SQL",
+          "quote": "Used Python and SQL to prepare reproducible analyses with peer-reviewed query checks."
+        },
+        {
+          "kind": "skill",
+          "label": "A/B testing",
+          "quote": "Designed A/B testing plans, calculated uncertainty intervals and documented inconclusive results."
+        },
+        {
+          "kind": "skill",
+          "label": "dbt",
+          "quote": "Built dbt transformations with data quality checks."
+        },
+        {
+          "kind": "qualification",
+          "label": "BSc Statistics",
+          "quote": "Education: BSc Statistics."
+        }
+      ],
+      "is_demo": true
+    },
+    {
+      "id": "demo_ds_mina",
+      "display_name": "Mina Patel",
+      "headline": "Operations Analyst",
+      "summary": "Brings operational analysis experience with limited experimental ownership.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nMina Patel\nOperations Analyst\nBrings operational analysis experience with limited experimental ownership.\n5 years of operations analysis, including SQL reporting and process dashboards.\nWrote small Python scripts to reconcile inventory records and documented manual checks.\nReviewed before-and-after process changes; has not owned a randomized experiment.\nEducation: BCom Operations.",
+      "claims": [
+        {
+          "kind": "experience",
+          "label": "5 years",
+          "quote": "5 years of operations analysis, including SQL reporting and process dashboards."
+        },
+        {
+          "kind": "skill",
+          "label": "SQL",
+          "quote": "5 years of operations analysis, including SQL reporting and process dashboards."
+        },
+        {
+          "kind": "skill",
+          "label": "Python",
+          "quote": "Wrote small Python scripts to reconcile inventory records and documented manual checks."
+        },
+        {
+          "kind": "qualification",
+          "label": "BCom Operations",
+          "quote": "Education: BCom Operations."
+        }
+      ],
+      "is_demo": true
+    },
+    {
+      "id": "demo_ds_jordan",
+      "display_name": "Jordan Ellis",
+      "headline": "Analytics Team Contributor",
+      "summary": "Describes team analysis work with unclear individual ownership and dates.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nJordan Ellis\nAnalytics Team Contributor\nDescribes team analysis work with unclear individual ownership and dates.\nParticipated in a team using Python and SQL for customer reporting.\nThe team reported experiment outcomes; personal statistical methods and responsibilities are unspecified.\nProject dates and education are not included in this resume.",
+      "claims": [
+        {
+          "kind": "skill",
+          "label": "Python",
+          "quote": "Participated in a team using Python and SQL for customer reporting."
+        },
+        {
+          "kind": "skill",
+          "label": "SQL",
+          "quote": "Participated in a team using Python and SQL for customer reporting."
+        }
+      ],
+      "is_demo": true
+    },
+    {
+      "id": "demo_mle_samir",
+      "display_name": "Samir Rao",
+      "headline": "ML Platform Engineer",
+      "summary": "Builds and operates containerized model-serving services.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nSamir Rao\nML Platform Engineer\nBuilds and operates containerized model-serving services.\n5 years of ML engineering, including ownership of release and incident response.\nDeveloped Python model services with FastAPI, Docker builds and automated release tests.\nOwned model monitoring for drift, quality checks and latency; documented rollback decisions.\nDeployed workloads on AWS and maintained runbooks.\nEducation: MSc Computer Engineering.",
+      "claims": [
+        {
+          "kind": "experience",
+          "label": "5 years",
+          "quote": "5 years of ML engineering, including ownership of release and incident response."
+        },
+        {
+          "kind": "skill",
+          "label": "Python",
+          "quote": "Developed Python model services with FastAPI, Docker builds and automated release tests."
+        },
+        {
+          "kind": "skill",
+          "label": "Docker",
+          "quote": "Developed Python model services with FastAPI, Docker builds and automated release tests."
+        },
+        {
+          "kind": "skill",
+          "label": "monitoring",
+          "quote": "Owned model monitoring for drift, quality checks and latency; documented rollback decisions."
+        },
+        {
+          "kind": "skill",
+          "label": "AWS",
+          "quote": "Deployed workloads on AWS and maintained runbooks."
+        },
+        {
+          "kind": "qualification",
+          "label": "MSc Computer Engineering",
+          "quote": "Education: MSc Computer Engineering."
+        }
+      ],
+      "is_demo": true
+    },
+    {
+      "id": "demo_mle_leah",
+      "display_name": "Leah Morgan",
+      "headline": "Applied ML Research Assistant",
+      "summary": "Has model development experience and limited deployment evidence.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nLeah Morgan\nApplied ML Research Assistant\nHas model development experience and limited deployment evidence.\n2 years of applied ML research, building Python training and validation notebooks.\nPrepared reproducible datasets and compared model errors with a research supervisor.\nContainerized a small tutorial with Docker; has not operated a production model service.\nEducation: BSc Computer Science.",
+      "claims": [
+        {
+          "kind": "experience",
+          "label": "2 years",
+          "quote": "2 years of applied ML research, building Python training and validation notebooks."
+        },
+        {
+          "kind": "skill",
+          "label": "Python",
+          "quote": "2 years of applied ML research, building Python training and validation notebooks."
+        },
+        {
+          "kind": "skill",
+          "label": "Docker",
+          "quote": "Containerized a small tutorial with Docker; has not operated a production model service."
+        },
+        {
+          "kind": "qualification",
+          "label": "BSc Computer Science",
+          "quote": "Education: BSc Computer Science."
+        }
+      ],
+      "is_demo": true
+    },
+    {
+      "id": "demo_mle_noah",
+      "display_name": "Noah Brooks",
+      "headline": "Desktop Software Engineer",
+      "summary": "Has software engineering experience and introductory ML exposure.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nNoah Brooks\nDesktop Software Engineer\nHas software engineering experience and introductory ML exposure.\n4 years of desktop application development using C# and SQL.\nCompleted an introductory Python course and trained a small classifier as a personal exercise.\nNo deployed ML service or model monitoring work is described.\nEducation: BSc Computing.",
+      "claims": [
+        {
+          "kind": "experience",
+          "label": "4 years",
+          "quote": "4 years of desktop application development using C# and SQL."
+        },
+        {
+          "kind": "skill",
+          "label": "C#",
+          "quote": "4 years of desktop application development using C# and SQL."
+        },
+        {
+          "kind": "skill",
+          "label": "Python",
+          "quote": "Completed an introductory Python course and trained a small classifier as a personal exercise."
+        },
+        {
+          "kind": "qualification",
+          "label": "BSc Computing",
+          "quote": "Education: BSc Computing."
+        }
+      ],
+      "is_demo": true
+    },
+    {
+      "id": "demo_ai_elena",
+      "display_name": "Elena Torres",
+      "headline": "AI Application Engineer",
+      "summary": "Builds grounded document assistants and evaluates unsupported outputs.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nElena Torres\nAI Application Engineer\nBuilds grounded document assistants and evaluates unsupported outputs.\n3 years of AI application engineering with Python services and regression tests.\nImplemented RAG pipelines, evaluated retrieval quality and attached document evidence to answers.\nCreated an evaluation set for unsupported answers and instruction attacks in retrieved text.\nDeployed document assistants with AWS Bedrock and recorded model configuration changes.\nEducation: MSc Computer Science.",
+      "claims": [
+        {
+          "kind": "experience",
+          "label": "3 years",
+          "quote": "3 years of AI application engineering with Python services and regression tests."
+        },
+        {
+          "kind": "skill",
+          "label": "Python",
+          "quote": "3 years of AI application engineering with Python services and regression tests."
+        },
+        {
+          "kind": "skill",
+          "label": "RAG",
+          "quote": "Implemented RAG pipelines, evaluated retrieval quality and attached document evidence to answers."
+        },
+        {
+          "kind": "skill",
+          "label": "evaluation",
+          "quote": "Created an evaluation set for unsupported answers and instruction attacks in retrieved text."
+        },
+        {
+          "kind": "skill",
+          "label": "AWS Bedrock",
+          "quote": "Deployed document assistants with AWS Bedrock and recorded model configuration changes."
+        },
+        {
+          "kind": "qualification",
+          "label": "MSc Computer Science",
+          "quote": "Education: MSc Computer Science."
+        }
+      ],
+      "is_demo": true
+    },
+    {
+      "id": "demo_ai_kai",
+      "display_name": "Kai Bennett",
+      "headline": "Data Engineer / AI Prototyper",
+      "summary": "Has a retrieval prototype and needs verification of evaluation and deployment work.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nKai Bennett\nData Engineer / AI Prototyper\nHas a retrieval prototype and needs verification of evaluation and deployment work.\n1.5 years of AI application work alongside data pipeline engineering.\nBuilt a Python RAG prototype over internal sample documents with a retrieval library.\nReviewed a few answers manually; no repeatable evaluation set or deployed service is described.\nEducation: BSc Information Systems.",
+      "claims": [
+        {
+          "kind": "experience",
+          "label": "1.5 years",
+          "quote": "1.5 years of AI application work alongside data pipeline engineering."
+        },
+        {
+          "kind": "skill",
+          "label": "Python",
+          "quote": "Built a Python RAG prototype over internal sample documents with a retrieval library."
+        },
+        {
+          "kind": "skill",
+          "label": "RAG",
+          "quote": "Built a Python RAG prototype over internal sample documents with a retrieval library."
+        },
+        {
+          "kind": "qualification",
+          "label": "BSc Information Systems",
+          "quote": "Education: BSc Information Systems."
+        }
+      ],
+      "is_demo": true
+    },
+    {
+      "id": "demo_ai_rowan",
+      "display_name": "Rowan Park",
+      "headline": "AI Project Contributor",
+      "summary": "Lists prototype work without dates, evaluation details or qualifications.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nRowan Park\nAI Project Contributor\nLists prototype work without dates, evaluation details or qualifications.\nUsed Python for document retrieval prototypes.\nProject duration, evaluation methods, deployment ownership and education are not supplied.",
+      "claims": [
+        {
+          "kind": "skill",
+          "label": "Python",
+          "quote": "Used Python for document retrieval prototypes."
+        },
+        {
+          "kind": "skill",
+          "label": "retrieval",
+          "quote": "Used Python for document retrieval prototypes."
+        }
+      ],
+      "is_demo": true
+    },
+    {
+      "id": "demo_backend_priya",
+      "display_name": "Priya Shah",
+      "headline": "Senior Backend Engineer",
+      "summary": "Owns Python APIs, PostgreSQL transactions and operational diagnosis.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nPriya Shah\nSenior Backend Engineer\nOwns Python APIs, PostgreSQL transactions and operational diagnosis.\n6 years of backend engineering across API development and operational support.\nBuilt Python HTTP APIs with FastAPI, request validation and integration tests.\nDesigned PostgreSQL indexes and transaction boundaries, and investigated concurrent update failures.\nUsed observability traces and structured logs to diagnose timeouts without logging request bodies.\nEducation: BSc Software Engineering.",
+      "claims": [
+        {
+          "kind": "experience",
+          "label": "6 years",
+          "quote": "6 years of backend engineering across API development and operational support."
+        },
+        {
+          "kind": "skill",
+          "label": "Python",
+          "quote": "Built Python HTTP APIs with FastAPI, request validation and integration tests."
+        },
+        {
+          "kind": "skill",
+          "label": "HTTP APIs",
+          "quote": "Built Python HTTP APIs with FastAPI, request validation and integration tests."
+        },
+        {
+          "kind": "skill",
+          "label": "PostgreSQL",
+          "quote": "Designed PostgreSQL indexes and transaction boundaries, and investigated concurrent update failures."
+        },
+        {
+          "kind": "skill",
+          "label": "observability",
+          "quote": "Used observability traces and structured logs to diagnose timeouts without logging request bodies."
+        },
+        {
+          "kind": "qualification",
+          "label": "BSc Software Engineering",
+          "quote": "Education: BSc Software Engineering."
+        }
+      ],
+      "is_demo": true
+    },
+    {
+      "id": "demo_backend_theo",
+      "display_name": "Theo Grant",
+      "headline": "Java Backend Engineer",
+      "summary": "Offers transferable API and database experience with limited Python service ownership.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nTheo Grant\nJava Backend Engineer\nOffers transferable API and database experience with limited Python service ownership.\n4 years of backend engineering using Java and Spring.\nDesigned HTTP APIs with request validation and documented error contracts.\nOptimized PostgreSQL queries and investigated transaction isolation problems.\nUsed Python for personal scripting; production Python service ownership is not described.\nEducation: BSc Computer Science.",
+      "claims": [
+        {
+          "kind": "experience",
+          "label": "4 years",
+          "quote": "4 years of backend engineering using Java and Spring."
+        },
+        {
+          "kind": "skill",
+          "label": "Java",
+          "quote": "4 years of backend engineering using Java and Spring."
+        },
+        {
+          "kind": "skill",
+          "label": "HTTP APIs",
+          "quote": "Designed HTTP APIs with request validation and documented error contracts."
+        },
+        {
+          "kind": "skill",
+          "label": "PostgreSQL",
+          "quote": "Optimized PostgreSQL queries and investigated transaction isolation problems."
+        },
+        {
+          "kind": "skill",
+          "label": "Python",
+          "quote": "Used Python for personal scripting; production Python service ownership is not described."
+        },
+        {
+          "kind": "qualification",
+          "label": "BSc Computer Science",
+          "quote": "Education: BSc Computer Science."
+        }
+      ],
+      "is_demo": true
+    },
+    {
+      "id": "demo_backend_mara",
+      "display_name": "Mara Singh",
+      "headline": "Python Web Developer",
+      "summary": "Has Python web experience with gaps in database scale and operational evidence.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nMara Singh\nPython Web Developer\nHas Python web experience with gaps in database scale and operational evidence.\n2 years of web development using Python and Flask.\nBuilt HTTP APIs with basic request validation and unit tests.\nUsed SQLite for small applications; no PostgreSQL work is specified.\nEducation: MSc Computing.",
+      "claims": [
+        {
+          "kind": "experience",
+          "label": "2 years",
+          "quote": "2 years of web development using Python and Flask."
+        },
+        {
+          "kind": "skill",
+          "label": "Python",
+          "quote": "2 years of web development using Python and Flask."
+        },
+        {
+          "kind": "skill",
+          "label": "HTTP APIs",
+          "quote": "Built HTTP APIs with basic request validation and unit tests."
+        },
+        {
+          "kind": "skill",
+          "label": "SQLite",
+          "quote": "Used SQLite for small applications; no PostgreSQL work is specified."
+        },
+        {
+          "kind": "qualification",
+          "label": "MSc Computing",
+          "quote": "Education: MSc Computing."
+        }
+      ],
+      "is_demo": true
+    }
+  ],
+  "memberships": [
+    {
+      "job_id": "demo_ds",
+      "candidate_id": "demo_ds_avery",
+      "demo_scenario": "strong"
+    },
+    {
+      "job_id": "demo_ds",
+      "candidate_id": "demo_ds_mina",
+      "demo_scenario": "transferable"
+    },
+    {
+      "job_id": "demo_ds",
+      "candidate_id": "demo_ds_jordan",
+      "demo_scenario": "ambiguous"
+    },
+    {
+      "job_id": "demo_mle",
+      "candidate_id": "demo_mle_samir",
+      "demo_scenario": "strong"
+    },
+    {
+      "job_id": "demo_mle",
+      "candidate_id": "demo_mle_leah",
+      "demo_scenario": "partial"
+    },
+    {
+      "job_id": "demo_mle",
+      "candidate_id": "demo_mle_noah",
+      "demo_scenario": "weak"
+    },
+    {
+      "job_id": "demo_ai",
+      "candidate_id": "demo_ai_elena",
+      "demo_scenario": "strong"
+    },
+    {
+      "job_id": "demo_ai",
+      "candidate_id": "demo_ai_kai",
+      "demo_scenario": "partial"
+    },
+    {
+      "job_id": "demo_ai",
+      "candidate_id": "demo_ai_rowan",
+      "demo_scenario": "incomplete"
+    },
+    {
+      "job_id": "demo_backend",
+      "candidate_id": "demo_backend_priya",
+      "demo_scenario": "strong"
+    },
+    {
+      "job_id": "demo_backend",
+      "candidate_id": "demo_backend_theo",
+      "demo_scenario": "transferable"
+    },
+    {
+      "job_id": "demo_backend",
+      "candidate_id": "demo_backend_mara",
+      "demo_scenario": "partial"
+    }
+  ]
+}

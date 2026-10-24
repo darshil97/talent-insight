@@ -1,0 +1,18 @@
+"""Review initial DDL without connecting to any database."""
+
+import io
+from pathlib import Path
+
+from alembic.config import Config
+
+from alembic import command
+
+
+def test_offline_migration_preview_needs_no_credentials() -> None:
+    config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+    config.output_buffer = io.StringIO()
+    command.upgrade(config, "head", sql=True)
+    output = config.output_buffer.getvalue()
+    assert "CREATE SCHEMA talent_insight" in output
+    assert "CREATE TABLE talent_insight.demo_candidates" in output
+    assert "DROP TABLE" not in output
