@@ -1,6 +1,9 @@
 """Synthetic profile evidence must remain traceable before any database write."""
 
+import json
+import shutil
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
@@ -48,3 +51,47 @@ def test_rejects_unsupported_or_inconsistent_seed_records(mutation: str) -> None
         data["candidates"][0]["is_demo"] = False
     with pytest.raises(ValidationError):
         CatalogSeed.model_validate(data)
+
+
+def test_job_files_can_be_edited_or_added_without_python_changes(tmp_path: Path) -> None:
+    source = Path(__file__).resolve().parents[1] / "app" / "fixtures"
+    shutil.copytree(source, tmp_path / "fixtures")
+    root = tmp_path / "fixtures"
+    job_file = root / "jobs" / "demo_ds.json"
+    job = json.loads(job_file.read_text())
+    job["title"] = "Edited Data Scientist"
+    job_file.write_text(json.dumps(job))
+    assert next(job for job in load_seed(root).jobs if job.id == "demo_ds").title == job["title"]
+    job["id"] = "demo_new"
+    for row in job["requirements"]:
+        row["id"] = row["id"].replace("demo_ds", "demo_new")
+    for row in job["questions"]:
+        row["id"] = row["id"].replace("demo_ds", "demo_new")
+        row["requirement_ids"] = [
+            value.replace("demo_ds", "demo_new") for value in row["requirement_ids"]
+        ]
+    (root / "jobs" / "demo_new.json").write_text(json.dumps(job))
+    assert len(load_seed(root).jobs) == 5  # Jobs need no candidates until module 7.
+
+
+@pytest.mark.parametrize("mutation", ["filename", "duplicate", "missing", "malformed"])
+def test_split_job_files_fail_validation_before_database_access(
+    tmp_path: Path, mutation: str
+) -> None:
+    source = Path(__file__).resolve().parents[1] / "app" / "fixtures"
+    root = tmp_path / "fixtures"
+    shutil.copytree(source, root)
+    job_file = root / "jobs" / "demo_ds.json"
+    if mutation == "filename":
+        job_file.rename(root / "jobs" / "wrong.json")
+    elif mutation == "missing":
+        for path in (root / "jobs").iterdir():
+            path.unlink()
+    elif mutation == "malformed":
+        job_file.write_text("{")
+    else:
+        job = json.loads(job_file.read_text())
+        job["requirements"][1]["id"] = job["requirements"][0]["id"]
+        job_file.write_text(json.dumps(job))
+    with pytest.raises(ValueError):
+        load_seed(root)

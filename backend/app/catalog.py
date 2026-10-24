@@ -1,4 +1,4 @@
-"""Small read-only queries for the curated catalog; HTTP views follow later."""
+"""Small read-only queries for the curated catalog."""
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload

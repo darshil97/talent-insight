@@ -1,4 +1,4 @@
-# Backend foundation — modules 3–4
+# Backend foundation — modules 3–7
 
 ## Application and configuration
 
@@ -25,7 +25,7 @@ Unknown dotenv keys fail validation to catch typos. Unrelated process environmen
 {"status":"ok"}
 ```
 
-It includes `Cache-Control: no-store`. This is a process liveness endpoint. It does not query Neon, contact a provider, check credentials or assert readiness of unimplemented features. No other recruiting routes exist yet.
+It includes `Cache-Control: no-store`. This is a process liveness endpoint. It does not query Neon, contact a provider, check credentials or assert readiness of unimplemented features. Module 6 adds [read-only jobs routes](jobs.md), independently of health.
 
 `/docs` and `/openapi.json` are enabled by default and return 404 when `DOCS_ENABLED=false`; `/redoc` is always disabled. This explicit flag replaces the previous environment-specific rule. The Swagger page uses FastAPI's default external UI assets, so it needs internet access; health and the JSON schema do not. `/health/` is not redirected to `/health`.
 
@@ -55,4 +55,4 @@ The documented Uvicorn commands disable access logs, which would otherwise recor
 
 Automated tests cover dotenv/process/explicit setting precedence, CWD-independent file loading, invalid and unknown configuration, HTTPS remote origins, isolated factories, docs flags, health behavior, exact origin/preflight matching, CORS on errors, invalid requests/responses, safe exception logging, midstream failure and preserved protocol headers. They use synthetic values and in-process ASGI requests, with real settings files excluded from tests.
 
-Module 4 adds the [database catalog](database.md), independently of health and application startup. Request quotas, upload limits, provider retries, authentication, voice and public deployment remain future work. There is no database or provider readiness claim in `/health`. The frontend remains the module 2 starter.
+Module 4 adds the [database catalog](database.md). Module 6 creates a lazy per-app engine during lifespan and disposes it on shutdown; connections begin only on catalog requests. Jobs and module 7 [candidate requests](candidates.md) use read-only transactions and a five-second SQL statement timeout, with sanitized 503 responses on database failures. Candidate details validate exact resume provenance before serialization. Request quotas, upload limits, provider retries, authentication, voice and public deployment remain future work. There is no database or provider readiness claim in `/health`.

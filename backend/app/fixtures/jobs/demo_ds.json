@@ -1,0 +1,82 @@
+{
+  "id": "demo_ds",
+  "title": "Data Scientist",
+  "client": "Northstar Commerce (Demo)",
+  "description": "Synthetic role: partner with a product team to design experiments, analyze customer behavior and communicate uncertainty. Own reproducible Python and SQL analyses, not only dashboards. Expected experience: at least 3 years of relevant applied analysis.",
+  "skills": [
+    "Python",
+    "SQL",
+    "statistics",
+    "A/B testing",
+    "dbt"
+  ],
+  "screening_criteria": [
+    "Build reproducible data analysis in Python.",
+    "Write SQL joins, aggregations and analytical queries.",
+    "Design and interpret controlled experiments with statistical uncertainty.",
+    "At least 3 years of relevant applied analysis experience."
+  ],
+  "questions": [
+    {
+      "id": "demo_ds_q1",
+      "text": "Walk through an experiment you designed. How did you define success and handle uncertainty?",
+      "requirement_ids": [
+        "demo_ds_experiments"
+      ]
+    },
+    {
+      "id": "demo_ds_q2",
+      "text": "Describe a Python and SQL analysis you owned and how you checked its correctness.",
+      "requirement_ids": [
+        "demo_ds_python",
+        "demo_ds_sql"
+      ]
+    },
+    {
+      "id": "demo_ds_q3",
+      "text": "What was your personal contribution, and how long did you work in applied analysis?",
+      "requirement_ids": [
+        "demo_ds_experience"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "demo_ds_python",
+      "category": "mandatory",
+      "description": "Build reproducible data analysis in Python.",
+      "minimum_years": null
+    },
+    {
+      "id": "demo_ds_sql",
+      "category": "mandatory",
+      "description": "Write SQL joins, aggregations and analytical queries.",
+      "minimum_years": null
+    },
+    {
+      "id": "demo_ds_experiments",
+      "category": "mandatory",
+      "description": "Design and interpret controlled experiments with statistical uncertainty.",
+      "minimum_years": null
+    },
+    {
+      "id": "demo_ds_experience",
+      "category": "experience",
+      "description": "At least 3 years of relevant applied analysis experience.",
+      "minimum_years": 3
+    },
+    {
+      "id": "demo_ds_dbt",
+      "category": "preferred",
+      "description": "Experience with dbt or reproducible warehouse transformations.",
+      "minimum_years": null
+    },
+    {
+      "id": "demo_ds_degree",
+      "category": "qualification",
+      "description": "A quantitative degree or equivalent documented applied study.",
+      "minimum_years": null
+    }
+  ],
+  "is_demo": true
+}

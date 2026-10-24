@@ -1,4 +1,4 @@
-# Curated catalog on Neon — module 4
+# Curated catalog on Neon — modules 4–7
 
 ## One shared database
 
@@ -38,11 +38,11 @@ See [Neon's pooling guidance](https://neon.com/docs/connect/connection-pooling),
 
 `public.talent_insight_alembic_version` tracks the migration. Foreign keys, uniqueness and check constraints protect relationships and basic demo-data integrity. The initial migration refuses to adopt an unknown existing app schema. It does not replace unrelated public tables.
 
-The versioned source is `backend/app/fixtures/catalog.json`. Each role has three candidate profiles; the complete set covers strong, partial, weak, transferable, ambiguous and incomplete evidence. Scenario labels are internal fixture metadata, not calculated match scores or hiring recommendations. Every candidate is marked synthetic. Claims include original quotes and exact character offsets; this validates provenance, not independent truth. No uploaded candidates, transcripts, reports or match scores are stored.
+The versioned sources are one `backend/app/fixtures/jobs/<job_id>.json` per job and `backend/app/fixtures/candidates.json` for the unchanged synthetic candidates/memberships. Module 6 split the original combined JSON without changing any values. See [editing jobs](jobs.md). Each existing role has three candidate profiles; a newly authored job may start without a candidate pool. The complete candidate set covers strong, partial, weak, transferable, ambiguous and incomplete evidence. Scenario labels are internal fixture metadata, not calculated match scores or hiring recommendations. Claims include original quotes and exact character offsets; this validates provenance, not independent truth. No uploaded candidates, transcripts, reports or match scores are stored.
 
 Seeding validates the entire fixture and upserts only its stable IDs atomically. Repeated runs do not duplicate rows; both the initial seed and a repeat have been verified on Neon. Other rows are preserved; there is no automatic delete, truncate or pruning. Removed fixtures and criterion-order restructuring require a reviewed data migration.
 
-Read-only helpers in `app/catalog.py` list jobs, load ordered requirements, list candidate pools and fetch candidates through actual job membership. API/frontend catalog views remain later modules.
+Read-only helpers in `app/catalog.py` list jobs, load ordered requirements, list candidate pools and fetch candidates through actual job membership. Module 6 exposes jobs listing/details; module 7 adds job-scoped candidate pool/profile views with validated resume provenance. No schema or fixture changes were needed for module 7. Runtime queries read Neon, not JSON; edits take effect only after an explicitly approved seed. Startup never seeds or syncs files.
 
 ## Explicit administration
 
@@ -51,6 +51,9 @@ Activate the Conda environment following [local setup](local-development.md). Fr
 ```sh
 # Preview SQL without connecting.
 python -m alembic -c backend/alembic.ini upgrade head --sql
+
+# Validate all editable JSON without loading dotenv or connecting.
+python -m app.seed --validate-only
 
 # Inspect the shared database without modifying its catalog.
 python -m alembic -c backend/alembic.ini current

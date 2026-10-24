@@ -1,0 +1,82 @@
+{
+  "id": "demo_ai",
+  "title": "AI / LLM Engineer",
+  "client": "Lumen Knowledge (Demo)",
+  "description": "Synthetic role: build grounded document assistants with retrieval and measurable evaluation. Demonstrate Python engineering, RAG design, handling unsupported answers and evaluation of failure cases. Expected experience: at least 2 years of relevant AI application engineering.",
+  "skills": [
+    "Python",
+    "RAG",
+    "evaluation",
+    "retrieval",
+    "AWS Bedrock"
+  ],
+  "screening_criteria": [
+    "Build and test Python AI application services.",
+    "Implement retrieval-augmented generation and explain evidence grounding.",
+    "Evaluate LLM output quality, unsupported answers and instruction attacks.",
+    "At least 2 years of relevant AI application engineering."
+  ],
+  "questions": [
+    {
+      "id": "demo_ai_q1",
+      "text": "How did you choose retrieval and chunking methods for a document assistant?",
+      "requirement_ids": [
+        "demo_ai_rag"
+      ]
+    },
+    {
+      "id": "demo_ai_q2",
+      "text": "How would you test unsupported answers and instructions embedded in documents?",
+      "requirement_ids": [
+        "demo_ai_evaluation"
+      ]
+    },
+    {
+      "id": "demo_ai_q3",
+      "text": "Describe your Python ownership and the duration of your AI application work.",
+      "requirement_ids": [
+        "demo_ai_python",
+        "demo_ai_experience"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "demo_ai_python",
+      "category": "mandatory",
+      "description": "Build and test Python AI application services.",
+      "minimum_years": null
+    },
+    {
+      "id": "demo_ai_rag",
+      "category": "mandatory",
+      "description": "Implement retrieval-augmented generation and explain evidence grounding.",
+      "minimum_years": null
+    },
+    {
+      "id": "demo_ai_evaluation",
+      "category": "mandatory",
+      "description": "Evaluate LLM output quality, unsupported answers and instruction attacks.",
+      "minimum_years": null
+    },
+    {
+      "id": "demo_ai_experience",
+      "category": "experience",
+      "description": "At least 2 years of relevant AI application engineering.",
+      "minimum_years": 2
+    },
+    {
+      "id": "demo_ai_bedrock",
+      "category": "preferred",
+      "description": "Experience deploying AI workloads with AWS Bedrock.",
+      "minimum_years": null
+    },
+    {
+      "id": "demo_ai_degree",
+      "category": "qualification",
+      "description": "Computing degree, relevant certification or equivalent documented applied study.",
+      "minimum_years": null
+    }
+  ],
+  "is_demo": true
+}

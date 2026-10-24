@@ -1,0 +1,83 @@
+{
+  "id": "demo_backend",
+  "title": "Backend Engineer",
+  "client": "Harbor Systems (Demo)",
+  "description": "Synthetic role: build dependable Python APIs backed by PostgreSQL. Explain transactions, request validation and operational diagnosis. Expected experience: at least 3 years of backend engineering; experience in another language can be transferable.",
+  "skills": [
+    "Python",
+    "PostgreSQL",
+    "HTTP APIs",
+    "transactions",
+    "observability"
+  ],
+  "screening_criteria": [
+    "Implement and test Python backend services.",
+    "Design PostgreSQL queries, indexes and transaction boundaries.",
+    "Design HTTP APIs with validation and explicit failure handling.",
+    "At least 3 years of backend engineering experience."
+  ],
+  "questions": [
+    {
+      "id": "demo_backend_q1",
+      "text": "Describe an API you owned and how you validated requests and represented failures.",
+      "requirement_ids": [
+        "demo_backend_python",
+        "demo_backend_api"
+      ]
+    },
+    {
+      "id": "demo_backend_q2",
+      "text": "Explain a PostgreSQL transaction or query problem you investigated.",
+      "requirement_ids": [
+        "demo_backend_postgres"
+      ]
+    },
+    {
+      "id": "demo_backend_q3",
+      "text": "Which backend responsibilities did you own, for how long, and how did you diagnose failures?",
+      "requirement_ids": [
+        "demo_backend_experience",
+        "demo_backend_observability"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "demo_backend_python",
+      "category": "mandatory",
+      "description": "Implement and test Python backend services.",
+      "minimum_years": null
+    },
+    {
+      "id": "demo_backend_postgres",
+      "category": "mandatory",
+      "description": "Design PostgreSQL queries, indexes and transaction boundaries.",
+      "minimum_years": null
+    },
+    {
+      "id": "demo_backend_api",
+      "category": "mandatory",
+      "description": "Design HTTP APIs with validation and explicit failure handling.",
+      "minimum_years": null
+    },
+    {
+      "id": "demo_backend_experience",
+      "category": "experience",
+      "description": "At least 3 years of backend engineering experience.",
+      "minimum_years": 3
+    },
+    {
+      "id": "demo_backend_observability",
+      "category": "preferred",
+      "description": "Use service observability to investigate operational failures.",
+      "minimum_years": null
+    },
+    {
+      "id": "demo_backend_degree",
+      "category": "qualification",
+      "description": "Computing qualification or equivalent documented engineering study.",
+      "minimum_years": null
+    }
+  ],
+  "is_demo": true
+}

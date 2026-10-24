@@ -20,7 +20,7 @@ def test_health_is_typed_minimal_and_not_cached(api_request: Callable[..., httpx
 def test_unimplemented_api_returns_safe_not_found(
     api_request: Callable[..., httpx.Response],
 ) -> None:
-    response = api_request(create_app(Settings()), "GET", "/jobs")
+    response = api_request(create_app(Settings()), "GET", "/not-implemented")
     assert response.status_code == 404
     assert response.json() == {"error": {"code": "not_found", "message": "Not Found."}}
 
@@ -48,7 +48,14 @@ def test_openapi_describes_health_contract(
     app = create_app(Settings())
     assert api_request(app, "GET", "/docs").status_code == 200
     schema = api_request(app, "GET", "/openapi.json").json()
-    assert set(schema["paths"]) == {"/health"}
+    assert set(schema["paths"]) == {
+        "/health",
+        "/jobs",
+        "/jobs/{job_id}",
+        "/jobs/{job_id}/candidates",
+        "/jobs/{job_id}/candidates/{candidate_id}",
+    }
+    assert all(set(path) == {"get"} for path in schema["paths"].values())
     assert (
         schema["components"]["schemas"]["HealthResponse"]["properties"]["status"]["const"] == "ok"
     )

@@ -30,7 +30,7 @@ where = ["."]
 include = ["app*"]
 
 [tool.setuptools.package-data]
-app = ["fixtures/*.json"]
+app = ["fixtures/*.json", "fixtures/jobs/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

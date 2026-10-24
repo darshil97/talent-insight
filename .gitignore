@@ -29,6 +29,7 @@ build/
 dist/
 
 # Local files and editor state.
+.run_local/
 .DS_Store
 .idea/
 .vscode/

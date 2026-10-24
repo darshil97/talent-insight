@@ -1,7 +1,9 @@
 """Validated, atomic, repeatable seeding of synthetic catalog records only."""
 
+import argparse
 import json
 from importlib.resources import files
+from pathlib import Path
 from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
@@ -130,14 +132,28 @@ class CatalogSeed(SeedModel):
             raise ValueError("Duplicate job-candidate membership")
         if any(j not in jobs or c not in candidates for j, c in pairs):
             raise ValueError("Membership references an unknown job or candidate")
-        if {j for j, _ in pairs} != jobs or {c for _, c in pairs} != candidates:
-            raise ValueError("Every job and candidate must belong to a demo pool")
+        if {c for _, c in pairs} != candidates:
+            raise ValueError("Every candidate must belong to a demo pool")
         return self
 
 
-def load_seed() -> CatalogSeed:
-    data = files("app").joinpath("fixtures/catalog.json").read_text(encoding="utf-8")
-    return CatalogSeed.model_validate_json(data)
+def load_seed(directory: Path | None = None) -> CatalogSeed:
+    """One editable JSON per job; validate the combined catalog before any write."""
+    root = directory if directory is not None else files("app").joinpath("fixtures")
+    data = json.loads(root.joinpath("candidates.json").read_text(encoding="utf-8"))
+    if not isinstance(data, dict) or set(data) != {"candidates", "memberships"}:
+        raise ValueError("Candidate fixture must contain candidates and memberships only")
+    job_files = sorted(
+        (path for path in root.joinpath("jobs").iterdir() if path.name.endswith(".json")),
+        key=lambda path: path.name,
+    )
+    jobs = []
+    for path in job_files:
+        job = JobSeed.model_validate_json(path.read_text(encoding="utf-8"))
+        if path.name != f"{job.id}.json":
+            raise ValueError("Each job filename must match its stable ID")
+        jobs.append(job.model_dump())
+    return CatalogSeed.model_validate({**data, "jobs": jobs})
 
 
 def seed_catalog(engine: Engine, data: CatalogSeed | None = None) -> dict[str, int]:
@@ -183,12 +199,28 @@ def seed_catalog(engine: Engine, data: CatalogSeed | None = None) -> dict[str, i
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--validate-only", action="store_true", help="Validate JSON without a database"
+    )
+    args = parser.parse_args()
+    try:
+        data = load_seed()
+    except (ValueError, OSError):
+        raise SystemExit(
+            "Invalid catalog JSON. Check job files and candidate references."
+        ) from None
+    if args.validate_only:
+        print(
+            json.dumps({"valid": True, "jobs": len(data.jobs), "candidates": len(data.candidates)})
+        )
+        return
     settings = load_settings()
     if settings.database_url is None:
         raise SystemExit("Configure DATABASE_URL for the existing talent-insight Neon project.")
     engine = create_database_engine(settings.database_url)
     try:
-        counts = seed_catalog(engine)
+        counts = seed_catalog(engine, data)
     except (SQLAlchemyError, ValueError):
         raise SystemExit(
             "Seeding failed. Check migrations, database access and fixture validity."
