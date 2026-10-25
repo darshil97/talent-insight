@@ -1,0 +1,30 @@
+# Matching and deterministic scoring — module 10
+
+Module 10 adds backend assessment endpoints; module 11 adds the [evidence view and resume-to-job UI](assessment-ui.md). These scores summarize **resume evidence interpreted against a job**, not likely performance, suitability or a hiring decision. A recruiter must inspect source text and resolve ambiguities.
+
+## Request and provenance
+
+| Endpoint | Request | Server-owned inputs |
+| --- | --- | --- |
+| `POST /jobs/{job_id}/resumes/assess` | Raw `application/pdf` | Current job requirements and locally parsed PDF pages |
+| `POST /jobs/{job_id}/candidates/{candidate_id}/assess` | Empty body | Current job, actual membership and validated synthetic resume |
+
+The routes use module 9's read-only catalog snapshot, PDF checks, verified extraction, explicit `AI_MODE`, admission limits and safe errors. The catalog transaction closes before provider work. Uploaded results remain in the response and process memory only; no uploaded candidate, resume, interpretation or score is stored in Neon, the filesystem, routine logs or browser storage. Both success and errors are `no-store`. The caller cannot submit requirements, facts, judgments or scores as authoritative data.
+
+The response separates `structured` source text and verified fact excerpts, `judgments` as model interpretation, and `scoring` as backend arithmetic. A non-unknown judgment cites zero-based `fact_indices` into `structured.facts`. The backend rechecks every quote and offset, requires exactly one judgment for each current requirement, rejects foreign/duplicate IDs and out-of-range references, and computes all scores itself. A citation verifies text location only. It does **not** prove relevance, accurate interpretation, truth, ability or complete extraction. The model's short reason is interpretation, not a source quotation. Human review of ambiguous or negative wording remains necessary.
+
+`AI_MODE=mock` safely marks every requirement `unknown`: literal keyword extraction does not establish criterion satisfaction. Bedrock mode requests a separate structured judgment after extraction, with the same fixed configured model/method and bounded worker lifecycle. Missing evidence must be `unknown`; `not_met` is reserved for explicit contrary evidence and `partial` for narrower, transferable or below-threshold evidence. These semantic instructions cannot be fully machine-verified. The model is told not to invent years or aggregate overlapping periods; no external accuracy evaluation of this new interpretation prompt has run. Provider/schema/provenance failures stop the assessment and never turn into a zero or perfect match.
+
+## Rubric
+
+Each requirement has one status: `met` = 1 credit, `partial` = 0.5, `not_met` = 0, `unknown` = unresolved. For an experience threshold, the judgment must consider the *relevant* documented work and the required years. Transferable experience or explicit work below the threshold may receive partial credit; unspecified dates remain unknown. These are model interpretations that require review, while the subsequent arithmetic is deterministic.
+
+Default category weights in `backend/app/config.yaml` are mandatory 50%, experience 25%, preferred 15%, qualification 10%. Set the four backend-only `MATCH_WEIGHT_MANDATORY`, `MATCH_WEIGHT_EXPERIENCE`, `MATCH_WEIGHT_PREFERRED`, `MATCH_WEIGHT_QUALIFICATION` integer percentages to override them. Each is 0–100 and they must sum to 100. These initial weights are illustrative and unvalidated for hiring decisions. A category's credit is the arithmetic mean of **all** its requirements. Present categories divide by the sum of their configured weights, redistributing the weight of absent categories. If present categories have zero total weight, the score is unavailable. Within a category, requirements are equally weighted; there is no bonus for extra facts.
+
+Unknown requirements stay in the denominator. `lower` treats each unknown as zero credit and `upper` treats it as full credit. Neither endpoint claims the unknown is truly failed or met. A single `score` is returned only if all requirements are resolved and an active weight exists. With all unknowns, the range is 0–100 and `score` is null. With no requirements, or no positive weight in present categories, all score values are null. Output values are rounded to one decimal place after exact decimal calculation. `mandatory_met` and `mandatory_total`, resolved/unknown counts, per-category effective weights and bounds are reported independently. Even a complete score needs source review; the endpoints do not rank candidates or recommend a decision.
+
+## Local verification and limits
+
+Default tests use offline synthetic fixtures and AWS Stubber; they do not call Neon or Bedrock. They cover exact arithmetic, partial and unknown handling, absent categories, configurable weights, zero/no-criterion behavior, forged references, repeatability, all six synthetic scenario types, both API sources and native Bedrock request serialization. The mock endpoints intentionally yield an unavailable point score. The full results and remaining limitations are recorded in `PROJECT_CONTEXT.md`.
+
+No real resume or live matching model output has been evaluated. The prior small Bedrock call verified module 9 extraction only. The assessment call can consume up to two extraction and two interpretation attempts, each under its own configured `AI_TIMEOUT_SECONDS` deadline; a PDF parse deadline precedes them. The existing process-local concurrency and minute limits count one assessment request, not each provider attempt. They are not a distributed cost budget. Uploaded text sent in Bedrock mode remains subject to the provider privacy and retention questions in [structured extraction](structured-extraction.md). Do not use this unvalidated rubric as an automatic hiring filter.

@@ -9,8 +9,9 @@ from botocore.config import Config
 from botocore.stub import Stubber
 from langchain_aws import ChatBedrockConverse
 from test_extraction import facts, job_context, source_text
+from test_matching import sample
 
-from app.bedrock_worker import SYSTEM_RULES, invoke_bedrock
+from app.bedrock_worker import INTERPRETATION_RULES, SYSTEM_RULES, invoke_bedrock
 from app.config import Settings
 from app.extraction_contracts import ExtractionFailure
 
@@ -226,3 +227,41 @@ def test_client_setup_failure_is_not_misreported_as_model_output(monkeypatch, ca
     with pytest.raises(ExtractionFailure, match="provider_configuration_error") as caught:
         invoke_bedrock(job_context(), source_text(), Settings())
     assert "private-credential-detail" not in str(caught.value) + caplog.text
+
+
+def test_interpretation_native_request_uses_verified_facts_and_no_provider_score():
+    model, client = model_and_client()
+    structured = sample()
+    value = {
+        "judgments": [
+            {
+                "requirement_id": row.id,
+                "status": "unknown",
+                "fact_indices": [],
+                "reason": "No sufficient source evidence",
+            }
+            for row in structured.job.requirements
+        ]
+    }
+    captured = []
+    client.meta.events.register(
+        "before-parameter-build.bedrock-runtime.Converse",
+        lambda params, **kwargs: captured.append(params),
+    )
+    with Stubber(client) as stub:
+        stub.add_response("converse", response(value))
+        result = invoke_bedrock(
+            structured.job,
+            structured.source,
+            Settings(),
+            model=model,
+            facts=structured.facts,
+        )
+    assert result == value
+    request = captured[0]
+    assert request["system"][0]["text"].startswith(INTERPRETATION_RULES)
+    body = json.loads(request["messages"][0]["content"][0]["text"])
+    assert body["verified_text_mentions"][0]["value"] == "Python"
+    assert "score" not in result
+    schema = json.loads(request["outputConfig"]["textFormat"]["structure"]["jsonSchema"]["schema"])
+    assert schema["required"] == ["judgments"]

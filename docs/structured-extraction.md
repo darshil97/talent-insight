@@ -1,6 +1,6 @@
 # Structured resume extraction — module 9
 
-This backend module turns server-read resume text into bounded job-related text mentions with exact source evidence. It does not assess whether requirements are met, infer total experience, rank candidates or generate scores/recommendations. The existing job page still provides module 8 PDF text review; the assessment UI remains module 11.
+This backend module turns server-read resume text into bounded job-related text mentions with exact source evidence. Its `/structure` routes do not assess whether requirements are met, infer total experience, rank candidates or generate scores/recommendations. The separate `/assess` routes and [assessment UI](assessment-ui.md) now provide human-reviewable job matching.
 
 ## API and authoritative context
 

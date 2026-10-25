@@ -19,6 +19,7 @@ from app.extraction_contracts import (
     ExtractionSource,
     StructuredResume,
 )
+from app.matching import Assessment, assess_resume
 from app.resumes import ResumePage
 
 router = APIRouter(tags=["structured extraction"])
@@ -63,6 +64,10 @@ ERRORS = {
         502,
         "The model returned evidence that could not be verified against the source. "
         "No assessment was produced.",
+    ),
+    "invalid_interpretation": (
+        502,
+        "The requirement interpretation could not be verified. No assessment was produced.",
     ),
 }
 
@@ -186,5 +191,51 @@ async def structure_demo(
         raise HTTPException(400)
     async with extraction_slot(request):
         result = await structure_resume(*context, request.app.state.settings)
+        response.headers["Cache-Control"] = "no-store"
+        return result
+
+
+@router.post(
+    "/jobs/{job_id}/resumes/assess",
+    response_model=Assessment,
+    responses=responses,
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {"application/pdf": {"schema": {"type": "string", "format": "binary"}}},
+        }
+    },
+)
+async def assess_upload(
+    request: Request, response: Response, job: Annotated[ExtractionJob, Depends(job_context)]
+) -> Assessment | JSONResponse:
+    async with extraction_slot(request):
+        extracted = await extract_upload(request, response)
+        if isinstance(extracted, JSONResponse):
+            return extracted
+        source = ExtractionSource(kind="uploaded_pdf", pages=extracted.pages)
+        structured = await structure_resume(job, source, request.app.state.settings)
+        result = await assess_resume(structured, request.app.state.settings)
+        response.headers["Cache-Control"] = "no-store"
+        return result
+
+
+@router.post(
+    "/jobs/{job_id}/candidates/{candidate_id}/assess",
+    response_model=Assessment,
+    responses=responses,
+)
+async def assess_demo(
+    request: Request,
+    response: Response,
+    context: Annotated[tuple[ExtractionJob, ExtractionSource], Depends(demo_context)],
+) -> Assessment:
+    if request.headers.get("content-length", "0") != "0" or request.headers.get(
+        "transfer-encoding"
+    ):
+        raise HTTPException(400)
+    async with extraction_slot(request):
+        structured = await structure_resume(*context, request.app.state.settings)
+        result = await assess_resume(structured, request.app.state.settings)
         response.headers["Cache-Control"] = "no-store"
         return result

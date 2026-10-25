@@ -78,7 +78,12 @@ def worker_environment(settings: Settings) -> dict[str, str]:
 
 
 async def bedrock_provider(
-    job: ExtractionJob, source: ExtractionSource, settings: Settings, repair: bool
+    job: ExtractionJob,
+    source: ExtractionSource,
+    settings: Settings,
+    repair: bool,
+    *,
+    facts: list | None = None,
 ) -> object:
     process = await asyncio.create_subprocess_exec(
         sys.executable,
@@ -91,7 +96,16 @@ async def bedrock_provider(
     )
     try:
         payload = json.dumps(
-            {"job": job.model_dump(), "source": source.model_dump(), "repair": repair},
+            {
+                "job": job.model_dump(),
+                "source": source.model_dump(),
+                "repair": repair,
+                **(
+                    {"task": "interpret", "facts": [fact.model_dump() for fact in facts]}
+                    if facts is not None
+                    else {}
+                ),
+            },
             ensure_ascii=False,
         ).encode()
         output, _ = await process.communicate(payload)

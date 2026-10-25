@@ -1,6 +1,6 @@
 # Temporary resume PDF extraction
 
-Module 8 adds anonymous text-based PDF upload on a loaded job detail page. It displays extracted text by page for human review; it does not create a candidate, interpret qualifications, match requirements or generate scores. All uploaded content, including embedded instructions and HTML, remains untrusted text.
+Module 8 added anonymous text-based PDF extraction. Its standalone `/resumes/extract` API remains available without a provider. Module 11 changes the job-page action to the separate [assessment API and UI](assessment-ui.md), which interprets requirements when configured. Neither action creates a candidate. All uploaded content, including embedded instructions and HTML, remains untrusted text.
 
 ## HTTP contract
 
@@ -45,7 +45,7 @@ The parser uses the official [pypdf extraction API](https://pypdf.readthedocs.io
 
 The application does not write uploaded bytes/text into files, Neon, browser storage or routine logs. Filenames and PDF metadata are omitted from the request/result contract. The chosen file is released from frontend state after success; results exist in React memory only. Clear removes the selected file/result/error and focuses the input. Selecting a replacement removes old output. Leaving the job unmounts/aborts the upload view. Refresh and browser pagehide/history restoration clear temporary data. No resume data enters URLs or server-rendered props.
 
-Browser cancellation discards frontend results immediately. If the backend has already received the body, it may finish within its server deadline before observing a disconnected client. The module 8 route and existing upload UI do not call AI. Module 9's separate [structured-extraction API](structured-extraction.md) sends text to Bedrock only when that route and provider mode are explicitly used. Application non-persistence is not a secure-memory-erasure guarantee or a statement about OS swap, browser internals, proxy logs or third-party retention. Hosted request logging/body capture must be reviewed before deployment. Plain PDF extraction needs no database, provider, migration, seed or deployment.
+Browser cancellation discards frontend results immediately. If the backend has already received the body, it may finish within its server deadline before observing a disconnected client. The module 8 route does not call AI; the module 11 job-page assessment action uses the backend's configured provider. Module 9's separate [structured-extraction API](structured-extraction.md) also sends text to Bedrock only when that route and provider mode are explicitly used. Application non-persistence is not a secure-memory-erasure guarantee or a statement about OS swap, browser internals, proxy logs or third-party retention. Hosted request logging/body capture must be reviewed before deployment. Plain PDF extraction needs no database, provider, migration, seed or deployment.
 
 ## Verification
 

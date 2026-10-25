@@ -1,6 +1,6 @@
 # Local development
 
-Modules 2–9 provide the frontend, read-only job/candidate APIs, Neon demo catalog, temporary PDF text review and backend structured-extraction APIs. Matching/scoring and the assessment UI remain pending. Health/plain PDF parsing need no credentials; catalog browsing uses the existing Neon database. Structured extraction requires an explicit provider choice; Bedrock mode uses private backend AWS settings. Local and hosted catalog runs share the same Neon database; no local PostgreSQL server is used.
+Modules 2–11 provide the frontend, read-only job/candidate APIs, Neon demo catalog, temporary PDF extraction, backend structured extraction and assessment APIs, and the assessment UI. Module 11 browser checks remain unconfirmed. Health/plain PDF parsing need no credentials; catalog browsing uses the existing Neon database. Structured extraction and assessment require an explicit provider choice; Bedrock mode uses private backend AWS settings. Local and hosted catalog runs share the same Neon database; no local PostgreSQL server is used.
 
 ## 1. Create and activate the Conda environment
 
@@ -54,11 +54,13 @@ The examples contain no secrets. Both projects run without copying them; without
 | Example | Setting | Current behavior |
 | --- | --- | --- |
 | `frontend/.env.example` | `NEXT_PUBLIC_API_BASE_URL` | FastAPI origin used by the browser jobs client; defaults to `http://127.0.0.1:8000` when absent |
-| `backend/.env.example` | `DOCS_ENABLED`, `CORS_ALLOWED_ORIGINS` | Loaded and validated at app creation; explicit docs visibility and permitted frontend origins |
+| `backend/app/config.yaml` | Nested API, resume, AI and matching settings | Committed non-secret defaults loaded and validated at app creation |
+| `backend/.env.example` | Optional `DOCS_ENABLED`, `CORS_ALLOWED_ORIGINS` | Private local overrides for docs visibility and permitted frontend origins |
 | `backend/.env.example` | `DATABASE_URL`, `DIRECT_DATABASE_URL` | Placeholder examples for the same Neon database; the ignored local `backend/.env` is already configured privately on this machine; see [database setup](database.md) |
 | `backend/.env.example` | `AI_MODE`, `AWS_REGION`, `BEDROCK_MODEL_ID`, `AWS_BEARER_TOKEN_BEDROCK` | Explicit mock/Bedrock provider selection and private credentials; [structured extraction](structured-extraction.md) documents the verified local model and limits |
+| `backend/app/config.yaml` | Matching weights | Backend-only integer category weights totaling 100; see [scoring](scoring.md) |
 
-Next.js loads `.env.local` automatically. The jobs client validates the API setting as an origin with no credentials, path, query or fragment; remote origins require HTTPS and loopback may use HTTP. Invalid settings show the safe unavailable state. Public settings are bundled into production builds, so rebuild after changing them. The backend reads `backend/.env` from its package location, independently of the current directory. Process variables override file values; restart the backend after changes. Unknown `.env` keys and malformed settings fail startup with a safe diagnostic. The CORS list is a JSON array; it accepts exact origins, not URL paths or wildcards. The example permits both `http://localhost:3000` and `http://127.0.0.1:3000`, which are distinct browser origins. See [the configuration contract](backend-foundation.md).
+Next.js loads `.env.local` automatically. The jobs client validates the API setting as an origin with no credentials, path, query or fragment; remote origins require HTTPS and loopback may use HTTP. Invalid settings show the safe unavailable state. Public settings are bundled into production builds, so rebuild after changing them. The backend loads packaged `app/config.yaml` and private `backend/.env` independently of the current directory. Explicit settings override process variables, which override dotenv, which overrides YAML. Empty values fall through; `${NAME}` and `${NAME:-fallback}` placeholders in YAML read exported variables. Restart the backend after changes. Unknown YAML or `.env` keys and malformed settings fail startup with a safe diagnostic. The CORS list accepts exact origins, not URL paths or wildcards. The launcher supplies both `http://localhost:3000` and `http://127.0.0.1:3000`, which are distinct browser origins. See [the configuration contract](backend-foundation.md).
 
 Remove `APP_ENV` from older local files. Set `DOCS_ENABLED=false` if you want to hide API docs. Remote frontend origins require HTTPS consistently; HTTP is supported only for loopback origins. Secrets belong only in backend-local environment configuration or a deployment secret store. Configure the hosted backend with the same two Neon URL values when deploying. Never prefix provider keys with `NEXT_PUBLIC_`.
 
@@ -93,7 +95,7 @@ cd frontend
 npm run dev
 ```
 
-Open [the local frontend](http://127.0.0.1:3000). The overview (`/`) and guide (`/guide`) need no backend; jobs (`/jobs`), job details and nested candidate pools/profiles require FastAPI, matching CORS origins and the existing Neon configuration. From a job detail, choose **Review demo candidates**, or select a text-based resume PDF under **Review a resume PDF**. See [jobs](jobs.md), [candidate checks](candidates.md) and [upload limits/privacy](resumes.md). Unknown routes show a recovery link. Press Ctrl+C to stop.
+Open [the local frontend](http://127.0.0.1:3000). The overview (`/`) and guide (`/guide`) need no backend; jobs (`/jobs`), job details and nested candidate pools/profiles require FastAPI, matching CORS origins and the existing Neon configuration. From a job detail, choose **Review demo candidates**, or select a text-based PDF under **Assess a resume PDF**. Synthetic profiles also have an assessment action. These actions use the backend's configured `AI_MODE`; the saved local value is Bedrock and makes provider calls. Set `AI_MODE=mock` explicitly in the backend process for no-cost workflow checks. See [assessment UI](assessment-ui.md), [jobs](jobs.md), [candidate checks](candidates.md) and [upload limits/privacy](resumes.md). Unknown routes show a recovery link. Press Ctrl+C to stop.
 
 To build and serve the production bundle locally:
 

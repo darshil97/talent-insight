@@ -1,0 +1,46 @@
+# Backend defaults. Secrets stay in backend/.env or the host environment.
+# A value such as ${NAME} uses NAME when set; an empty or unset value is null.
+# ${NAME:-fallback} supplies a fallback when NAME is empty or unset.
+# Explicit Settings arguments > process variables > backend/.env > this file.
+# Unknown or duplicate YAML keys fail startup.
+
+api:
+  docs_enabled: true
+  cors_allowed_origins: []
+
+database:
+  url: ${DATABASE_URL}
+  direct_url: ${DIRECT_DATABASE_URL}
+
+resumes:
+  max_bytes: 5242880
+  max_pages: 20
+  max_characters: 100000
+  timeout_seconds: 10
+  upload_timeout_seconds: 15
+  max_concurrent: 2
+
+ai:
+  mode: ${AI_MODE}
+  max_input_characters: 20000
+  max_output_tokens: 3000
+  timeout_seconds: 45
+  max_attempts: 2
+  max_concurrent: 1
+  requests_per_minute: 5
+  bedrock:
+    region: ${AWS_REGION}
+    model_id: ${BEDROCK_MODEL_ID}
+    bearer_token: ${AWS_BEARER_TOKEN_BEDROCK}
+    profile: ${AWS_PROFILE}
+    access_key_id: ${AWS_ACCESS_KEY_ID}
+    secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+    session_token: ${AWS_SESSION_TOKEN}
+    structured_method: json_schema
+
+matching:
+  weights:
+    mandatory: 50
+    experience: 25
+    preferred: 15
+    qualification: 10

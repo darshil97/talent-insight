@@ -16,6 +16,7 @@ dependencies = [
     "pydantic==2.14.1",
     "pydantic-settings==2.16.1",
     "pypdf==6.19.0",
+    "pyyaml==6.0.3",
     "psycopg[binary]==3.3.6",
     "sqlalchemy==2.0.55",
     "starlette==1.9.0",
@@ -34,7 +35,7 @@ where = ["."]
 include = ["app*"]
 
 [tool.setuptools.package-data]
-app = ["fixtures/*.json", "fixtures/jobs/*.json"]
+app = ["config.yaml", "fixtures/*.json", "fixtures/jobs/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

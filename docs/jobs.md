@@ -60,4 +60,4 @@ Module 6 checks in the dedicated Conda environment:
 
 No migration, seed, external infrastructure change, AI/voice call, deployment or commit occurred. The opt-in Neon regression suite was not repeated; live verification here was limited to the read-only application jobs path. Browser checks are manual, not an automated browser suite or screen-reader audit. Hosted deployment, other browser engines and cross-platform launcher behavior remain unverified.
 
-Modules 6 and 7 are approved. Module 8 is complete and awaiting review; see [PDF extraction](resumes.md). Structured AI extraction remains module 9 and requires explicit approval.
+Modules 1–10 are reviewed and approved. Module 11 adds the [assessment UI](assessment-ui.md) to job and candidate pages and awaits review. PDF extraction details remain in [PDF extraction](resumes.md).

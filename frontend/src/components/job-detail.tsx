@@ -33,7 +33,7 @@ export function JobDetailView({ jobId }: { jobId: string }) {
       <div className="mt-7 grid gap-7 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <section aria-labelledby="requirements-heading" className="rounded-xl border border-[#dce1d7] bg-white p-6 sm:p-7">
           <h2 id="requirements-heading" className="text-xl font-semibold">What the role calls for</h2>
-          <p className="mt-3 text-sm leading-6 text-[#59665d]">Job requirements for human review. No candidate has been assessed.</p>
+          <p className="mt-3 text-sm leading-6 text-[#59665d]">Job requirements for human review. Assess an uploaded resume below or a synthetic candidate in the demo pool.</p>
           {categories.map(({ key, label }) => {
             const requirements = job.requirements.filter((row) => row.category === key);
             return (
@@ -58,8 +58,8 @@ export function JobDetailView({ jobId }: { jobId: string }) {
           </section>
         </div>
       </div>
-      <ResumeUpload key={job.id} />
-      <p className="mt-7 rounded-xl border border-dashed border-[#cbd3c3] p-5 text-sm leading-7 text-[#59665d]">You can review this job’s synthetic candidate pool or inspect text from a temporary resume upload. Assessments remain in development. People make the final hiring decisions.</p>
+      <ResumeUpload key={job.id} job={job} />
+      <p className="mt-7 rounded-xl border border-dashed border-[#cbd3c3] p-5 text-sm leading-7 text-[#59665d]">Assessment evidence and scores support review of this role. People make the final hiring decisions.</p>
     </>
   );
 }

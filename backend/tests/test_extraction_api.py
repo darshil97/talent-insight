@@ -67,6 +67,58 @@ def test_demo_result_is_labeled_and_uses_real_membership_context(extraction_app,
     assert extraction_app.state.test_session_closed
 
 
+def test_assessment_routes_are_temporary_and_mock_scores_stay_unavailable(
+    extraction_app, api_request
+):
+    demo = api_request(extraction_app, "POST", "/jobs/demo_ds/candidates/demo_ds_avery/assess")
+    assert demo.status_code == 200
+    body = demo.json()
+    assert body["structured"]["source"]["candidate_id"] == "demo_ds_avery"
+    assert body["scoring"]["score"] is None
+    assert (body["scoring"]["lower"], body["scoring"]["upper"]) == (0, 100)
+    assert all(row["status"] == "unknown" for row in body["judgments"])
+    assert demo.headers["cache-control"] == "no-store"
+    assert extraction_app.state.test_session_closed
+    uploaded = api_request(
+        extraction_app,
+        "POST",
+        "/jobs/demo_ds/resumes/assess",
+        content=pdf(("SYNTHETIC RESUME\nUsed Python and SQL.",)),
+        headers={"Content-Type": "application/pdf"},
+    )
+    assert uploaded.status_code == 200
+    assert uploaded.json()["structured"]["source"]["candidate_id"] is None
+    assert uploaded.json()["scoring"]["score"] is None
+    assert uploaded.headers["cache-control"] == "no-store"
+
+
+def test_assessment_rejects_cross_job_and_client_supplied_results(extraction_app, api_request):
+    assert (
+        api_request(
+            extraction_app, "POST", "/jobs/demo_backend/candidates/demo_ds_avery/assess"
+        ).status_code
+        == 404
+    )
+    assert (
+        api_request(
+            extraction_app,
+            "POST",
+            "/jobs/demo_ds/candidates/demo_ds_avery/assess",
+            json={"score": 100},
+        ).status_code
+        == 400
+    )
+    assert (
+        api_request(
+            extraction_app,
+            "POST",
+            "/jobs/demo_ds/resumes/assess",
+            json={"score": 100},
+        ).status_code
+        == 415
+    )
+
+
 @pytest.mark.parametrize(
     "path,status",
     [

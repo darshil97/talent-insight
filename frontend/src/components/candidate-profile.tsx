@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { CatalogLoading, CatalogUnavailable, useCatalog } from "@/components/catalog-resource";
 import { CandidateNotFound } from "@/components/candidate-not-found";
 import { decodeCandidateProfile, splitResume, type EvidenceClaim } from "@/lib/candidates";
+import { DemoAssessment } from "@/components/demo-assessment";
 
 const kinds = [
   { key: "experience", label: "Experience excerpts" },
@@ -80,7 +81,8 @@ export function CandidateProfileView({ jobId, candidateId }: { jobId: string; ca
         {selected && <p role="status" className="mt-4 text-sm font-medium text-[#466344]">Highlighted excerpt: {selected.label}</p>}
         <pre className="mt-5 rounded-lg bg-[#f7f8f2] p-5 font-sans text-sm leading-8 whitespace-pre-wrap text-[#475a49] [overflow-wrap:anywhere]">{highlighted ? <>{highlighted.before}<mark className="rounded-sm bg-[#f2e8b2] text-[#243c2e]">{highlighted.excerpt}</mark>{highlighted.after}</> : candidate.resume_text}</pre>
       </section>
-      <p className="mt-7 rounded-xl border border-dashed border-[#cbd3c3] p-5 text-sm leading-7 text-[#59665d]">This profile has not been matched or scored against the job. Resume uploads and assessments are still in development. People make the final hiring decisions.</p>
+      <DemoAssessment key={`${jobId}/${candidateId}`} jobId={jobId} candidateId={candidateId} />
+      <p className="mt-7 rounded-xl border border-dashed border-[#cbd3c3] p-5 text-sm leading-7 text-[#59665d]">This is synthetic demo data. Assessment results are temporary and require human review. People make the final hiring decisions.</p>
     </>
   );
 }
