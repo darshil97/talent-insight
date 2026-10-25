@@ -6,14 +6,14 @@ Modules 5 and 6 are approved. Module 7 adds a read-only candidate pool and profi
 
 | FastAPI route | Response |
 | --- | --- |
-| `GET /jobs/{job_id}/candidates` | `{"job": JobSummary, "candidates": CandidateSummary[]}` |
+| `GET /jobs/{job_id}/candidates` | `{"job": JobSummary, "candidates": CandidateTableSummary[]}` |
 | `GET /jobs/{job_id}/candidates/{candidate_id}` | `{"job": JobSummary, "candidate": CandidateDetail}` |
 
 Both IDs use the existing stable `demo_...` syntax (at most 64 characters). The backend first verifies the job exists. It lists candidates or loads a profile through actual `job_candidates` membership, never by interpreting an ID prefix. A missing job or a candidate outside that job returns a safe 404; invalid ID syntax returns 422. An existing job with no members returns an empty pool. Database failures return sanitized 503 responses.
 
 The routes reuse the module 6 read-only session and five-second SQL statement timeout. Responses and errors are `no-store`. Only GET routes were added. Startup/health still do not query, seed or migrate. No database schema or configuration changes were needed.
 
-`CandidateSummary` contains only `id`, `display_name`, `headline`, `summary` and `is_demo: true`. Detail adds `resume_text`, `claims` and `offset_unit: "unicode_code_point"`. Claims contain `kind` (`skill`, `experience`, `qualification`), `label`, `quote`, `start` and `end`. Internal scenario labels remain private fixture metadata; they are never returned as candidate statuses or scores.
+`CandidateSummary` contains `id`, `display_name`, `headline`, `summary` and `is_demo: true`. The job-scoped list now adds `stated_experience`, taken only from a validated source experience claim or `null`; it is a source claim, not verified years of relevant experience. Detail adds `resume_text`, `claims` and `offset_unit: "unicode_code_point"`. Claims contain `kind` (`skill`, `experience`, `qualification`), `label`, `quote`, `start` and `end`. Internal scenario labels remain private fixture metadata; they are never returned as candidate statuses or scores.
 
 ## Source evidence
 
@@ -25,7 +25,7 @@ Summaries are labeled as authored demo summaries. Excerpts are curated source ev
 
 ## Frontend workflow
 
-From a job detail, choose **Review demo candidates**. The pool at `/jobs/<job_id>/candidates` shows its job context, actual member count, synthetic labels and profile links. Profiles at `/jobs/<job_id>/candidates/<candidate_id>` show the authored summary, grouped excerpts and complete source resume, with links back to the pool and requirements.
+From a job detail, choose the **Candidates** tab. The pool at `/jobs/<job_id>/candidates` shows its job context, a table of members, stated years where supported, score availability and profile links. Profiles at `/jobs/<job_id>/candidates/<candidate_id>` show the authored summary, grouped excerpts and complete source resume, with links back to the pool and requirements. Until precomputation is approved, demo scores display as pending; the list does not invoke the provider for them.
 
 **View in source resume** moves focus to the source section and highlights exactly that excerpt. **Clear highlight** removes it. Selection is React memory only and clears on refresh or route change; no candidate data is written to browser storage. Job navigation remains active on nested candidate routes. Each route retains one main landmark and one h1.
 

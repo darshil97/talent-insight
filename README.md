@@ -4,7 +4,7 @@ An AI recruiting and candidate pipeline assistant for technical recruiters and s
 
 Planned workflow: select a curated job, review synthetic candidates, upload a temporary resume, inspect evidence-backed matching, conduct an optional AI voice screening, and review a structured report. A recruiter makes the hiring decision.
 
-**Current status: module 11 complete, awaiting review.** Browse synthetic jobs/candidates, assess a temporary PDF for a job, or assess a synthetic profile. The UI shows source evidence, requirement judgments, score availability, uncertainty and follow-up questions for human review. Mock mode leaves every criterion unknown and the point score unavailable. The selected Bedrock model passed a small synthetic *extraction* check; its interpretation prompt has not been evaluated live. Voice screening remains pending.
+**Current status: the Sci-fi / Mission layout and job-scoped candidate table are implemented for review.** Browse synthetic jobs/candidates, choose a PDF from a job's Candidates tab for automatic temporary assessment, or assess a synthetic profile manually. Available point scores sort highest first; demo scores remain pending until a separately approved precompute module. The UI shows source evidence, requirement judgments, score availability, uncertainty and follow-up questions for human review. Mock mode leaves every criterion unknown and the point score unavailable. The selected Bedrock model passed a small synthetic *extraction* check; its interpretation prompt has not been evaluated live. Voice screening remains pending.
 
 Use the dedicated Anaconda environment:
 
@@ -44,4 +44,4 @@ The backend's [health endpoint](http://localhost:8000/health) returns `{"status"
 
 The planned stack is Next.js/React/TypeScript/Tailwind on Vercel, FastAPI/Pydantic on Render, Neon Postgres, AWS Bedrock via LangChain, and Deepgram for browser voice. Uploaded personal data will not become permanent demo records.
 
-Work proceeds one module at a time with review between modules. Module 11 awaits review; module 12 requires approval and a voice credential architecture decision. Neon and a small synthetic Bedrock extraction are verified; matching-model accuracy, real-document accuracy, voice integration and hosted deployment remain unverified.
+Work proceeds one module at a time with review between modules. The candidate workflow update awaits review. Demo assessment precomputation, uploaded identity extraction and module 12 voice work require separate review; voice work also needs a credential architecture decision. Neon and a small synthetic Bedrock extraction are verified; matching-model accuracy, real-document accuracy, voice integration and hosted deployment remain unverified.

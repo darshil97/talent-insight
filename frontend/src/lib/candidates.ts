@@ -10,6 +10,10 @@ export interface CandidateSummary {
   is_demo: true;
 }
 
+export interface CandidateTableSummary extends CandidateSummary {
+  stated_experience: string | null;
+}
+
 export interface EvidenceClaim {
   kind: "skill" | "experience" | "qualification";
   label: string;
@@ -26,7 +30,7 @@ export interface CandidateDetail extends CandidateSummary {
 
 export interface CandidatePool {
   job: JobSummary;
-  candidates: CandidateSummary[];
+  candidates: CandidateTableSummary[];
 }
 
 export interface CandidateProfile {
@@ -42,6 +46,11 @@ const text = (value: unknown): value is string =>
 function isCandidateSummary(value: unknown): value is CandidateSummary {
   return object(value) && isCandidateId(value.id) && text(value.display_name) &&
     text(value.headline) && text(value.summary) && value.is_demo === true;
+}
+
+function isCandidateTableSummary(value: unknown): value is CandidateTableSummary {
+  return isCandidateSummary(value) && object(value) &&
+    (value.stated_experience === null || text(value.stated_experience));
 }
 
 function isClaim(value: unknown): value is EvidenceClaim {
@@ -62,7 +71,7 @@ export function splitResume(source: string, start: number, end: number) {
 
 export function decodeCandidatePool(value: unknown, jobId: string): CandidatePool {
   if (!object(value) || !isJobSummary(value.job) || value.job.id !== jobId ||
-      !Array.isArray(value.candidates) || !value.candidates.every(isCandidateSummary) ||
+      !Array.isArray(value.candidates) || !value.candidates.every(isCandidateTableSummary) ||
       new Set(value.candidates.map((row) => row.id)).size !== value.candidates.length) {
     throw new CatalogError("unavailable");
   }

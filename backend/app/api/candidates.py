@@ -24,6 +24,10 @@ class CandidateSummary(BaseModel):
     is_demo: Literal[True]
 
 
+class CandidateTableSummary(CandidateSummary):
+    stated_experience: str | None
+
+
 class EvidenceClaim(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -64,7 +68,7 @@ class CandidateDetail(CandidateSummary):
 
 class CandidateListResponse(BaseModel):
     job: JobSummary
-    candidates: list[CandidateSummary]
+    candidates: list[CandidateTableSummary]
 
 
 class CandidateProfileResponse(BaseModel):
@@ -82,10 +86,17 @@ def candidates(job_id: JobId, response: Response, session: CatalogSession) -> Ca
         raise HTTPException(404)
     rows = catalog.list_candidates_for_job(session, job_id)
     response.headers["Cache-Control"] = "no-store"
-    return CandidateListResponse(
-        job=JobSummary.model_validate(job),
-        candidates=[CandidateSummary.model_validate(row) for row in rows],
-    )
+    summaries = []
+    for row in rows:
+        summary = CandidateSummary.model_validate(row)
+        claims = StoredProfile.model_validate(row.profile).claims
+        # Validate the quoted source before displaying a stated duration in the table.
+        CandidateDetail(**summary.model_dump(), resume_text=row.resume_text, claims=claims)
+        experience = next((claim.label for claim in claims if claim.kind == "experience"), None)
+        summaries.append(
+            CandidateTableSummary(**summary.model_dump(), stated_experience=experience)
+        )
+    return CandidateListResponse(job=JobSummary.model_validate(job), candidates=summaries)
 
 
 @router.get("/{candidate_id}", response_model=CandidateProfileResponse, responses=responses)

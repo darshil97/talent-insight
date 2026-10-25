@@ -7,7 +7,7 @@ import { decodeCandidatePool, decodeCandidateProfile, splitResume } from "../src
 const fixtures = JSON.parse(readFileSync(new URL("../../backend/app/fixtures/candidates.json", import.meta.url), "utf8"));
 const source = fixtures.candidates[0];
 const job = JSON.parse(readFileSync(new URL("../../backend/app/fixtures/jobs/demo_ds.json", import.meta.url), "utf8"));
-const summary = { id: source.id, display_name: source.display_name, headline: source.headline, summary: source.summary, is_demo: true };
+const summary = { id: source.id, display_name: source.display_name, headline: source.headline, summary: source.summary, is_demo: true, stated_experience: "4 years" };
 const candidate = { ...summary, resume_text: source.resume_text, offset_unit: "unicode_code_point", claims: source.claims.map((claim: { quote: string }) => {
   const start = Array.from(source.resume_text.slice(0, source.resume_text.indexOf(claim.quote))).length;
   return { ...claim, start, end: start + Array.from(claim.quote).length };
@@ -16,7 +16,7 @@ const candidate = { ...summary, resume_text: source.resume_text, offset_unit: "u
 test("candidate pools validate selected job context and preserve authored summaries", () => {
   assert.deepEqual(decodeCandidatePool({ job, candidates: [summary] }, job.id).candidates, [summary]);
   assert.deepEqual(decodeCandidatePool({ job, candidates: [] }, job.id).candidates, []);
-  for (const body of [null, { job, candidates: null }, { job, candidates: [summary, summary] }, { job, candidates: [{ ...summary, is_demo: false }] }, { job: { ...job, id: "demo_other" }, candidates: [summary] }]) {
+  for (const body of [null, { job, candidates: null }, { job, candidates: [summary, summary] }, { job, candidates: [{ ...summary, is_demo: false }] }, { job, candidates: [{ ...summary, stated_experience: undefined }] }, { job: { ...job, id: "demo_other" }, candidates: [summary] }]) {
     assert.throws(() => decodeCandidatePool(body, job.id), CatalogError);
   }
 });

@@ -60,8 +60,20 @@ def test_list_contains_only_job_members_and_public_summary_fields(
     expected = {row.candidate_id for row in load_seed().memberships if row.job_id == job_id}
     assert {row["id"] for row in rows} == expected
     for row in rows:
-        assert set(row) == {"id", "display_name", "headline", "summary", "is_demo"}
+        assert set(row) == {
+            "id",
+            "display_name",
+            "headline",
+            "summary",
+            "is_demo",
+            "stated_experience",
+        }
         assert row["is_demo"] is True
+        source = next(item for item in load_seed().candidates if item.id == row["id"])
+        expected_years = next(
+            (claim.label for claim in source.claims if claim.kind == "experience"), None
+        )
+        assert row["stated_experience"] == expected_years
 
 
 def test_all_profiles_preserve_original_text_and_validated_evidence(candidates_app, api_request):

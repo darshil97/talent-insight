@@ -10,9 +10,7 @@ export default async function CandidatesPage({ params }: { params: Promise<{ job
   const { jobId } = await params;
   return (
     <>
-      <Link href="/jobs" className="mb-5 inline-flex min-h-12 items-center rounded-sm text-sm font-semibold text-[#315943] underline underline-offset-4">← Back to jobs</Link>
-      <p className="eyebrow">CANDIDATE PIPELINE</p>
-      <h1 className="mt-3 mb-7 text-3xl font-semibold tracking-tight">Candidate pool</h1>
+      <Link href="/jobs" className="mission-back-link">← All jobs</Link>
       {isJobId(jobId) ? <CandidatePoolView key={jobId} jobId={jobId} /> : <CatalogNotFound />}
     </>
   );
