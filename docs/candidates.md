@@ -1,19 +1,19 @@
 # Candidate pipeline and profiles — module 7
 
-Modules 5 and 6 are approved. Module 7 adds a read-only candidate pool and profiles within the selected job. The existing twelve synthetic Neon candidates and their memberships are unchanged. The pipeline is an alphabetical pool; no workflow stages, rankings, match scores or hiring recommendations are introduced.
+Modules 5 and 6 are approved. Module 7 added a read-only candidate pool and profiles within the selected job. The twelve synthetic Neon candidates and memberships remain unchanged. The current pool sorts available precomputed match scores while retaining alphabetical order for unresolved rows. No workflow stages or hiring recommendations are introduced.
 
 ## API and membership boundary
 
 | FastAPI route | Response |
 | --- | --- |
 | `GET /jobs/{job_id}/candidates` | `{"job": JobSummary, "candidates": CandidateTableSummary[]}` |
-| `GET /jobs/{job_id}/candidates/{candidate_id}` | `{"job": JobSummary, "candidate": CandidateDetail}` |
+| `GET /jobs/{job_id}/candidates/{candidate_id}` | `{"job": JobSummary, "candidate": CandidateDetail, "assessment": Assessment or null}` |
 
 Both IDs use the existing stable `demo_...` syntax (at most 64 characters). The backend first verifies the job exists. It lists candidates or loads a profile through actual `job_candidates` membership, never by interpreting an ID prefix. A missing job or a candidate outside that job returns a safe 404; invalid ID syntax returns 422. An existing job with no members returns an empty pool. Database failures return sanitized 503 responses.
 
 The routes reuse the module 6 read-only session and five-second SQL statement timeout. Responses and errors are `no-store`. Only GET routes were added. Startup/health still do not query, seed or migrate. No database schema or configuration changes were needed.
 
-`CandidateSummary` contains `id`, `display_name`, `headline`, `summary` and `is_demo: true`. The job-scoped list now adds `stated_experience`, taken only from a validated source experience claim or `null`; it is a source claim, not verified years of relevant experience. Detail adds `resume_text`, `claims` and `offset_unit: "unicode_code_point"`. Claims contain `kind` (`skill`, `experience`, `qualification`), `label`, `quote`, `start` and `end`. Internal scenario labels remain private fixture metadata; they are never returned as candidate statuses or scores.
+`CandidateSummary` contains `id`, `display_name`, `headline`, `summary` and `is_demo: true`. The job-scoped list adds `stated_experience`, taken only from a validated source experience claim or `null`; it is a source claim, not verified years of relevant experience. The list also returns `snapshot_available`, `match_score`, `score_lower` and `score_upper` from the current snapshot. Detail adds `resume_text`, `claims` and `offset_unit: "unicode_code_point"`. Claims contain `kind` (`skill`, `experience`, `qualification`), `label`, `quote`, `start` and `end`. Internal scenario labels remain private fixture metadata.
 
 ## Source evidence
 
@@ -25,7 +25,24 @@ Summaries are labeled as authored demo summaries. Excerpts are curated source ev
 
 ## Frontend workflow
 
-From a job detail, choose the **Candidates** tab. The pool at `/jobs/<job_id>/candidates` shows its job context, a table of members, stated years where supported, score availability and profile links. Profiles at `/jobs/<job_id>/candidates/<candidate_id>` show the authored summary, grouped excerpts and complete source resume, with links back to the pool and requirements. Until precomputation is approved, demo scores display as pending; the list does not invoke the provider for them.
+From a job detail, choose the **Candidates** tab. The pool at `/jobs/<job_id>/candidates` shows its job context, a table of members, stated years where supported, cached score or range, and profile links. Profiles at `/jobs/<job_id>/candidates/<candidate_id>` show the authored summary, grouped excerpts, complete source resume and any current cached assessment. Missing or stale snapshots display as pending; neither page invokes the provider for demo candidates.
+
+## Adding and refreshing demo candidates
+
+The fixture and shared catalog have three synthetic candidates in each role plus one Backend Engineer also assigned to Senior Data Scientist: four Data Scientist memberships and three in each other role, across twelve distinct synthetic people and thirteen memberships. Each synthetic resume includes experience, projects, skills and education/training sections; private reference resumes were used for the level of detail only. To add one, edit `backend/app/fixtures/candidates.json`: add a candidate with a stable `demo_...` ID, source resume text, display context copied from that text and only exact supporting claim quotes. Put its job links in that candidate's `memberships` array:
+
+```json
+"memberships": [
+  {"job_id": "demo_ds", "demo_scenario": "partial"},
+  {"job_id": "demo_backend", "demo_scenario": "transferable"}
+]
+```
+
+The scenario is internal demo metadata for that candidate **in that job**; it can differ across jobs. The loader derives database membership rows from these links, so candidate IDs are not repeated in a separate authoring list. Membership, rather than the candidate ID prefix, selects the job. The fixture validator checks IDs, unique links, references, quotes, display context and three to five memberships for every populated job. A new job can be staged with zero candidates, but the snapshot refresh requires three to five for every job.
+
+After editing, run `python -m app.seed --validate-only` and `python -m app.refresh_demo` from `backend/` in the `talent-insight` Conda environment. The first validates the catalog; the second checks that every job has three to five candidates and prints counts. Both are offline and read-only; running either does **not** populate scores. The Neon catalog remains the runtime source for candidates, so future fixture changes need a separately approved `python -m app.seed` before they appear in the app. Removing jobs needs a separate reviewed data transition because the seed only upserts; the four-domain retirement is complete. Once the catalog and interpretation are reviewed, run `python -m app.refresh_demo --run` to generate `backend/app/fixtures/assessments.json`. This explicitly calls Bedrock for extraction and interpretation of every demo membership, then atomically replaces the complete JSON only if all succeed. For the current thirteen memberships that is at least 26 provider requests, with configured retries possible. On failure, ignored local extraction and assessment checkpoints retain validated synthetic work; rerun the same command to resume. Each checkpoint entry is checked against the current job, source, code fingerprint and digest before reuse. Successful publication removes both checkpoints. The command does not change Neon. Do not hand edit the generated assessment or checkpoint files. A `weak` scenario label is authoring metadata, not a score target: the backend leaves a point score unavailable when evidence is unresolved. Evaluate the cross-domain assessment after refresh before changing scoring logic.
+
+The API matches each snapshot to the current job requirements, candidate resume, scoring weights and extraction/scoring source code. When those change, or a snapshot is absent, the pool and profile show pending until the command is rerun. The JSON cache now contains all thirteen validated memberships. Five have a point score; eight retain an uncertainty range because at least one requirement is unknown. Uploaded PDFs use the same backend extraction, interpretation and deterministic scoring functions on selection, and remain temporary in React memory.
 
 **View in source resume** moves focus to the source section and highlights exactly that excerpt. **Clear highlight** removes it. Selection is React memory only and clears on refresh or route change; no candidate data is written to browser storage. Job navigation remains active on nested candidate routes. Each route retains one main landmark and one h1.
 
@@ -41,4 +58,4 @@ Loading, empty pool, missing job/profile and service failure are distinct. Error
 
 No AI/voice integration, uploaded-candidate persistence, deployment or commit was introduced. Hosted behavior, other browsers and other operating systems remain unverified.
 
-Module 7 is approved. Module 11 adds a temporary [assessment action](assessment-ui.md) to synthetic candidate profiles without changing demo records or these read-only APIs. It awaits review.
+Module 7 is approved. The later [assessment UI](assessment-ui.md) and demo snapshot workflow supersede its original pending-score behavior. The snapshot workflow awaits review.

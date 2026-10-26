@@ -176,10 +176,10 @@ class Settings(BaseSettings):
         default=20_000, ge=100, le=50_000, validation_alias="AI_MAX_INPUT_CHARACTERS"
     )
     ai_max_output_tokens: int = Field(
-        default=3000, ge=256, le=8192, validation_alias="AI_MAX_OUTPUT_TOKENS"
+        default=8192, ge=256, le=8192, validation_alias="AI_MAX_OUTPUT_TOKENS"
     )
     ai_timeout_seconds: float = Field(
-        default=45, ge=5, le=120, validation_alias="AI_TIMEOUT_SECONDS"
+        default=130, ge=5, le=150, validation_alias="AI_TIMEOUT_SECONDS"
     )
     ai_max_attempts: int = Field(default=2, ge=1, le=2, validation_alias="AI_MAX_ATTEMPTS")
     ai_max_concurrent: int = Field(default=1, ge=1, le=2, validation_alias="AI_MAX_CONCURRENT")

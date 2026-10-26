@@ -64,7 +64,7 @@ def test_job_detail_contains_ordered_requirements_and_question_references(
     assert [row["id"] for row in body["requirements"]] == [row.id for row in source.requirements]
     assert [row["sort_order"] for row in body["requirements"]] == list(range(6))
     assert body["questions"] == [row.model_dump() for row in source.questions]
-    assert body["requirements"][3]["minimum_years"] == 3
+    assert body["requirements"][3]["minimum_years"] == 5
     assert "candidates" not in body
     assert response.headers["cache-control"] == "no-store"
 

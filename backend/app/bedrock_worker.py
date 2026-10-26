@@ -26,7 +26,14 @@ Extract only explicitly stated skills, experience, qualifications or project des
 Keep negative/uncertain wording in the evidence; a skill mention is not proof of competence.
 Every value must be a literal phrase in its cited text. Never paraphrase, calculate years or invent.
 Quote exact unique excerpts from the indicated page, preserving whitespace and punctuation.
-Return at most 40 facts, with at most 3 quotes per fact; values <=200 and quotes <=1200 characters.
+Return no more than 12 distinct facts total. Prioritize one or two facts per job requirement;
+do not enumerate every skill or project in the resume. Choose the strongest literal evidence.
+For each fact, prefer one short, complete source line containing the value. If its exact
+characters or uniqueness are uncertain, omit the fact rather than guessing a quote.
+The value is a short literal phrase copied from that line, ideally one to six words and no
+more than 80 characters. Put surrounding context in quote, never in value.
+The backend hard limit remains 40 facts, with at most 3 quotes per fact; values <=200 and
+quotes <=1200 characters.
 An empty facts list is valid. Missing evidence is unknown, never proof a skill is absent.
 Do not match criteria, judge suitability, rank, score, recommend or make a hiring decision.
 Return only the requested structure. If an extraction tool is declared, use it only to format
@@ -44,6 +51,28 @@ unknown has no citations. The reason is a brief interpretation, not a fabricated
 Do not invent years, combine overlapping periods, or treat a keyword mention as proven competence.
 Do not score, rank, recommend, hire or reject. Humans review every interpretation.
 Return only the requested structure. A declared tool only formats output and is not executed."""
+
+
+def _load_native_json(text: str, top_level_key: str) -> object:
+    """Correct only a duplicated opening brace before the expected root key."""
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        stripped = text.lstrip()
+        root = f'{{"{top_level_key}"'
+        if stripped.startswith('{"{') and stripped[3:].startswith(f'"{top_level_key}"'):
+            candidate = stripped[0] + stripped[3:]
+        elif stripped.startswith("{") and stripped[1:].lstrip().startswith(root):
+            candidate = stripped[1:].lstrip()
+        else:
+            raise
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            # A matching extra closing brace can accompany the duplicated opener.
+            if candidate.rstrip().endswith("}}"):
+                return json.loads(candidate.rstrip()[:-1])
+            raise
 
 
 def invoke_bedrock(
@@ -78,7 +107,7 @@ def invoke_bedrock(
                     max_tokens=settings.ai_max_output_tokens,
                     config=Config(
                         connect_timeout=3,
-                        read_timeout=min(20, settings.ai_timeout_seconds),
+                        read_timeout=min(60, settings.ai_timeout_seconds),
                         retries={"total_max_attempts": 1},
                         max_pool_connections=1,
                     ),
@@ -104,12 +133,15 @@ def invoke_bedrock(
             },
             ensure_ascii=False,
         )
-        rules = (INTERPRETATION_RULES if interpreting else SYSTEM_RULES) + (
-            "\nPrevious attempt failed validation. "
-            "Return exactly the requested schema with valid references."
-            if repair
-            else ""
-        )
+        rules = INTERPRETATION_RULES if interpreting else SYSTEM_RULES
+        if repair:
+            rules += "\nPrevious attempt failed validation. Return the requested schema. "
+            rules += (
+                "Cite only valid verified fact indices, or mark the requirement unknown."
+                if interpreting
+                else "Keep each value to a short literal phrase and use an exact, unique "
+                "source quote; omit any fact whose source wording is uncertain."
+            )
         output_name = "Interpretation" if interpreting else "ResumeFacts"
         if settings.bedrock_structured_method == "function_calling":
             rules += (
@@ -123,15 +155,13 @@ def invoke_bedrock(
                 "\nReturn exactly one JSON object matching this schema. "
                 "Do not use markdown fences or explanations.\n"
                 + json.dumps(schema, ensure_ascii=False)
+                + "\nUse one outer object containing only the listed top-level property. "
+                "Do not nest the complete object inside another object."
             )
         result = runnable.invoke([("system", rules), ("human", payload)], config={"callbacks": []})
-        if (
-            result.get("parsing_error") is not None
-            or result.get("parsed") is None
-            or result["raw"].response_metadata.get("stopReason") not in {"end_turn", "tool_use"}
-        ):
+        raw = result.get("raw")
+        if raw is None or raw.response_metadata.get("stopReason") not in {"end_turn", "tool_use"}:
             raise ExtractionFailure("invalid_model_output")
-        raw = result["raw"]
         if settings.bedrock_structured_method == "json_schema":
             if getattr(raw, "tool_calls", []):
                 raise ExtractionFailure("invalid_model_output")
@@ -143,8 +173,9 @@ def invoke_bedrock(
             )
             if len(texts) != 1:
                 raise ExtractionFailure("invalid_model_output")
-            # LangChain's generic JSON parser can repair incomplete JSON. Do not accept that.
-            value = json.loads(texts[0])
+            # LangChain's generic parser can repair incomplete JSON. Accept only
+            # complete JSON, plus the narrow duplicated-brace correction above.
+            value = _load_native_json(texts[0], "judgments" if interpreting else "facts")
         else:
             calls = getattr(raw, "tool_calls", [])
             if len(calls) != 1 or calls[0].get("name") != output_name:

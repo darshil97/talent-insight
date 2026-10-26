@@ -6,12 +6,14 @@ Module 6 is approved. The browser reads the shared Neon catalog through FastAPI.
 
 Each job has its own versioned JSON file under `backend/app/fixtures/jobs/`:
 
-- `demo_ds.json`: Data Scientist.
-- `demo_mle.json`: Machine Learning Engineer.
-- `demo_ai.json`: AI / LLM Engineer.
+- `demo_ds.json`: Senior Data Scientist.
 - `demo_backend.json`: Backend Engineer.
+- `demo_hr_ops.json`: HR and Operations Specialist.
+- `demo_marketing_ops.json`: Marketing Operations Specialist.
 
-These files contain the existing role/client descriptions, skills, screening criteria, questions and categorized requirements. Candidate profiles and membership records stay in `backend/app/fixtures/candidates.json`. Splitting the original `catalog.json` preserved all values; no database changes were needed or applied in module 6. All files are included in the backend wheel.
+These files contain synthetic role/client descriptions, skills, screening criteria, questions and categorized requirements. Candidate profiles and their job links stay together in `backend/app/fixtures/candidates.json`; the loader converts those links into the existing database membership rows. All files are included in the backend wheel.
+
+The job descriptions are original demo summaries informed by current employer descriptions: [Airbnb Senior Data Scientist](https://careers.airbnb.com/positions/7662244?gh_jid=7662244) for experiments, causal analysis and Python/SQL; [Stripe Backend Engineer](https://stripe.com/careers/listing/backend-engineer-developer-end-user-experience-platform/7476555) for API and service ownership; [ShopBack HR Operations Specialist](https://jobs.lever.co/shopback-2/0d1daa50-91c1-49b7-93d0-42fe23570001) for onboarding, HRIS and payroll coordination; and [Stripe Marketing Technology Program Manager](https://stripe.com/careers/listing/marketing-technology-program-manager/8257939) for CRM, lead handoff and campaign measurement. Demo client names and requirements are synthesized, not copied job postings or claims that these employers use this catalog.
 
 To edit a role, change its JSON. To add one, copy an existing job file, choose a unique stable `demo_...` ID and name the file `<id>.json`. Use new, globally unique requirement/question IDs and update each question's `requirement_ids` to point to requirements in that job. Preserve IDs when editing existing records. Keep `is_demo: true`; files are only for curated synthetic demo records. A new job may have no candidates. Do not copy real candidate data into these files.
 
@@ -25,7 +27,7 @@ python -m app.seed --validate-only
 
 This reads and validates every job file, uniqueness, question references, candidate evidence and memberships. It does not load dotenv, connect or write to a database. A missing/invalid job file fails validation rather than silently using stale hardcoded data.
 
-JSON is an authoring source, not a runtime fallback. Runtime reads continue to use the existing shared Neon project. Publishing edits to that catalog requires review and explicit approval for `python -m app.seed`; neither app startup nor the launcher runs it. The seed is atomic and preserves unrelated rows. Removing a file does not delete database rows; removing or reordering existing requirements needs a reviewed data update because the seed does not prune old IDs. No admin UI or auto-sync was added.
+JSON is an authoring source, not a runtime fallback. Runtime reads continue to use the existing shared Neon project. Publishing edits to that catalog requires review and explicit approval for `python -m app.seed`; neither app startup nor the launcher runs it. The seed is atomic and preserves unrelated rows. Removing a file does not delete database rows: after the four-domain upsert, the prior `demo_mle` and `demo_ai` roles remained visible until the user approved their targeted retirement. The shared catalog now has exactly the four current fixture roles. No admin UI or auto-sync was added.
 
 ## HTTP contracts
 

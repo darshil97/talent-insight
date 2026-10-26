@@ -2,12 +2,16 @@
 
 from typing import Annotated, Literal, Self
 
-from fastapi import APIRouter, HTTPException, Path, Response
+from fastapi import APIRouter, HTTPException, Path, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 from app import catalog
-from app.api.jobs import CatalogSession, JobId, JobSummary
+from app.api.jobs import CatalogSession, JobDetail, JobId, JobSummary
+from app.demo_cache import load_cache, valid_assessment
 from app.errors import ErrorResponse
+from app.extraction_contracts import ExtractionJob, ExtractionSource
+from app.matching import Assessment
+from app.resumes import ResumePage
 
 router = APIRouter(prefix="/jobs/{job_id}/candidates", tags=["candidates"])
 CandidateId = Annotated[str, Path(pattern=r"^demo_[a-z0-9_]+$", max_length=64)]
@@ -26,6 +30,10 @@ class CandidateSummary(BaseModel):
 
 class CandidateTableSummary(CandidateSummary):
     stated_experience: str | None
+    snapshot_available: bool
+    match_score: float | None
+    score_lower: float | None
+    score_upper: float | None
 
 
 class EvidenceClaim(BaseModel):
@@ -74,34 +82,64 @@ class CandidateListResponse(BaseModel):
 class CandidateProfileResponse(BaseModel):
     job: JobSummary
     candidate: CandidateDetail
+    assessment: Assessment | None
+
+
+def cached_for_candidate(entries, job, candidate, settings):
+    detail = JobDetail.model_validate(job)
+    context = ExtractionJob(
+        id=detail.id, title=detail.title, skills=detail.skills, requirements=detail.requirements
+    )
+    source = ExtractionSource(
+        kind="synthetic_demo",
+        candidate_id=candidate.id,
+        pages=[ResumePage(page_number=1, text=candidate.resume_text)],
+    )
+    return valid_assessment(entries, context, source, settings)
 
 
 responses = {status: {"model": ErrorResponse} for status in (404, 422, 503)}
 
 
 @router.get("", response_model=CandidateListResponse, responses=responses)
-def candidates(job_id: JobId, response: Response, session: CatalogSession) -> CandidateListResponse:
+def candidates(
+    job_id: JobId, response: Response, request: Request, session: CatalogSession
+) -> CandidateListResponse:
     job = catalog.get_job(session, job_id)
     if job is None:
         raise HTTPException(404)
     rows = catalog.list_candidates_for_job(session, job_id)
     response.headers["Cache-Control"] = "no-store"
     summaries = []
+    entries = load_cache()
     for row in rows:
         summary = CandidateSummary.model_validate(row)
         claims = StoredProfile.model_validate(row.profile).claims
         # Validate the quoted source before displaying a stated duration in the table.
         CandidateDetail(**summary.model_dump(), resume_text=row.resume_text, claims=claims)
         experience = next((claim.label for claim in claims if claim.kind == "experience"), None)
+        assessment = cached_for_candidate(entries, job, row, request.app.state.settings)
+        scoring = assessment.scoring if assessment else None
         summaries.append(
-            CandidateTableSummary(**summary.model_dump(), stated_experience=experience)
+            CandidateTableSummary(
+                **summary.model_dump(),
+                stated_experience=experience,
+                snapshot_available=assessment is not None,
+                match_score=scoring.score if scoring else None,
+                score_lower=scoring.lower if scoring else None,
+                score_upper=scoring.upper if scoring else None,
+            )
         )
     return CandidateListResponse(job=JobSummary.model_validate(job), candidates=summaries)
 
 
 @router.get("/{candidate_id}", response_model=CandidateProfileResponse, responses=responses)
 def candidate_profile(
-    job_id: JobId, candidate_id: CandidateId, response: Response, session: CatalogSession
+    job_id: JobId,
+    candidate_id: CandidateId,
+    response: Response,
+    request: Request,
+    session: CatalogSession,
 ) -> CandidateProfileResponse:
     job = catalog.get_job(session, job_id)
     if job is None:
@@ -115,4 +153,7 @@ def candidate_profile(
         **summary.model_dump(), resume_text=candidate.resume_text, claims=profile.claims
     )
     response.headers["Cache-Control"] = "no-store"
-    return CandidateProfileResponse(job=JobSummary.model_validate(job), candidate=detail)
+    assessment = cached_for_candidate(load_cache(), job, candidate, request.app.state.settings)
+    return CandidateProfileResponse(
+        job=JobSummary.model_validate(job), candidate=detail, assessment=assessment
+    )

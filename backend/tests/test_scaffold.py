@@ -57,9 +57,7 @@ def test_openapi_describes_health_contract(
         "/resumes/limits",
         "/resumes/extract",
         "/jobs/{job_id}/resumes/structure",
-        "/jobs/{job_id}/candidates/{candidate_id}/structure",
         "/jobs/{job_id}/resumes/assess",
-        "/jobs/{job_id}/candidates/{candidate_id}/assess",
     }
     assert all(
         set(path)

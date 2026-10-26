@@ -18,7 +18,7 @@ export function AssessmentResult({ assessment, job }: { assessment: Assessment; 
     <article aria-labelledby="assessment-heading" className="mt-6 min-w-0 border-t border-[#e5e8df] pt-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 id="assessment-heading" className="text-lg font-semibold">Assessment · temporary</h3>
+          <h3 id="assessment-heading" className="text-lg font-semibold">Assessment · {structured.source.kind === "synthetic_demo" ? "precomputed demo" : "temporary upload"}</h3>
           <p className="mt-2 text-xs leading-6 text-[#59665d]">{structured.mode === "mock" ? "Mock mode · no interpreted match" : "AI interpretation · check each judgment against the source"}</p>
         </div>
         <span className="rounded-full bg-[#edf1e5] px-3 py-1 text-xs font-medium text-[#315943]">Human review required</span>

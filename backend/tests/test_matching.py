@@ -303,9 +303,9 @@ def test_all_synthetic_scenarios_preserve_unknowns_and_source_identity():
 def test_curated_synthetic_experience_scenarios_show_partial_and_unknown():
     data = load_seed()
     cases = [
-        ("demo_ds_avery", "4 years of applied product analysis", "met", 100),
+        ("demo_ds_avery", "6 years of applied product data science", "met", 100),
         ("demo_ds_mina", "5 years of operations analysis", "partial", 50),
-        ("demo_ds_jordan", "Project dates and education are not included", "unknown", None),
+        ("demo_ds_jordan", "the specific query ownership is not stated", "unknown", None),
     ]
     requirement = next(
         row

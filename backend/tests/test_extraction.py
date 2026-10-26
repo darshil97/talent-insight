@@ -326,7 +326,7 @@ def test_service_deadline_cancels_inflight_provider_without_another_attempt():
         {"aws_region": "bad/region"},
         {"bedrock_structured_method": "prompt_prefill"},
         {"bedrock_model_id": "https://untrusted.example"},
-        {"ai_timeout_seconds": 121},
+        {"ai_timeout_seconds": 151},
     ],
 )
 def test_unsafe_provider_configuration_is_rejected(values):

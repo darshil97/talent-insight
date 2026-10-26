@@ -137,7 +137,3 @@ export function assessUpload(file: File, limits: ResumeLimits, job: JobDetail, s
   validateResumeFile(file, limits);
   return postAssessment(`/jobs/${encodeURIComponent(job.id)}/resumes/assess`, job, "uploaded_pdf", null, signal, file);
 }
-
-export function assessDemo(job: JobDetail, candidateId: string, signal: AbortSignal): Promise<Assessment> {
-  return postAssessment(`/jobs/${encodeURIComponent(job.id)}/candidates/${encodeURIComponent(candidateId)}/assess`, job, "synthetic_demo", candidateId, signal);
-}

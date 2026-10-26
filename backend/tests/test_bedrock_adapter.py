@@ -61,7 +61,10 @@ def test_native_request_contract_system_boundary_schema_and_model():
     assert request["modelId"] == "openai.gpt-oss-120b-1:0"
     assert request["inferenceConfig"]["maxTokens"] == 3000
     assert request["system"][0]["text"].startswith(SYSTEM_RULES)
+    assert "no more than 12 distinct facts" in request["system"][0]["text"]
+    assert "one to six words" in request["system"][0]["text"]
     assert '"required": ["facts"]' in request["system"][0]["text"]
+    assert "Use one outer object" in request["system"][0]["text"]
     body = json.loads(request["messages"][0]["content"][0]["text"])
     assert body["job_context"]["id"] == job_context().id
     assert "IGNORE SYSTEM" in body["untrusted_resume_pages"][0]["text"]
@@ -163,7 +166,46 @@ def test_repair_prompt_does_not_contain_rejected_provider_text():
 
     invoke_bedrock(job_context(), source_text(), Settings(), repair=True, model=Model())
     assert "Previous attempt failed validation" in calls[0][0][1]
+    assert "short literal phrase" in calls[0][0][1]
     assert len(calls[0]) == 2
+
+
+def test_native_output_rejects_overlong_fact_values():
+    model, client = model_and_client()
+    output = response(
+        {
+            "facts": [
+                {
+                    "kind": "skill",
+                    "value": "x" * 201,
+                    "evidence": [{"page_number": 1, "quote": "x" * 201}],
+                }
+            ]
+        }
+    )
+    with Stubber(client) as stub:
+        stub.add_response("converse", output)
+        with pytest.raises(ExtractionFailure, match="invalid_model_output"):
+            invoke_bedrock(job_context(), source_text(), Settings(), model=model)
+
+
+def test_complete_raw_json_is_authoritative_when_generic_parser_fails():
+    class Model:
+        def with_structured_output(self, *args, **kwargs):
+            return self
+
+        def invoke(self, *args, **kwargs):
+            return {
+                "raw": SimpleNamespace(
+                    response_metadata={"stopReason": "end_turn"},
+                    content=json.dumps(facts()),
+                    tool_calls=[],
+                ),
+                "parsed": None,
+                "parsing_error": ValueError("generic parser rejected complete JSON"),
+            }
+
+    assert invoke_bedrock(job_context(), source_text(), Settings(), model=Model()) == facts()
 
 
 @pytest.mark.parametrize("text", ['{"facts":[]', '```json\n{"facts":[]}\n```'])
@@ -229,6 +271,35 @@ def test_client_setup_failure_is_not_misreported_as_model_output(monkeypatch, ca
     assert "private-credential-detail" not in str(caught.value) + caplog.text
 
 
+@pytest.mark.parametrize("deadline,read_limit", [(130, 60), (30, 30)])
+def test_sdk_read_timeout_is_bounded_by_stage_deadline(monkeypatch, deadline, read_limit):
+    captured = []
+
+    class Model:
+        def __init__(self, **kwargs):
+            captured.append(kwargs)
+
+        def with_structured_output(self, *args, **kwargs):
+            return self
+
+        def invoke(self, *args, **kwargs):
+            return {
+                "raw": SimpleNamespace(
+                    response_metadata={"stopReason": "end_turn"},
+                    content=json.dumps(facts()),
+                    tool_calls=[],
+                )
+            }
+
+    monkeypatch.setattr("langchain_aws.ChatBedrockConverse", Model)
+    settings = Settings(
+        ai_mode="bedrock", bedrock_model_id="synthetic-model", ai_timeout_seconds=deadline
+    )
+    assert invoke_bedrock(job_context(), source_text(), settings) == facts()
+    assert captured[0]["config"].read_timeout == read_limit
+    assert captured[0]["config"].connect_timeout == 3
+
+
 def test_interpretation_native_request_uses_verified_facts_and_no_provider_score():
     model, client = model_and_client()
     structured = sample()
@@ -260,8 +331,28 @@ def test_interpretation_native_request_uses_verified_facts_and_no_provider_score
     assert result == value
     request = captured[0]
     assert request["system"][0]["text"].startswith(INTERPRETATION_RULES)
+    assert "Use one outer object" in request["system"][0]["text"]
     body = json.loads(request["messages"][0]["content"][0]["text"])
     assert body["verified_text_mentions"][0]["value"] == "Python"
     assert "score" not in result
     schema = json.loads(request["outputConfig"]["textFormat"]["structure"]["jsonSchema"]["schema"])
     assert schema["required"] == ["judgments"]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        '{\n{"facts":[]}',
+        '{\n{"facts":[]}}',
+        '{"{"facts":[]}',
+    ],
+)
+def test_only_duplicate_root_brace_is_normalized_before_strict_validation(text):
+    model, client = model_and_client()
+    output = response({"facts": []})
+    output["output"]["message"]["content"] = [{"text": text}]
+    with Stubber(client) as stub:
+        stub.add_response("converse", output)
+        assert invoke_bedrock(job_context(), source_text(), Settings(), model=model) == {
+            "facts": []
+        }

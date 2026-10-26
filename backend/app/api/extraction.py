@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from starlette.responses import JSONResponse
 
 from app import catalog
-from app.api.candidates import CandidateDetail, CandidateId, StoredProfile
 from app.api.jobs import JobDetail, JobId, catalog_session
 from app.api.resumes import extract_upload
 from app.errors import ErrorResponse, error_response
@@ -20,7 +19,6 @@ from app.extraction_contracts import (
     StructuredResume,
 )
 from app.matching import Assessment, assess_resume
-from app.resumes import ResumePage
 
 router = APIRouter(tags=["structured extraction"])
 ERRORS = {
@@ -81,7 +79,7 @@ async def extraction_error_handler(_request: Request, exc: ExtractionFailure) ->
     return result
 
 
-def load_context(request: Request, job_id: str, candidate_id: str | None = None):
+def load_context(request: Request, job_id: str) -> ExtractionJob:
     # Snapshot in a sync dependency and close the read-only transaction BEFORE PDF/AI work.
     with contextmanager(catalog_session)(request) as session:
         row = catalog.get_job(session, job_id)
@@ -91,38 +89,11 @@ def load_context(request: Request, job_id: str, candidate_id: str | None = None)
         job = ExtractionJob(
             id=detail.id, title=detail.title, skills=detail.skills, requirements=detail.requirements
         )
-        if candidate_id is None:
-            return job, None
-        candidate = catalog.get_candidate_for_job(session, job_id, candidate_id)
-        if candidate is None:
-            raise HTTPException(404)
-        stored = StoredProfile.model_validate(candidate.profile)
-        # Reuse module 7's corruption/provenance guard before using a demo source.
-        profile = CandidateDetail.model_validate(
-            {
-                "id": candidate.id,
-                "display_name": candidate.display_name,
-                "headline": candidate.headline,
-                "summary": candidate.summary,
-                "is_demo": candidate.is_demo,
-                "resume_text": candidate.resume_text,
-                "claims": stored.claims,
-            }
-        )
-        source = ExtractionSource(
-            kind="synthetic_demo",
-            candidate_id=profile.id,
-            pages=[ResumePage(page_number=1, text=profile.resume_text)],
-        )
-        return job, source
+        return job
 
 
 def job_context(request: Request, job_id: JobId) -> ExtractionJob:
-    return load_context(request, job_id)[0]
-
-
-def demo_context(request: Request, job_id: JobId, candidate_id: CandidateId):
-    return load_context(request, job_id, candidate_id)
+    return load_context(request, job_id)
 
 
 @asynccontextmanager
@@ -175,27 +146,6 @@ async def structure_upload(
 
 
 @router.post(
-    "/jobs/{job_id}/candidates/{candidate_id}/structure",
-    response_model=StructuredResume,
-    responses=responses,
-)
-async def structure_demo(
-    request: Request,
-    response: Response,
-    context: Annotated[tuple[ExtractionJob, ExtractionSource], Depends(demo_context)],
-) -> StructuredResume:
-    # This route accepts no client profile, scores, prompts or job requirements.
-    if request.headers.get("content-length", "0") != "0" or request.headers.get(
-        "transfer-encoding"
-    ):
-        raise HTTPException(400)
-    async with extraction_slot(request):
-        result = await structure_resume(*context, request.app.state.settings)
-        response.headers["Cache-Control"] = "no-store"
-        return result
-
-
-@router.post(
     "/jobs/{job_id}/resumes/assess",
     response_model=Assessment,
     responses=responses,
@@ -215,27 +165,6 @@ async def assess_upload(
             return extracted
         source = ExtractionSource(kind="uploaded_pdf", pages=extracted.pages)
         structured = await structure_resume(job, source, request.app.state.settings)
-        result = await assess_resume(structured, request.app.state.settings)
-        response.headers["Cache-Control"] = "no-store"
-        return result
-
-
-@router.post(
-    "/jobs/{job_id}/candidates/{candidate_id}/assess",
-    response_model=Assessment,
-    responses=responses,
-)
-async def assess_demo(
-    request: Request,
-    response: Response,
-    context: Annotated[tuple[ExtractionJob, ExtractionSource], Depends(demo_context)],
-) -> Assessment:
-    if request.headers.get("content-length", "0") != "0" or request.headers.get(
-        "transfer-encoding"
-    ):
-        raise HTTPException(400)
-    async with extraction_slot(request):
-        structured = await structure_resume(*context, request.app.state.settings)
         result = await assess_resume(structured, request.app.state.settings)
         response.headers["Cache-Control"] = "no-store"
         return result

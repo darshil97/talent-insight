@@ -1,5 +1,6 @@
 """Synthetic profile evidence must remain traceable before any database write."""
 
+import asyncio
 import json
 import shutil
 from copy import deepcopy
@@ -8,13 +9,27 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from app.config import Settings
+from app.refresh_demo import build_cache
 from app.seed import CatalogSeed, load_seed
 
 
 def test_curated_fixture_covers_domains_and_varied_evidence() -> None:
+    fixture = json.loads(
+        (Path(__file__).resolve().parents[1] / "app" / "fixtures" / "candidates.json").read_text()
+    )
+    assert set(fixture) == {"candidates"}
+    assert all(len(row["memberships"]) >= 1 for row in fixture["candidates"])
     data = load_seed()
     assert len(data.jobs) == 4
     assert len(data.candidates) == 12
+    assert len(data.memberships) == 13
+    assert {job.id for job in data.jobs} == {
+        "demo_ds",
+        "demo_backend",
+        "demo_hr_ops",
+        "demo_marketing_ops",
+    }
     assert {row.demo_scenario for row in data.memberships} == {
         "strong",
         "partial",
@@ -30,10 +45,48 @@ def test_curated_fixture_covers_domains_and_varied_evidence() -> None:
             "preferred",
             "qualification",
         }
-        assert len([row for row in data.memberships if row.job_id == job.id]) == 3
+        assert len([row for row in data.memberships if row.job_id == job.id]) == (
+            4 if job.id == "demo_ds" else 3
+        )
+    assert any(
+        row.job_id == "demo_ds"
+        and row.candidate_id == "demo_backend_theo"
+        and row.demo_scenario == "weak"
+        for row in data.memberships
+    )
     for candidate in data.candidates:
         for claim in candidate.profile()["claims"]:
             assert candidate.resume_text[claim["start"] : claim["end"]] == claim["quote"]
+
+
+def test_candidate_owned_links_support_more_than_one_job(tmp_path: Path) -> None:
+    source = Path(__file__).resolve().parents[1] / "app" / "fixtures"
+    root = tmp_path / "fixtures"
+    shutil.copytree(source, root)
+    path = root / "candidates.json"
+    fixture = json.loads(path.read_text())
+    fixture["candidates"][0]["memberships"].append(
+        {"job_id": "demo_hr_ops", "demo_scenario": "transferable"}
+    )
+    path.write_text(json.dumps(fixture))
+    data = load_seed(root)
+    assert len(data.memberships) == 14
+    assert {
+        (row.job_id, row.demo_scenario)
+        for row in data.memberships
+        if row.candidate_id == "demo_ds_avery"
+    } == {("demo_ds", "strong"), ("demo_hr_ops", "transferable")}
+    snapshots = asyncio.run(build_cache(data, Settings(ai_mode="mock")))
+    assert len(snapshots.entries) == 14
+    assert {(row.job_id, row.candidate_id) for row in snapshots.entries} == {
+        (row.job_id, row.candidate_id) for row in data.memberships
+    }
+    fixture["candidates"][0]["memberships"].append(
+        {"job_id": "demo_hr_ops", "demo_scenario": "strong"}
+    )
+    path.write_text(json.dumps(fixture))
+    with pytest.raises(ValidationError, match="Duplicate job-candidate membership"):
+        load_seed(root)
 
 
 @pytest.mark.parametrize("mutation", ["quote", "duplicate", "question", "membership", "real"])
@@ -72,6 +125,18 @@ def test_job_files_can_be_edited_or_added_without_python_changes(tmp_path: Path)
         ]
     (root / "jobs" / "demo_new.json").write_text(json.dumps(job))
     assert len(load_seed(root).jobs) == 5  # Jobs need no candidates until module 7.
+
+
+def test_populated_job_requires_three_to_five_memberships() -> None:
+    data = load_seed().model_dump()
+    data["memberships"] = [
+        row
+        for row in data["memberships"]
+        if row["job_id"] != "demo_backend" or row["candidate_id"] == "demo_backend_priya"
+    ]
+    data["candidates"] = [row for row in data["candidates"] if row["id"] != "demo_backend_mara"]
+    with pytest.raises(ValidationError, match="three to five"):
+        CatalogSeed.model_validate(data)
 
 
 @pytest.mark.parametrize("mutation", ["filename", "duplicate", "missing", "malformed"])

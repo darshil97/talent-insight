@@ -2,7 +2,7 @@
   "id": "demo_backend",
   "title": "Backend Engineer",
   "client": "Harbor Systems (Demo)",
-  "description": "Synthetic role: build dependable Python APIs backed by PostgreSQL. Explain transactions, request validation and operational diagnosis. Expected experience: at least 3 years of backend engineering; experience in another language can be transferable.",
+  "description": "Synthetic role: design and maintain dependable backend APIs and services. Work with PostgreSQL data models and transaction boundaries, test request validation and failures, and diagnose production issues with logs and metrics. Expected experience: at least 3 years of backend engineering; another language may be transferable.",
   "skills": [
     "Python",
     "PostgreSQL",
@@ -13,7 +13,7 @@
   "screening_criteria": [
     "Implement and test Python backend services.",
     "Design PostgreSQL queries, indexes and transaction boundaries.",
-    "Design HTTP APIs with validation and explicit failure handling.",
+    "Design and test HTTP APIs with validation and explicit failure handling.",
     "At least 3 years of backend engineering experience."
   ],
   "questions": [
@@ -57,7 +57,7 @@
     {
       "id": "demo_backend_api",
       "category": "mandatory",
-      "description": "Design HTTP APIs with validation and explicit failure handling.",
+      "description": "Design and test HTTP APIs with validation and explicit failure handling.",
       "minimum_years": null
     },
     {

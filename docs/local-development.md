@@ -95,7 +95,7 @@ cd frontend
 npm run dev
 ```
 
-Open [the local frontend](http://127.0.0.1:3000). The overview (`/`) and guide (`/guide`) need no backend; jobs (`/jobs`), job details and nested candidate pools/profiles require FastAPI, matching CORS origins and the existing Neon configuration. Open a job's **Candidates** tab to view the table. Choosing a text-based PDF there immediately requests a temporary assessment; the new row appears after completion and can open its evidence detail. Synthetic profiles also retain a manual assessment action. These actions use the backend's configured `AI_MODE`; the saved local value is Bedrock and makes provider calls. Set `AI_MODE=mock` explicitly in the backend process for no-cost workflow checks. See [assessment UI](assessment-ui.md), [jobs](jobs.md), [candidate checks](candidates.md) and [upload limits/privacy](resumes.md). Unknown routes show a recovery link. Press Ctrl+C to stop.
+Open [the local frontend](http://127.0.0.1:3000). The overview (`/`) and guide (`/guide`) need no backend; jobs (`/jobs`), job details and nested candidate pools/profiles require FastAPI, matching CORS origins and the existing Neon configuration. Open a job's **Candidates** tab to view the table. Choosing a text-based PDF there immediately requests a temporary assessment; the new row appears after completion and can open its evidence detail. Synthetic profiles display the current precomputed snapshot without a provider call. Uploaded PDFs use the backend's configured `AI_MODE`; the saved local value is Bedrock and makes provider calls. Set `AI_MODE=mock` explicitly in the backend process for no-cost upload workflow checks. See [assessment UI](assessment-ui.md), [jobs](jobs.md), [candidate checks](candidates.md) and [upload limits/privacy](resumes.md). Unknown routes show a recovery link. Press Ctrl+C to stop.
 
 To build and serve the production bundle locally:
 
@@ -141,6 +141,7 @@ python -m ruff check .
 python -m ruff format --check .
 python -m pip check
 python -m app.seed --validate-only
+python -m app.refresh_demo
 ```
 
 From the repository root, also run `bash -n run_local.sh`, `python -m unittest discover -s scripts -p 'test_*.py'`, `python -m ruff check scripts` and `python -m ruff format --check scripts`. Launcher unit tests mock process ownership and ports; they do not start servers. Frontend `npm test` uses Node 24's built-in test runner for job/candidate API contracts, public URL validation, evidence/Unicode validation and failure/cancellation behavior, without network calls or additional dependencies.

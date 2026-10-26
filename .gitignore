@@ -38,3 +38,5 @@ dist/
 # Future local uploaded data must never be committed.
 uploads/
 tmp/
+backend/app/fixtures/.assessments-progress.json
+backend/app/fixtures/.extractions-progress.json

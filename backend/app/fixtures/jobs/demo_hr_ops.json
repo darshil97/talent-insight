@@ -1,0 +1,39 @@
+{
+  "id": "demo_hr_ops",
+  "title": "HR and Operations Specialist",
+  "client": "Cedar People Services (Demo)",
+  "description": "Synthetic people-operations role: coordinate onboarding and offboarding, maintain accurate employee records in an HRIS, partner with payroll and benefits teams, and improve repeatable employee-service workflows. Handle sensitive records carefully and route policy questions for human review. Expected experience: at least 2 years in HR or people operations.",
+  "skills": ["onboarding", "HRIS", "employee records", "payroll coordination", "process documentation"],
+  "screening_criteria": [
+    "Coordinate documented onboarding and offboarding steps.",
+    "Maintain accurate employee records and changes in an HRIS.",
+    "Coordinate payroll or benefits changes with the responsible team.",
+    "At least 2 years of relevant HR or people operations experience."
+  ],
+  "questions": [
+    {
+      "id": "demo_hr_ops_q1",
+      "text": "Describe an onboarding or offboarding workflow you owned and how you checked every handoff.",
+      "requirement_ids": ["demo_hr_ops_lifecycle"]
+    },
+    {
+      "id": "demo_hr_ops_q2",
+      "text": "How did you verify HRIS changes and coordinate a payroll or benefits update?",
+      "requirement_ids": ["demo_hr_ops_hris", "demo_hr_ops_payroll"]
+    },
+    {
+      "id": "demo_hr_ops_q3",
+      "text": "Which HR operations responsibilities did you personally handle, for how long, and what process did you document?",
+      "requirement_ids": ["demo_hr_ops_experience", "demo_hr_ops_process"]
+    }
+  ],
+  "requirements": [
+    {"id": "demo_hr_ops_lifecycle", "category": "mandatory", "description": "Coordinate documented onboarding and offboarding steps.", "minimum_years": null},
+    {"id": "demo_hr_ops_hris", "category": "mandatory", "description": "Maintain accurate employee records and changes in an HRIS.", "minimum_years": null},
+    {"id": "demo_hr_ops_payroll", "category": "mandatory", "description": "Coordinate payroll or benefits changes with the responsible team.", "minimum_years": null},
+    {"id": "demo_hr_ops_experience", "category": "experience", "description": "At least 2 years of relevant HR or people operations experience.", "minimum_years": 2},
+    {"id": "demo_hr_ops_process", "category": "preferred", "description": "Document and improve repeatable HR operations workflows.", "minimum_years": null},
+    {"id": "demo_hr_ops_training", "category": "qualification", "description": "Documented HR operations training or equivalent relevant practical experience.", "minimum_years": null}
+  ],
+  "is_demo": true
+}

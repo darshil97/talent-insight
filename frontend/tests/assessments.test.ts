@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, mock, test } from "node:test";
-import { assessDemo, assessUpload, AssessmentError, decodeAssessment } from "../src/lib/assessments.ts";
+import { assessUpload, AssessmentError, decodeAssessment } from "../src/lib/assessments.ts";
 import type { JobDetail } from "../src/lib/catalog.ts";
 import { ResumeError } from "../src/lib/resumes.ts";
 
@@ -69,7 +69,7 @@ test("accepts an unavailable range when present requirements have zero configure
   assert.deepEqual(decodeAssessment(zero, job, "uploaded_pdf"), zero);
 });
 
-test("upload sends only raw PDF bytes and demo request sends no profile/body", async () => {
+test("upload sends only raw PDF bytes", async () => {
   const fetch = mock.method(globalThis, "fetch", async (url: unknown, options?: RequestInit) => {
     assert.equal(options?.method, "POST");
     assert.equal(options?.cache, "no-store"); assert.equal(options?.credentials, "omit"); assert.equal(options?.redirect, "error");
@@ -78,21 +78,17 @@ test("upload sends only raw PDF bytes and demo request sends no profile/body", a
       assert.deepEqual(options?.headers, { "Content-Type": "application/pdf" }); assert.equal(options?.body, file);
       return Response.json(result);
     }
-    assert.ok(String(url).endsWith("/candidates/demo_candidate/assess"));
-    assert.equal(options?.body, undefined); assert.equal(options?.headers, undefined);
-    const demo = structuredClone(result); demo.structured.source.kind = "synthetic_demo"; demo.structured.source.candidate_id = "demo_candidate" as never;
-    return Response.json(demo);
+    throw new Error("Unexpected request");
   });
   assert.deepEqual(await assessUpload(file, limits, job, new AbortController().signal), result);
-  assert.equal((await assessDemo(job, "demo_candidate", new AbortController().signal)).structured.source.kind, "synthetic_demo");
-  assert.equal(fetch.mock.callCount(), 2);
+  assert.equal(fetch.mock.callCount(), 1);
 });
 
 test("safe errors and cancellation do not expose server text", async () => {
   const fetch = mock.method(globalThis, "fetch", async () => Response.json({ error: { code: "provider_throttled", message: "private-secret" } }, { status: 503 }));
-  await assert.rejects(assessDemo(job, "demo_candidate", new AbortController().signal), (error: unknown) => error instanceof AssessmentError && /busy/.test(error.message) && !error.message.includes("private-secret"));
+  await assert.rejects(assessUpload(file, limits, job, new AbortController().signal), (error: unknown) => error instanceof AssessmentError && /busy/.test(error.message) && !error.message.includes("private-secret"));
   fetch.mock.mockImplementation(async () => new Response("private-secret", { status: 500 }));
-  await assert.rejects(assessDemo(job, "demo_candidate", new AbortController().signal), AssessmentError);
+  await assert.rejects(assessUpload(file, limits, job, new AbortController().signal), AssessmentError);
   fetch.mock.mockImplementation(async () => Response.json({ error: { code: "no_extractable_text", message: "private-secret" } }, { status: 422 }));
   await assert.rejects(assessUpload(file, limits, job, new AbortController().signal), (error: unknown) => error instanceof ResumeError && /scanned/.test(error.message) && !error.message.includes("private-secret"));
   const controller = new AbortController(); controller.abort();

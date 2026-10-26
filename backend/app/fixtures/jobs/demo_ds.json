@@ -1,25 +1,26 @@
 {
   "id": "demo_ds",
-  "title": "Data Scientist",
+  "title": "Senior Data Scientist",
   "client": "Northstar Commerce (Demo)",
-  "description": "Synthetic role: partner with a product team to design experiments, analyze customer behavior and communicate uncertainty. Own reproducible Python and SQL analyses, not only dashboards. Expected experience: at least 3 years of relevant applied analysis.",
+  "description": "Synthetic senior product role: frame business questions, build reproducible Python and SQL analyses, design experiments or credible causal studies, and explain uncertainty to product partners. Own measurement from hypothesis through review. Expected experience: at least 5 years of relevant applied data science or quantitative analysis.",
   "skills": [
     "Python",
     "SQL",
     "statistics",
-    "A/B testing",
+    "experimentation",
+    "causal inference",
     "dbt"
   ],
   "screening_criteria": [
     "Build reproducible data analysis in Python.",
     "Write SQL joins, aggregations and analytical queries.",
-    "Design and interpret controlled experiments with statistical uncertainty.",
-    "At least 3 years of relevant applied analysis experience."
+    "Design and interpret controlled experiments or causal studies with statistical uncertainty.",
+    "At least 5 years of relevant applied data science experience."
   ],
   "questions": [
     {
       "id": "demo_ds_q1",
-      "text": "Walk through an experiment you designed. How did you define success and handle uncertainty?",
+      "text": "Walk through an experiment or causal study you owned. How did you define outcomes, check assumptions and explain uncertainty?",
       "requirement_ids": [
         "demo_ds_experiments"
       ]
@@ -34,7 +35,7 @@
     },
     {
       "id": "demo_ds_q3",
-      "text": "What was your personal contribution, and how long did you work in applied analysis?",
+      "text": "Which quantitative analyses did you personally lead, and over what dates?",
       "requirement_ids": [
         "demo_ds_experience"
       ]
@@ -56,14 +57,14 @@
     {
       "id": "demo_ds_experiments",
       "category": "mandatory",
-      "description": "Design and interpret controlled experiments with statistical uncertainty.",
+      "description": "Design and interpret controlled experiments or causal studies with statistical uncertainty.",
       "minimum_years": null
     },
     {
       "id": "demo_ds_experience",
       "category": "experience",
-      "description": "At least 3 years of relevant applied analysis experience.",
-      "minimum_years": 3
+      "description": "At least 5 years of relevant applied data science or quantitative analysis experience.",
+      "minimum_years": 5
     },
     {
       "id": "demo_ds_dbt",

@@ -1,7 +1,6 @@
 """Job-scoped extraction API, privacy and admission tests with offline catalog snapshots."""
 
 import asyncio
-from copy import deepcopy
 
 import httpx
 import pytest
@@ -53,32 +52,20 @@ def extraction_app(monkeypatch):
     return app
 
 
-def test_demo_result_is_labeled_and_uses_real_membership_context(extraction_app, api_request):
-    result = api_request(extraction_app, "POST", "/jobs/demo_ds/candidates/demo_ds_avery/structure")
-    assert result.status_code == 200
-    body = result.json()
-    assert body["job"]["id"] == "demo_ds"
-    assert body["source"]["candidate_id"] == "demo_ds_avery"
-    assert body["source"]["kind"] == "synthetic_demo"
-    assert body["mode"] == "mock" and body["model_id"] is None
-    assert "qualification" in body["unknown_categories"]
-    assert result.headers["cache-control"] == "no-store"
-    assert "score" not in body and "scenario" not in body
-    assert extraction_app.state.test_session_closed
+def test_demo_provider_routes_are_removed(extraction_app, api_request):
+    for suffix in ("structure", "assess"):
+        response = api_request(
+            extraction_app, "POST", f"/jobs/demo_ds/candidates/demo_ds_avery/{suffix}"
+        )
+        assert response.status_code == 404
+    assert not extraction_app.state.ai_requests
 
 
 def test_assessment_routes_are_temporary_and_mock_scores_stay_unavailable(
     extraction_app, api_request
 ):
     demo = api_request(extraction_app, "POST", "/jobs/demo_ds/candidates/demo_ds_avery/assess")
-    assert demo.status_code == 200
-    body = demo.json()
-    assert body["structured"]["source"]["candidate_id"] == "demo_ds_avery"
-    assert body["scoring"]["score"] is None
-    assert (body["scoring"]["lower"], body["scoring"]["upper"]) == (0, 100)
-    assert all(row["status"] == "unknown" for row in body["judgments"])
-    assert demo.headers["cache-control"] == "no-store"
-    assert extraction_app.state.test_session_closed
+    assert demo.status_code == 404
     uploaded = api_request(
         extraction_app,
         "POST",
@@ -95,18 +82,12 @@ def test_assessment_routes_are_temporary_and_mock_scores_stay_unavailable(
 def test_assessment_rejects_cross_job_and_client_supplied_results(extraction_app, api_request):
     assert (
         api_request(
-            extraction_app, "POST", "/jobs/demo_backend/candidates/demo_ds_avery/assess"
-        ).status_code
-        == 404
-    )
-    assert (
-        api_request(
             extraction_app,
             "POST",
             "/jobs/demo_ds/candidates/demo_ds_avery/assess",
             json={"score": 100},
         ).status_code
-        == 400
+        == 404
     )
     assert (
         api_request(
@@ -122,10 +103,8 @@ def test_assessment_rejects_cross_job_and_client_supplied_results(extraction_app
 @pytest.mark.parametrize(
     "path,status",
     [
-        ("/jobs/demo_backend/candidates/demo_ds_avery/structure", 404),
-        ("/jobs/demo_missing/candidates/demo_ds_avery/structure", 404),
-        ("/jobs/invalid-id/candidates/demo_ds_avery/structure", 422),
-        ("/jobs/demo_ds/candidates/invalid-id/structure", 422),
+        ("/jobs/demo_missing/resumes/structure", 404),
+        ("/jobs/invalid-id/resumes/structure", 422),
     ],
 )
 def test_missing_cross_job_or_invalid_context_never_calls_provider(
@@ -137,7 +116,13 @@ def test_missing_cross_job_or_invalid_context_never_calls_provider(
         calls.append(1)
 
     monkeypatch.setattr(extraction, "structure_resume", provider)
-    result = api_request(extraction_app, "POST", path)
+    result = api_request(
+        extraction_app,
+        "POST",
+        path,
+        content=pdf(("SYNTHETIC RESUME\nUsed Python.",)),
+        headers={"Content-Type": "application/pdf"},
+    )
     assert result.status_code == status and calls == []
     assert "Avery" not in result.text
 
@@ -168,34 +153,11 @@ def test_upload_uses_server_parsed_pdf_and_releases_database_before_ai(
     assert extraction_app.state.ai_active == extraction_app.state.resume_active == 0
 
 
-def test_uploaded_client_json_and_demo_profile_overrides_are_rejected(extraction_app, api_request):
+def test_uploaded_client_json_is_rejected(extraction_app, api_request):
     result = api_request(
         extraction_app, "POST", "/jobs/demo_ds/resumes/structure", json={"score": 100, "facts": []}
     )
     assert result.status_code == 415
-    result = api_request(
-        extraction_app,
-        "POST",
-        "/jobs/demo_ds/candidates/demo_ds_avery/structure",
-        json={"resume_text": "Invented AWS expert"},
-    )
-    assert result.status_code == 400
-    assert "Invented" not in result.text
-
-
-def test_corrupt_demo_source_fails_before_provider(
-    extraction_app, api_request, monkeypatch, caplog
-):
-    source = load_seed().candidates[0]
-    profile = deepcopy(source.profile())
-    profile["claims"][0]["quote"] = "fabricated-secret"
-    candidate = DemoCandidate(**source.model_dump(exclude={"claims"}), profile=profile)
-    monkeypatch.setattr(extraction.catalog, "get_candidate_for_job", lambda *args: candidate)
-    response = api_request(
-        extraction_app, "POST", "/jobs/demo_ds/candidates/demo_ds_avery/structure"
-    )
-    assert response.status_code == 500
-    assert "fabricated-secret" not in response.text + caplog.text
 
 
 def test_disabled_and_bad_bedrock_configuration_fail_without_mock_fallback(
@@ -207,7 +169,11 @@ def test_disabled_and_bad_bedrock_configuration_fail_without_mock_fallback(
     ]:
         extraction_app.state.settings = settings
         result = api_request(
-            extraction_app, "POST", "/jobs/demo_ds/candidates/demo_ds_avery/structure"
+            extraction_app,
+            "POST",
+            "/jobs/demo_ds/resumes/structure",
+            content=pdf(("SYNTHETIC RESUME\nUsed Python.",)),
+            headers={"Content-Type": "application/pdf"},
         )
         assert result.status_code == 503 and result.json()["error"]["code"] == code
         assert not extraction_app.state.ai_requests
@@ -215,14 +181,22 @@ def test_disabled_and_bad_bedrock_configuration_fail_without_mock_fallback(
 
 def test_rolling_rate_limit_has_no_resume_data(extraction_app, api_request, monkeypatch):
     extraction_app.state.settings = Settings(ai_mode="mock", ai_requests_per_minute=1)
-    path = "/jobs/demo_ds/candidates/demo_ds_avery/structure"
+    path = "/jobs/demo_ds/resumes/structure"
     monkeypatch.setattr(extraction.time, "monotonic", lambda: 1000)
-    assert api_request(extraction_app, "POST", path).status_code == 200
-    blocked = api_request(extraction_app, "POST", path)
+    payload = pdf(("SYNTHETIC RESUME\nUsed Python.",))
+    headers = {"Content-Type": "application/pdf"}
+    assert (
+        api_request(extraction_app, "POST", path, content=payload, headers=headers).status_code
+        == 200
+    )
+    blocked = api_request(extraction_app, "POST", path, content=payload, headers=headers)
     assert blocked.status_code == 429 and blocked.headers["retry-after"] == "60"
     assert list(extraction_app.state.ai_requests) == [1000]
     monkeypatch.setattr(extraction.time, "monotonic", lambda: 1061)
-    assert api_request(extraction_app, "POST", path).status_code == 200
+    assert (
+        api_request(extraction_app, "POST", path, content=payload, headers=headers).status_code
+        == 200
+    )
 
 
 def test_concurrent_admission_and_cancellation_free_capacity(extraction_app, monkeypatch):
@@ -238,10 +212,15 @@ def test_concurrent_admission_and_cancellation_free_capacity(extraction_app, mon
         async with httpx.AsyncClient(
             transport=httpx.ASGITransport(extraction_app), base_url="http://test"
         ) as client:
-            path = "/jobs/demo_ds/candidates/demo_ds_avery/structure"
-            first = asyncio.create_task(client.post(path))
+            path = "/jobs/demo_ds/resumes/structure"
+            payload = pdf(("SYNTHETIC RESUME\nUsed Python.",))
+            first = asyncio.create_task(
+                client.post(path, content=payload, headers={"Content-Type": "application/pdf"})
+            )
             await started.wait()
-            blocked = await client.post(path)
+            blocked = await client.post(
+                path, content=payload, headers={"Content-Type": "application/pdf"}
+            )
             assert blocked.status_code == 503 and blocked.json()["error"]["code"] == "ai_busy"
             first.cancel()
             with pytest.raises(asyncio.CancelledError):
@@ -270,8 +249,9 @@ def test_errors_are_safe_no_store_and_cors_wrapped(
     response = api_request(
         extraction_app,
         "POST",
-        "/jobs/demo_ds/candidates/demo_ds_avery/structure",
-        headers={"Origin": "http://127.0.0.1:3000"},
+        "/jobs/demo_ds/resumes/structure",
+        content=pdf(("SYNTHETIC RESUME\nUsed Python.",)),
+        headers={"Origin": "http://127.0.0.1:3000", "Content-Type": "application/pdf"},
     )
     assert response.status_code == status
     assert response.headers["cache-control"] == "no-store"

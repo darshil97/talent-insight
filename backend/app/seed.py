@@ -109,6 +109,19 @@ class MembershipSeed(SeedModel):
     demo_scenario: Literal["strong", "partial", "weak", "transferable", "ambiguous", "incomplete"]
 
 
+class CandidateMembershipSeed(SeedModel):
+    job_id: DemoId
+    demo_scenario: Literal["strong", "partial", "weak", "transferable", "ambiguous", "incomplete"]
+
+
+class CandidateFixture(CandidateSeed):
+    memberships: list[CandidateMembershipSeed] = Field(min_length=1)
+
+
+class CandidateFixtureDocument(SeedModel):
+    candidates: list[CandidateFixture] = Field(min_length=1)
+
+
 class CatalogSeed(SeedModel):
     jobs: list[JobSeed] = Field(min_length=1)
     candidates: list[CandidateSeed] = Field(min_length=1)
@@ -134,15 +147,18 @@ class CatalogSeed(SeedModel):
             raise ValueError("Membership references an unknown job or candidate")
         if {c for _, c in pairs} != candidates:
             raise ValueError("Every candidate must belong to a demo pool")
+        counts = {job_id: sum(member_job == job_id for member_job, _ in pairs) for job_id in jobs}
+        if any(count not in (0, 3, 4, 5) for count in counts.values()):
+            raise ValueError("Populated demo jobs require three to five candidates")
         return self
 
 
 def load_seed(directory: Path | None = None) -> CatalogSeed:
-    """One editable JSON per job; validate the combined catalog before any write."""
+    """Normalize candidate-owned job links before validating the combined catalog."""
     root = directory if directory is not None else files("app").joinpath("fixtures")
-    data = json.loads(root.joinpath("candidates.json").read_text(encoding="utf-8"))
-    if not isinstance(data, dict) or set(data) != {"candidates", "memberships"}:
-        raise ValueError("Candidate fixture must contain candidates and memberships only")
+    fixture = CandidateFixtureDocument.model_validate_json(
+        root.joinpath("candidates.json").read_text(encoding="utf-8")
+    )
     job_files = sorted(
         (path for path in root.joinpath("jobs").iterdir() if path.name.endswith(".json")),
         key=lambda path: path.name,
@@ -153,7 +169,15 @@ def load_seed(directory: Path | None = None) -> CatalogSeed:
         if path.name != f"{job.id}.json":
             raise ValueError("Each job filename must match its stable ID")
         jobs.append(job.model_dump())
-    return CatalogSeed.model_validate({**data, "jobs": jobs})
+    candidates = [row.model_dump(exclude={"memberships"}) for row in fixture.candidates]
+    memberships = [
+        {"candidate_id": row.id, **membership.model_dump()}
+        for row in fixture.candidates
+        for membership in row.memberships
+    ]
+    return CatalogSeed.model_validate(
+        {"jobs": jobs, "candidates": candidates, "memberships": memberships}
+    )
 
 
 def seed_catalog(engine: Engine, data: CatalogSeed | None = None) -> dict[str, int]:

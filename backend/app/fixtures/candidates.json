@@ -2,460 +2,434 @@
   "candidates": [
     {
       "id": "demo_ds_avery",
+      "memberships": [
+        {
+          "job_id": "demo_ds",
+          "demo_scenario": "strong"
+        }
+      ],
       "display_name": "Avery Chen",
-      "headline": "Product Data Scientist",
-      "summary": "Owns product experiments and reproducible analytical work.",
-      "resume_text": "SYNTHETIC DEMO RESUME\nAvery Chen\nProduct Data Scientist\nOwns product experiments and reproducible analytical work.\n4 years of applied product analysis at a synthetic commerce team.\nUsed Python and SQL to prepare reproducible analyses with peer-reviewed query checks.\nDesigned A/B testing plans, calculated uncertainty intervals and documented inconclusive results.\nBuilt dbt transformations with data quality checks.\nEducation: BSc Statistics.",
+      "headline": "Senior Product Data Scientist",
+      "summary": "Owns product experiments and reproducible analyses with explicit uncertainty checks.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nAvery Chen\nSenior Product Data Scientist\nOwns product experiments and reproducible analyses with explicit uncertainty checks.\nWORK EXPERIENCE\n- 6 years of applied product data science in synthetic marketplace and subscription teams, with ownership of experiment readouts.\n- Used Python and SQL to build reproducible analyses and checked cohort definitions with analytics engineers.\n- Designed A/B tests, set guardrail metrics, and reported uncertainty intervals rather than treating directional changes as proof.\nSELECTED PROJECTS\n- Pricing change study combined randomized results with observational sensitivity checks for segments outside the rollout.\n- Warehouse measurement project used dbt models to document event definitions and missing-data checks.\nSKILLS\n- Python, SQL, statistics, experimentation, causal inference, dbt and stakeholder communication.\nEDUCATION AND TRAINING\n- BSc Statistics (synthetic demo qualification).",
       "claims": [
         {
           "kind": "experience",
-          "label": "4 years",
-          "quote": "4 years of applied product analysis at a synthetic commerce team."
+          "label": "6 years",
+          "quote": "- 6 years of applied product data science in synthetic marketplace and subscription teams, with ownership of experiment readouts."
         },
         {
           "kind": "skill",
           "label": "Python",
-          "quote": "Used Python and SQL to prepare reproducible analyses with peer-reviewed query checks."
+          "quote": "- Used Python and SQL to build reproducible analyses and checked cohort definitions with analytics engineers."
         },
         {
           "kind": "skill",
           "label": "SQL",
-          "quote": "Used Python and SQL to prepare reproducible analyses with peer-reviewed query checks."
+          "quote": "- Used Python and SQL to build reproducible analyses and checked cohort definitions with analytics engineers."
         },
         {
           "kind": "skill",
-          "label": "A/B testing",
-          "quote": "Designed A/B testing plans, calculated uncertainty intervals and documented inconclusive results."
+          "label": "A/B tests",
+          "quote": "- Designed A/B tests, set guardrail metrics, and reported uncertainty intervals rather than treating directional changes as proof."
         },
         {
           "kind": "skill",
           "label": "dbt",
-          "quote": "Built dbt transformations with data quality checks."
+          "quote": "- Warehouse measurement project used dbt models to document event definitions and missing-data checks."
         },
         {
           "kind": "qualification",
           "label": "BSc Statistics",
-          "quote": "Education: BSc Statistics."
+          "quote": "- BSc Statistics (synthetic demo qualification)."
         }
       ],
       "is_demo": true
     },
     {
       "id": "demo_ds_mina",
+      "memberships": [
+        {
+          "job_id": "demo_ds",
+          "demo_scenario": "transferable"
+        }
+      ],
       "display_name": "Mina Patel",
       "headline": "Operations Analyst",
-      "summary": "Brings operational analysis experience with limited experimental ownership.",
-      "resume_text": "SYNTHETIC DEMO RESUME\nMina Patel\nOperations Analyst\nBrings operational analysis experience with limited experimental ownership.\n5 years of operations analysis, including SQL reporting and process dashboards.\nWrote small Python scripts to reconcile inventory records and documented manual checks.\nReviewed before-and-after process changes; has not owned a randomized experiment.\nEducation: BCom Operations.",
+      "summary": "Brings operational analysis and reporting experience with limited experiment ownership.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nMina Patel\nOperations Analyst\nBrings operational analysis and reporting experience with limited experiment ownership.\nWORK EXPERIENCE\n- 5 years of operations analysis, including SQL reporting and process dashboards for a synthetic supply team.\n- Wrote Python reconciliation scripts for inventory records and documented manual validation checks.\n- Reviewed before-and-after process changes; randomized experiment design or causal identification is not documented.\nSELECTED PROJECTS\n- Inventory quality project compared warehouse and order records and documented unresolved mismatches.\n- Operations dashboard project defined weekly service measures and explained data gaps to managers.\nSKILLS\n- SQL, Python, spreadsheet analysis, dashboard review and process documentation.\nEDUCATION AND TRAINING\n- BCom Operations (synthetic demo qualification).",
       "claims": [
         {
           "kind": "experience",
           "label": "5 years",
-          "quote": "5 years of operations analysis, including SQL reporting and process dashboards."
+          "quote": "- 5 years of operations analysis, including SQL reporting and process dashboards for a synthetic supply team."
         },
         {
           "kind": "skill",
           "label": "SQL",
-          "quote": "5 years of operations analysis, including SQL reporting and process dashboards."
+          "quote": "- 5 years of operations analysis, including SQL reporting and process dashboards for a synthetic supply team."
         },
         {
           "kind": "skill",
           "label": "Python",
-          "quote": "Wrote small Python scripts to reconcile inventory records and documented manual checks."
+          "quote": "- Wrote Python reconciliation scripts for inventory records and documented manual validation checks."
         },
         {
           "kind": "qualification",
           "label": "BCom Operations",
-          "quote": "Education: BCom Operations."
+          "quote": "- BCom Operations (synthetic demo qualification)."
         }
       ],
       "is_demo": true
     },
     {
       "id": "demo_ds_jordan",
+      "memberships": [
+        {
+          "job_id": "demo_ds",
+          "demo_scenario": "ambiguous"
+        }
+      ],
       "display_name": "Jordan Ellis",
       "headline": "Analytics Team Contributor",
-      "summary": "Describes team analysis work with unclear individual ownership and dates.",
-      "resume_text": "SYNTHETIC DEMO RESUME\nJordan Ellis\nAnalytics Team Contributor\nDescribes team analysis work with unclear individual ownership and dates.\nParticipated in a team using Python and SQL for customer reporting.\nThe team reported experiment outcomes; personal statistical methods and responsibilities are unspecified.\nProject dates and education are not included in this resume.",
+      "summary": "Describes useful team analysis work without clear dates or individual ownership.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nJordan Ellis\nAnalytics Team Contributor\nDescribes useful team analysis work without clear dates or individual ownership.\nWORK EXPERIENCE\n- Contributed SQL aggregations to a team dashboard for service trends; the specific query ownership is not stated.\n- Helped prepare descriptive charts, but the source does not identify an experiment design or causal study owned by Jordan.\nSELECTED PROJECTS\n- Support queue trend dashboard summarized weekly volumes and caveats about incomplete event tracking.\nSKILLS\n- SQL, descriptive reporting and chart review are mentioned without proficiency level.\nEDUCATION AND TRAINING\n- Education details and dates are not provided in this synthetic source.",
       "claims": [
-        {
-          "kind": "skill",
-          "label": "Python",
-          "quote": "Participated in a team using Python and SQL for customer reporting."
-        },
         {
           "kind": "skill",
           "label": "SQL",
-          "quote": "Participated in a team using Python and SQL for customer reporting."
-        }
-      ],
-      "is_demo": true
-    },
-    {
-      "id": "demo_mle_samir",
-      "display_name": "Samir Rao",
-      "headline": "ML Platform Engineer",
-      "summary": "Builds and operates containerized model-serving services.",
-      "resume_text": "SYNTHETIC DEMO RESUME\nSamir Rao\nML Platform Engineer\nBuilds and operates containerized model-serving services.\n5 years of ML engineering, including ownership of release and incident response.\nDeveloped Python model services with FastAPI, Docker builds and automated release tests.\nOwned model monitoring for drift, quality checks and latency; documented rollback decisions.\nDeployed workloads on AWS and maintained runbooks.\nEducation: MSc Computer Engineering.",
-      "claims": [
-        {
-          "kind": "experience",
-          "label": "5 years",
-          "quote": "5 years of ML engineering, including ownership of release and incident response."
+          "quote": "- Contributed SQL aggregations to a team dashboard for service trends; the specific query ownership is not stated."
         },
         {
           "kind": "skill",
-          "label": "Python",
-          "quote": "Developed Python model services with FastAPI, Docker builds and automated release tests."
-        },
-        {
-          "kind": "skill",
-          "label": "Docker",
-          "quote": "Developed Python model services with FastAPI, Docker builds and automated release tests."
-        },
-        {
-          "kind": "skill",
-          "label": "monitoring",
-          "quote": "Owned model monitoring for drift, quality checks and latency; documented rollback decisions."
-        },
-        {
-          "kind": "skill",
-          "label": "AWS",
-          "quote": "Deployed workloads on AWS and maintained runbooks."
-        },
-        {
-          "kind": "qualification",
-          "label": "MSc Computer Engineering",
-          "quote": "Education: MSc Computer Engineering."
-        }
-      ],
-      "is_demo": true
-    },
-    {
-      "id": "demo_mle_leah",
-      "display_name": "Leah Morgan",
-      "headline": "Applied ML Research Assistant",
-      "summary": "Has model development experience and limited deployment evidence.",
-      "resume_text": "SYNTHETIC DEMO RESUME\nLeah Morgan\nApplied ML Research Assistant\nHas model development experience and limited deployment evidence.\n2 years of applied ML research, building Python training and validation notebooks.\nPrepared reproducible datasets and compared model errors with a research supervisor.\nContainerized a small tutorial with Docker; has not operated a production model service.\nEducation: BSc Computer Science.",
-      "claims": [
-        {
-          "kind": "experience",
-          "label": "2 years",
-          "quote": "2 years of applied ML research, building Python training and validation notebooks."
-        },
-        {
-          "kind": "skill",
-          "label": "Python",
-          "quote": "2 years of applied ML research, building Python training and validation notebooks."
-        },
-        {
-          "kind": "skill",
-          "label": "Docker",
-          "quote": "Containerized a small tutorial with Docker; has not operated a production model service."
-        },
-        {
-          "kind": "qualification",
-          "label": "BSc Computer Science",
-          "quote": "Education: BSc Computer Science."
-        }
-      ],
-      "is_demo": true
-    },
-    {
-      "id": "demo_mle_noah",
-      "display_name": "Noah Brooks",
-      "headline": "Desktop Software Engineer",
-      "summary": "Has software engineering experience and introductory ML exposure.",
-      "resume_text": "SYNTHETIC DEMO RESUME\nNoah Brooks\nDesktop Software Engineer\nHas software engineering experience and introductory ML exposure.\n4 years of desktop application development using C# and SQL.\nCompleted an introductory Python course and trained a small classifier as a personal exercise.\nNo deployed ML service or model monitoring work is described.\nEducation: BSc Computing.",
-      "claims": [
-        {
-          "kind": "experience",
-          "label": "4 years",
-          "quote": "4 years of desktop application development using C# and SQL."
-        },
-        {
-          "kind": "skill",
-          "label": "C#",
-          "quote": "4 years of desktop application development using C# and SQL."
-        },
-        {
-          "kind": "skill",
-          "label": "Python",
-          "quote": "Completed an introductory Python course and trained a small classifier as a personal exercise."
-        },
-        {
-          "kind": "qualification",
-          "label": "BSc Computing",
-          "quote": "Education: BSc Computing."
-        }
-      ],
-      "is_demo": true
-    },
-    {
-      "id": "demo_ai_elena",
-      "display_name": "Elena Torres",
-      "headline": "AI Application Engineer",
-      "summary": "Builds grounded document assistants and evaluates unsupported outputs.",
-      "resume_text": "SYNTHETIC DEMO RESUME\nElena Torres\nAI Application Engineer\nBuilds grounded document assistants and evaluates unsupported outputs.\n3 years of AI application engineering with Python services and regression tests.\nImplemented RAG pipelines, evaluated retrieval quality and attached document evidence to answers.\nCreated an evaluation set for unsupported answers and instruction attacks in retrieved text.\nDeployed document assistants with AWS Bedrock and recorded model configuration changes.\nEducation: MSc Computer Science.",
-      "claims": [
-        {
-          "kind": "experience",
-          "label": "3 years",
-          "quote": "3 years of AI application engineering with Python services and regression tests."
-        },
-        {
-          "kind": "skill",
-          "label": "Python",
-          "quote": "3 years of AI application engineering with Python services and regression tests."
-        },
-        {
-          "kind": "skill",
-          "label": "RAG",
-          "quote": "Implemented RAG pipelines, evaluated retrieval quality and attached document evidence to answers."
-        },
-        {
-          "kind": "skill",
-          "label": "evaluation",
-          "quote": "Created an evaluation set for unsupported answers and instruction attacks in retrieved text."
-        },
-        {
-          "kind": "skill",
-          "label": "AWS Bedrock",
-          "quote": "Deployed document assistants with AWS Bedrock and recorded model configuration changes."
-        },
-        {
-          "kind": "qualification",
-          "label": "MSc Computer Science",
-          "quote": "Education: MSc Computer Science."
-        }
-      ],
-      "is_demo": true
-    },
-    {
-      "id": "demo_ai_kai",
-      "display_name": "Kai Bennett",
-      "headline": "Data Engineer / AI Prototyper",
-      "summary": "Has a retrieval prototype and needs verification of evaluation and deployment work.",
-      "resume_text": "SYNTHETIC DEMO RESUME\nKai Bennett\nData Engineer / AI Prototyper\nHas a retrieval prototype and needs verification of evaluation and deployment work.\n1.5 years of AI application work alongside data pipeline engineering.\nBuilt a Python RAG prototype over internal sample documents with a retrieval library.\nReviewed a few answers manually; no repeatable evaluation set or deployed service is described.\nEducation: BSc Information Systems.",
-      "claims": [
-        {
-          "kind": "experience",
-          "label": "1.5 years",
-          "quote": "1.5 years of AI application work alongside data pipeline engineering."
-        },
-        {
-          "kind": "skill",
-          "label": "Python",
-          "quote": "Built a Python RAG prototype over internal sample documents with a retrieval library."
-        },
-        {
-          "kind": "skill",
-          "label": "RAG",
-          "quote": "Built a Python RAG prototype over internal sample documents with a retrieval library."
-        },
-        {
-          "kind": "qualification",
-          "label": "BSc Information Systems",
-          "quote": "Education: BSc Information Systems."
-        }
-      ],
-      "is_demo": true
-    },
-    {
-      "id": "demo_ai_rowan",
-      "display_name": "Rowan Park",
-      "headline": "AI Project Contributor",
-      "summary": "Lists prototype work without dates, evaluation details or qualifications.",
-      "resume_text": "SYNTHETIC DEMO RESUME\nRowan Park\nAI Project Contributor\nLists prototype work without dates, evaluation details or qualifications.\nUsed Python for document retrieval prototypes.\nProject duration, evaluation methods, deployment ownership and education are not supplied.",
-      "claims": [
-        {
-          "kind": "skill",
-          "label": "Python",
-          "quote": "Used Python for document retrieval prototypes."
-        },
-        {
-          "kind": "skill",
-          "label": "retrieval",
-          "quote": "Used Python for document retrieval prototypes."
+          "label": "descriptive charts",
+          "quote": "- Helped prepare descriptive charts, but the source does not identify an experiment design or causal study owned by Jordan."
         }
       ],
       "is_demo": true
     },
     {
       "id": "demo_backend_priya",
-      "display_name": "Priya Shah",
-      "headline": "Senior Backend Engineer",
-      "summary": "Owns Python APIs, PostgreSQL transactions and operational diagnosis.",
-      "resume_text": "SYNTHETIC DEMO RESUME\nPriya Shah\nSenior Backend Engineer\nOwns Python APIs, PostgreSQL transactions and operational diagnosis.\n6 years of backend engineering across API development and operational support.\nBuilt Python HTTP APIs with FastAPI, request validation and integration tests.\nDesigned PostgreSQL indexes and transaction boundaries, and investigated concurrent update failures.\nUsed observability traces and structured logs to diagnose timeouts without logging request bodies.\nEducation: BSc Software Engineering.",
+      "memberships": [
+        {
+          "job_id": "demo_backend",
+          "demo_scenario": "strong"
+        }
+      ],
+      "display_name": "Priya Nair",
+      "headline": "Backend Platform Engineer",
+      "summary": "Owns tested Python services, PostgreSQL data paths and production diagnosis.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nPriya Nair\nBackend Platform Engineer\nOwns tested Python services, PostgreSQL data paths and production diagnosis.\nWORK EXPERIENCE\n- 5 years of backend engineering on synthetic billing and account services.\n- Built Python HTTP APIs with schema validation, explicit error responses and contract tests.\n- Designed PostgreSQL indexes and transaction boundaries for account updates and reviewed lock contention.\nSELECTED PROJECTS\n- Account preference API project added idempotent writes and documented retry behavior for callers.\n- Service diagnosis project used logs and metrics to trace failed requests through dependent services.\nSKILLS\n- Python, PostgreSQL, HTTP APIs, automated tests, transactions and observability.\nEDUCATION AND TRAINING\n- BEng Computer Science (synthetic demo qualification).",
       "claims": [
         {
           "kind": "experience",
-          "label": "6 years",
-          "quote": "6 years of backend engineering across API development and operational support."
+          "label": "5 years",
+          "quote": "- 5 years of backend engineering on synthetic billing and account services."
         },
         {
           "kind": "skill",
           "label": "Python",
-          "quote": "Built Python HTTP APIs with FastAPI, request validation and integration tests."
-        },
-        {
-          "kind": "skill",
-          "label": "HTTP APIs",
-          "quote": "Built Python HTTP APIs with FastAPI, request validation and integration tests."
+          "quote": "- Built Python HTTP APIs with schema validation, explicit error responses and contract tests."
         },
         {
           "kind": "skill",
           "label": "PostgreSQL",
-          "quote": "Designed PostgreSQL indexes and transaction boundaries, and investigated concurrent update failures."
+          "quote": "- Designed PostgreSQL indexes and transaction boundaries for account updates and reviewed lock contention."
         },
         {
           "kind": "skill",
-          "label": "observability",
-          "quote": "Used observability traces and structured logs to diagnose timeouts without logging request bodies."
+          "label": "HTTP APIs",
+          "quote": "- Built Python HTTP APIs with schema validation, explicit error responses and contract tests."
+        },
+        {
+          "kind": "skill",
+          "label": "logs and metrics",
+          "quote": "- Service diagnosis project used logs and metrics to trace failed requests through dependent services."
         },
         {
           "kind": "qualification",
-          "label": "BSc Software Engineering",
-          "quote": "Education: BSc Software Engineering."
+          "label": "BEng Computer Science",
+          "quote": "- BEng Computer Science (synthetic demo qualification)."
         }
       ],
       "is_demo": true
     },
     {
       "id": "demo_backend_theo",
+      "memberships": [
+        {
+          "job_id": "demo_backend",
+          "demo_scenario": "transferable"
+        },
+        {
+          "job_id": "demo_ds",
+          "demo_scenario": "weak"
+        }
+      ],
       "display_name": "Theo Grant",
-      "headline": "Java Backend Engineer",
-      "summary": "Offers transferable API and database experience with limited Python service ownership.",
-      "resume_text": "SYNTHETIC DEMO RESUME\nTheo Grant\nJava Backend Engineer\nOffers transferable API and database experience with limited Python service ownership.\n4 years of backend engineering using Java and Spring.\nDesigned HTTP APIs with request validation and documented error contracts.\nOptimized PostgreSQL queries and investigated transaction isolation problems.\nUsed Python for personal scripting; production Python service ownership is not described.\nEducation: BSc Computer Science.",
+      "headline": "Go Backend Engineer",
+      "summary": "Builds small backend services; no data science project or experiment ownership is documented.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nTheo Grant\nGo Backend Engineer\nBuilds small backend services; no data science project or experiment ownership is documented.\nWORK EXPERIENCE\n- 2 years of backend engineering focused on Go services and local persistence prototypes.\n- Implemented HTTP API request validation and integration tests for device event ingestion.\n- Used SQLite for a prototype; production PostgreSQL transactions are not documented.\nSELECTED PROJECTS\n- Device event ingestion project accepted batched messages and recorded malformed-request examples.\n- Service review project documented retry behavior and basic request logs.\nSKILLS\n- Go, HTTP APIs, SQLite, integration testing and service logs.\nEDUCATION AND TRAINING\n- BSc Software Engineering (synthetic demo qualification).",
       "claims": [
         {
           "kind": "experience",
-          "label": "4 years",
-          "quote": "4 years of backend engineering using Java and Spring."
+          "label": "2 years",
+          "quote": "- 2 years of backend engineering focused on Go services and local persistence prototypes."
         },
         {
           "kind": "skill",
-          "label": "Java",
-          "quote": "4 years of backend engineering using Java and Spring."
+          "label": "Go",
+          "quote": "- 2 years of backend engineering focused on Go services and local persistence prototypes."
         },
         {
           "kind": "skill",
-          "label": "HTTP APIs",
-          "quote": "Designed HTTP APIs with request validation and documented error contracts."
+          "label": "HTTP API",
+          "quote": "- Implemented HTTP API request validation and integration tests for device event ingestion."
         },
         {
           "kind": "skill",
-          "label": "PostgreSQL",
-          "quote": "Optimized PostgreSQL queries and investigated transaction isolation problems."
-        },
-        {
-          "kind": "skill",
-          "label": "Python",
-          "quote": "Used Python for personal scripting; production Python service ownership is not described."
+          "label": "SQLite",
+          "quote": "- Used SQLite for a prototype; production PostgreSQL transactions are not documented."
         },
         {
           "kind": "qualification",
-          "label": "BSc Computer Science",
-          "quote": "Education: BSc Computer Science."
+          "label": "BSc Software Engineering",
+          "quote": "- BSc Software Engineering (synthetic demo qualification)."
         }
       ],
       "is_demo": true
     },
     {
       "id": "demo_backend_mara",
-      "display_name": "Mara Singh",
-      "headline": "Python Web Developer",
-      "summary": "Has Python web experience with gaps in database scale and operational evidence.",
-      "resume_text": "SYNTHETIC DEMO RESUME\nMara Singh\nPython Web Developer\nHas Python web experience with gaps in database scale and operational evidence.\n2 years of web development using Python and Flask.\nBuilt HTTP APIs with basic request validation and unit tests.\nUsed SQLite for small applications; no PostgreSQL work is specified.\nEducation: MSc Computing.",
+      "memberships": [
+        {
+          "job_id": "demo_backend",
+          "demo_scenario": "partial"
+        }
+      ],
+      "display_name": "Mara Lewis",
+      "headline": "Application Developer",
+      "summary": "Has application API experience with incomplete evidence on database transactions.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nMara Lewis\nApplication Developer\nHas application API experience with incomplete evidence on database transactions.\nWORK EXPERIENCE\n- 3 years of application development using TypeScript and Node.js services.\n- Added HTTP endpoint validation and tests for a notification preference service.\n- Read PostgreSQL queries during support rotations; index design and transaction ownership are not specified.\nSELECTED PROJECTS\n- Notification service project mapped message preferences to API responses and checked failure cases.\n- Support handoff project collected request logs and open questions for the database team.\nSKILLS\n- TypeScript, Node.js, HTTP APIs, tests and basic PostgreSQL query review.\nEDUCATION AND TRAINING\n- Formal qualification details are not stated in this synthetic source.",
       "claims": [
         {
           "kind": "experience",
-          "label": "2 years",
-          "quote": "2 years of web development using Python and Flask."
+          "label": "3 years",
+          "quote": "- 3 years of application development using TypeScript and Node.js services."
         },
         {
           "kind": "skill",
-          "label": "Python",
-          "quote": "2 years of web development using Python and Flask."
+          "label": "TypeScript",
+          "quote": "- 3 years of application development using TypeScript and Node.js services."
         },
         {
           "kind": "skill",
-          "label": "HTTP APIs",
-          "quote": "Built HTTP APIs with basic request validation and unit tests."
+          "label": "HTTP endpoint",
+          "quote": "- Added HTTP endpoint validation and tests for a notification preference service."
         },
         {
           "kind": "skill",
-          "label": "SQLite",
-          "quote": "Used SQLite for small applications; no PostgreSQL work is specified."
-        },
-        {
-          "kind": "qualification",
-          "label": "MSc Computing",
-          "quote": "Education: MSc Computing."
+          "label": "PostgreSQL",
+          "quote": "- Read PostgreSQL queries during support rotations; index design and transaction ownership are not specified."
         }
       ],
       "is_demo": true
-    }
-  ],
-  "memberships": [
-    {
-      "job_id": "demo_ds",
-      "candidate_id": "demo_ds_avery",
-      "demo_scenario": "strong"
     },
     {
-      "job_id": "demo_ds",
-      "candidate_id": "demo_ds_mina",
-      "demo_scenario": "transferable"
+      "id": "demo_hr_ops_amira",
+      "memberships": [
+        {
+          "job_id": "demo_hr_ops",
+          "demo_scenario": "strong"
+        }
+      ],
+      "display_name": "Amira Shah",
+      "headline": "People Operations Specialist",
+      "summary": "Coordinates employee lifecycle work and checks HRIS records before payroll handoff.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nAmira Shah\nPeople Operations Specialist\nCoordinates employee lifecycle work and checks HRIS records before payroll handoff.\nWORK EXPERIENCE\n- 4 years of HR operations work for a synthetic distributed services team.\n- Coordinated onboarding and offboarding checklists with managers, IT and benefits partners.\n- Maintained HRIS employee records and verified status changes against approved source forms.\n- Prepared payroll change summaries for the payroll team to review; final pay decisions stayed with that team.\nSELECTED PROJECTS\n- New-starter handoff project documented who approves access, benefits enrollment and first-week tasks.\n- Record quality project added a second review step for incomplete HRIS change requests.\nSKILLS\n- HRIS, onboarding, offboarding, payroll coordination and process documentation.\nEDUCATION AND TRAINING\n- Formal education and external certification are not stated in this synthetic source.",
+      "claims": [
+        {
+          "kind": "experience",
+          "label": "4 years",
+          "quote": "- 4 years of HR operations work for a synthetic distributed services team."
+        },
+        {
+          "kind": "skill",
+          "label": "onboarding",
+          "quote": "- Coordinated onboarding and offboarding checklists with managers, IT and benefits partners."
+        },
+        {
+          "kind": "skill",
+          "label": "HRIS",
+          "quote": "- Maintained HRIS employee records and verified status changes against approved source forms."
+        },
+        {
+          "kind": "skill",
+          "label": "payroll",
+          "quote": "- Prepared payroll change summaries for the payroll team to review; final pay decisions stayed with that team."
+        }
+      ],
+      "is_demo": true
     },
     {
-      "job_id": "demo_ds",
-      "candidate_id": "demo_ds_jordan",
-      "demo_scenario": "ambiguous"
+      "id": "demo_hr_ops_neel",
+      "memberships": [
+        {
+          "job_id": "demo_hr_ops",
+          "demo_scenario": "partial"
+        }
+      ],
+      "display_name": "Neel Kapoor",
+      "headline": "Office Operations Coordinator",
+      "summary": "Brings administrative handoff experience with limited HR system ownership.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nNeel Kapoor\nOffice Operations Coordinator\nBrings administrative handoff experience with limited HR system ownership.\nWORK EXPERIENCE\n- 3 years of office operations coordinating equipment, facilities and new-starter logistics.\n- Collected onboarding documents and routed missing items to the HR team for review.\n- Kept a spreadsheet tracker of employee handoffs; direct HRIS updates and payroll coordination are not documented.\nSELECTED PROJECTS\n- New-starter checklist project clarified equipment and account request owners before start dates.\n- Facilities request project documented recurring handoff delays without claiming payroll ownership.\nSKILLS\n- Onboarding logistics, spreadsheet tracking, process checklists and stakeholder follow-up.\nEDUCATION AND TRAINING\n- Formal HR training is not stated in this synthetic source.",
+      "claims": [
+        {
+          "kind": "experience",
+          "label": "3 years",
+          "quote": "- 3 years of office operations coordinating equipment, facilities and new-starter logistics."
+        },
+        {
+          "kind": "skill",
+          "label": "onboarding",
+          "quote": "- Collected onboarding documents and routed missing items to the HR team for review."
+        },
+        {
+          "kind": "skill",
+          "label": "spreadsheet tracker",
+          "quote": "- Kept a spreadsheet tracker of employee handoffs; direct HRIS updates and payroll coordination are not documented."
+        }
+      ],
+      "is_demo": true
     },
     {
-      "job_id": "demo_mle",
-      "candidate_id": "demo_mle_samir",
-      "demo_scenario": "strong"
+      "id": "demo_hr_ops_tessa",
+      "memberships": [
+        {
+          "job_id": "demo_hr_ops",
+          "demo_scenario": "incomplete"
+        }
+      ],
+      "display_name": "Tessa Roy",
+      "headline": "Recruiting Coordinator",
+      "summary": "Documents scheduling and offer-packet support; broader people-operations scope is unclear.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nTessa Roy\nRecruiting Coordinator\nDocuments scheduling and offer-packet support; broader people-operations scope is unclear.\nWORK EXPERIENCE\n- Scheduled interviews and prepared offer packets for recruiter review; dates and hours are not specified.\n- Collected signed onboarding forms but did not describe HRIS maintenance or payroll handoffs.\nSELECTED PROJECTS\n- Candidate handoff notes project listed documents awaiting a human approval before onboarding.\nSKILLS\n- Interview scheduling, document tracking and written handoffs.\nEDUCATION AND TRAINING\n- Education and HR operations training are not stated in this synthetic source.",
+      "claims": [
+        {
+          "kind": "skill",
+          "label": "onboarding",
+          "quote": "- Collected signed onboarding forms but did not describe HRIS maintenance or payroll handoffs."
+        },
+        {
+          "kind": "skill",
+          "label": "document tracking",
+          "quote": "- Interview scheduling, document tracking and written handoffs."
+        }
+      ],
+      "is_demo": true
     },
     {
-      "job_id": "demo_mle",
-      "candidate_id": "demo_mle_leah",
-      "demo_scenario": "partial"
+      "id": "demo_marketing_ops_leena",
+      "memberships": [
+        {
+          "job_id": "demo_marketing_ops",
+          "demo_scenario": "strong"
+        }
+      ],
+      "display_name": "Leena Desai",
+      "headline": "Marketing Operations Specialist",
+      "summary": "Owns campaign production, CRM lead handoffs and cautious performance reporting.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nLeena Desai\nMarketing Operations Specialist\nOwns campaign production, CRM lead handoffs and cautious performance reporting.\nWORK EXPERIENCE\n- 4 years of marketing operations work across email, paid media and event campaigns for a synthetic software team.\n- Maintained CRM prospect records and lead-routing rules with sales operations partners.\n- Reported campaign engagement and downstream lead outcomes while noting attribution limits.\nSELECTED PROJECTS\n- Lifecycle email project used marketing automation to document audience rules, approval steps and send checks.\n- Campaign measurement project linked launch dates, spend, engagement and sales handoffs in a review dashboard.\nSKILLS\n- CRM, marketing automation, email campaigns, campaign analytics and lead handoff.\nEDUCATION AND TRAINING\n- Formal marketing qualification is not stated in this synthetic source.",
+      "claims": [
+        {
+          "kind": "experience",
+          "label": "4 years",
+          "quote": "- 4 years of marketing operations work across email, paid media and event campaigns for a synthetic software team."
+        },
+        {
+          "kind": "skill",
+          "label": "CRM",
+          "quote": "- Maintained CRM prospect records and lead-routing rules with sales operations partners."
+        },
+        {
+          "kind": "skill",
+          "label": "campaign engagement",
+          "quote": "- Reported campaign engagement and downstream lead outcomes while noting attribution limits."
+        },
+        {
+          "kind": "skill",
+          "label": "marketing automation",
+          "quote": "- Lifecycle email project used marketing automation to document audience rules, approval steps and send checks."
+        }
+      ],
+      "is_demo": true
     },
     {
-      "job_id": "demo_mle",
-      "candidate_id": "demo_mle_noah",
-      "demo_scenario": "weak"
+      "id": "demo_marketing_ops_omar",
+      "memberships": [
+        {
+          "job_id": "demo_marketing_ops",
+          "demo_scenario": "partial"
+        }
+      ],
+      "display_name": "Omar Singh",
+      "headline": "Digital Marketing Executive",
+      "summary": "Runs digital ads and web content with limited CRM and lead-routing evidence.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nOmar Singh\nDigital Marketing Executive\nRuns digital ads and web content with limited CRM and lead-routing evidence.\nWORK EXPERIENCE\n- 3 years of digital marketing work on paid search, social campaigns and website content.\n- Ran Meta Ads and Google Ads, revised audience groups and reviewed campaign engagement reports.\n- Built Shopify and WordPress landing pages with SEO checks; CRM lead routing is not described.\nSELECTED PROJECTS\n- Landing-page review project compared page content, ad messages and traffic sources without claiming causal lift.\n- Email draft project documented subject-line alternatives and manual approval steps.\nSKILLS\n- Meta Ads, Google Ads, SEO, Shopify, WordPress and Google Analytics.\nEDUCATION AND TRAINING\n- Formal education or marketing certification is not stated in this synthetic source.",
+      "claims": [
+        {
+          "kind": "experience",
+          "label": "3 years",
+          "quote": "- 3 years of digital marketing work on paid search, social campaigns and website content."
+        },
+        {
+          "kind": "skill",
+          "label": "Meta Ads",
+          "quote": "- Ran Meta Ads and Google Ads, revised audience groups and reviewed campaign engagement reports."
+        },
+        {
+          "kind": "skill",
+          "label": "Google Ads",
+          "quote": "- Ran Meta Ads and Google Ads, revised audience groups and reviewed campaign engagement reports."
+        },
+        {
+          "kind": "skill",
+          "label": "SEO",
+          "quote": "- Built Shopify and WordPress landing pages with SEO checks; CRM lead routing is not described."
+        },
+        {
+          "kind": "skill",
+          "label": "Google Analytics",
+          "quote": "- Meta Ads, Google Ads, SEO, Shopify, WordPress and Google Analytics."
+        }
+      ],
+      "is_demo": true
     },
     {
-      "job_id": "demo_ai",
-      "candidate_id": "demo_ai_elena",
-      "demo_scenario": "strong"
-    },
-    {
-      "job_id": "demo_ai",
-      "candidate_id": "demo_ai_kai",
-      "demo_scenario": "partial"
-    },
-    {
-      "job_id": "demo_ai",
-      "candidate_id": "demo_ai_rowan",
-      "demo_scenario": "incomplete"
-    },
-    {
-      "job_id": "demo_backend",
-      "candidate_id": "demo_backend_priya",
-      "demo_scenario": "strong"
-    },
-    {
-      "job_id": "demo_backend",
-      "candidate_id": "demo_backend_theo",
-      "demo_scenario": "transferable"
-    },
-    {
-      "job_id": "demo_backend",
-      "candidate_id": "demo_backend_mara",
-      "demo_scenario": "partial"
+      "id": "demo_marketing_ops_eva",
+      "memberships": [
+        {
+          "job_id": "demo_marketing_ops",
+          "demo_scenario": "ambiguous"
+        }
+      ],
+      "display_name": "Eva Brooks",
+      "headline": "Content Coordinator",
+      "summary": "Has content-calendar and newsletter contributions with uncertain campaign ownership.",
+      "resume_text": "SYNTHETIC DEMO RESUME\nEva Brooks\nContent Coordinator\nHas content-calendar and newsletter contributions with uncertain campaign ownership.\nWORK EXPERIENCE\n- Prepared social posts and email copy for a team calendar; work dates and campaign ownership are not specified.\n- Reviewed basic engagement charts but did not identify CRM updates, lead handoffs or downstream outcome analysis.\nSELECTED PROJECTS\n- Newsletter content project organized draft versions and a checklist for human approval.\nSKILLS\n- Content calendar, email copy, social posts and basic engagement review.\nEDUCATION AND TRAINING\n- Education and marketing training are not stated in this synthetic source.",
+      "claims": [
+        {
+          "kind": "skill",
+          "label": "email copy",
+          "quote": "- Prepared social posts and email copy for a team calendar; work dates and campaign ownership are not specified."
+        },
+        {
+          "kind": "skill",
+          "label": "engagement charts",
+          "quote": "- Reviewed basic engagement charts but did not identify CRM updates, lead handoffs or downstream outcome analysis."
+        }
+      ],
+      "is_demo": true
     }
   ]
 }

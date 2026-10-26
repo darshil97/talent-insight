@@ -29,18 +29,18 @@ See [Neon's pooling guidance](https://neon.com/docs/connect/connection-pooling),
 
 ## Schema and seed
 
-| Table | Contents | Initialized rows |
+| Table | Contents | Current verified rows |
 | --- | --- | --- |
 | `talent_insight.jobs` | Synthetic roles/clients, descriptions, skills, screening criteria and questions | 4 |
 | `talent_insight.job_requirements` | Categorized requirements, experience thresholds and ordering | 24 |
 | `talent_insight.demo_candidates` | Synthetic profiles, resume text and traceable evidence claims | 12 |
-| `talent_insight.job_candidates` | Fixed job-specific pools and internal synthetic scenario labels | 12 |
+| `talent_insight.job_candidates` | Fixed job-specific pools and internal synthetic scenario labels | 13 |
 
 `public.talent_insight_alembic_version` tracks the migration. Foreign keys, uniqueness and check constraints protect relationships and basic demo-data integrity. The initial migration refuses to adopt an unknown existing app schema. It does not replace unrelated public tables.
 
-The versioned sources are one `backend/app/fixtures/jobs/<job_id>.json` per job and `backend/app/fixtures/candidates.json` for the unchanged synthetic candidates/memberships. Module 6 split the original combined JSON without changing any values. See [editing jobs](jobs.md). Each existing role has three candidate profiles; a newly authored job may start without a candidate pool. The complete candidate set covers strong, partial, weak, transferable, ambiguous and incomplete evidence. Scenario labels are internal fixture metadata, not calculated match scores or hiring recommendations. Claims include original quotes and exact character offsets; this validates provenance, not independent truth. No uploaded candidates, transcripts, reports or match scores are stored.
+The versioned sources are one `backend/app/fixtures/jobs/<job_id>.json` per job and `backend/app/fixtures/candidates.json` for synthetic candidates with job links nested in each candidate entry. The loader derives the existing database membership rows from those links. See [editing jobs](jobs.md) and [adding candidates](candidates.md). The fixture and Neon catalog have four roles, twelve profiles and thirteen memberships. The complete candidate set covers strong, partial, weak, transferable, ambiguous and incomplete evidence. Scenario labels are internal fixture metadata, not calculated match scores or hiring recommendations. Claims include original quotes and exact character offsets; this validates provenance, not independent truth. No uploaded candidates, transcripts, reports or match scores are stored in Neon.
 
-Seeding validates the entire fixture and upserts only its stable IDs atomically. Repeated runs do not duplicate rows; both the initial seed and a repeat have been verified on Neon. Other rows are preserved; there is no automatic delete, truncate or pruning. Removed fixtures and criterion-order restructuring require a reviewed data migration.
+Seeding validates the entire fixture and upserts only its stable IDs atomically. Repeated runs do not duplicate rows; both the initial seed and a repeat have been verified on Neon. Other rows are preserved; there is no automatic delete, truncate or pruning. The four-domain upsert therefore left `demo_mle` and `demo_ai` visible. After explicit user approval, the exact-ID [retirement SQL](four-domain-catalog-transition.sql) removed those two jobs, their dependent requirements and memberships, and six now-unused candidate rows in one guarded transaction. A read-only Neon check confirmed four jobs, 24 requirements, 12 candidates and 13 memberships afterward. Future removals still require individual review; normal seeding does not prune.
 
 Read-only helpers in `app/catalog.py` list jobs, load ordered requirements, list candidate pools and fetch candidates through actual job membership. Module 6 exposes jobs listing/details; module 7 adds job-scoped candidate pool/profile views with validated resume provenance. No schema or fixture changes were needed for module 7. Runtime queries read Neon, not JSON; edits take effect only after an explicitly approved seed. Startup never seeds or syncs files.
 

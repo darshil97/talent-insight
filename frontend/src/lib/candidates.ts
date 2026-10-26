@@ -12,6 +12,10 @@ export interface CandidateSummary {
 
 export interface CandidateTableSummary extends CandidateSummary {
   stated_experience: string | null;
+  snapshot_available: boolean;
+  match_score: number | null;
+  score_lower: number | null;
+  score_upper: number | null;
 }
 
 export interface EvidenceClaim {
@@ -36,6 +40,7 @@ export interface CandidatePool {
 export interface CandidateProfile {
   job: JobSummary;
   candidate: CandidateDetail;
+  assessment: unknown;
 }
 
 const object = (value: unknown): value is Record<string, unknown> =>
@@ -49,8 +54,18 @@ function isCandidateSummary(value: unknown): value is CandidateSummary {
 }
 
 function isCandidateTableSummary(value: unknown): value is CandidateTableSummary {
-  return isCandidateSummary(value) && object(value) &&
-    (value.stated_experience === null || text(value.stated_experience));
+  if (!isCandidateSummary(value) || !object(value)) return false;
+  const lower = value.score_lower;
+  const upper = value.score_upper;
+  const score = value.match_score;
+  return (value.stated_experience === null || text(value.stated_experience)) &&
+    typeof value.snapshot_available === "boolean" &&
+    [score, lower, upper].every((number) => number === null ||
+      (typeof number === "number" && Number.isFinite(number) && number >= 0 && number <= 100)) &&
+    (lower === null ? upper === null && score === null :
+      typeof lower === "number" && typeof upper === "number" && lower <= upper &&
+      (score === null || score === lower)) &&
+    (value.snapshot_available || (score === null && lower === null && upper === null));
 }
 
 function isClaim(value: unknown): value is EvidenceClaim {
@@ -95,5 +110,6 @@ export function decodeCandidateProfile(value: unknown, jobId: string, candidateI
         splitResume(source, claim.start, claim.end).excerpt !== claim.quote)) {
     throw new CatalogError("unavailable");
   }
-  return { job: value.job, candidate: { ...candidate, resume_text: source, claims, offset_unit: "unicode_code_point" } };
+  if (!("assessment" in value)) throw new CatalogError("unavailable");
+  return { job: value.job, candidate: { ...candidate, resume_text: source, claims, offset_unit: "unicode_code_point" }, assessment: value.assessment };
 }

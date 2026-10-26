@@ -1,0 +1,39 @@
+{
+  "id": "demo_marketing_ops",
+  "title": "Marketing Operations Specialist",
+  "client": "Orchard Growth Studio (Demo)",
+  "description": "Synthetic marketing role: plan and execute digital campaigns, keep CRM and lead-routing data accurate, measure campaign performance from engagement through handoff, and improve repeatable production workflows. Work with sales and creative partners to explain results without overclaiming attribution. Expected experience: at least 2 years in marketing operations or digital campaign delivery.",
+  "skills": ["campaign operations", "CRM", "marketing automation", "campaign analytics", "lead handoff"],
+  "screening_criteria": [
+    "Plan and execute multi-channel digital campaigns with documented handoffs.",
+    "Maintain CRM prospect data and lead-routing rules.",
+    "Measure campaign engagement and downstream outcomes with appropriate caveats.",
+    "At least 2 years of relevant marketing operations or digital campaign experience."
+  ],
+  "questions": [
+    {
+      "id": "demo_marketing_ops_q1",
+      "text": "Describe a campaign you delivered from brief through launch and what you owned.",
+      "requirement_ids": ["demo_marketing_ops_campaigns"]
+    },
+    {
+      "id": "demo_marketing_ops_q2",
+      "text": "How did you maintain CRM data and pass qualified leads to sales?",
+      "requirement_ids": ["demo_marketing_ops_crm"]
+    },
+    {
+      "id": "demo_marketing_ops_q3",
+      "text": "What campaign measures did you report, what could they not prove, and how long have you done this work?",
+      "requirement_ids": ["demo_marketing_ops_measurement", "demo_marketing_ops_experience"]
+    }
+  ],
+  "requirements": [
+    {"id": "demo_marketing_ops_campaigns", "category": "mandatory", "description": "Plan and execute multi-channel digital campaigns with documented handoffs.", "minimum_years": null},
+    {"id": "demo_marketing_ops_crm", "category": "mandatory", "description": "Maintain CRM prospect data and lead-routing rules.", "minimum_years": null},
+    {"id": "demo_marketing_ops_measurement", "category": "mandatory", "description": "Measure campaign engagement and downstream outcomes with appropriate caveats.", "minimum_years": null},
+    {"id": "demo_marketing_ops_experience", "category": "experience", "description": "At least 2 years of relevant marketing operations or digital campaign experience.", "minimum_years": 2},
+    {"id": "demo_marketing_ops_automation", "category": "preferred", "description": "Use marketing automation or campaign production tools to reduce manual work.", "minimum_years": null},
+    {"id": "demo_marketing_ops_training", "category": "qualification", "description": "Documented marketing or analytics training or equivalent relevant practical experience.", "minimum_years": null}
+  ],
+  "is_demo": true
+}

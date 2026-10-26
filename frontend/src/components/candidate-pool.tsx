@@ -11,13 +11,12 @@ import { decodeCandidatePool, type CandidateTableSummary } from "@/lib/candidate
 import { decodeJob, fetchCatalog, type JobDetail } from "@/lib/catalog";
 import { decodeResumeLimits, ResumeError, type ResumeLimits } from "@/lib/resumes";
 
-type DemoRow = { kind: "demo"; name: string; score: null; candidate: CandidateTableSummary };
+type DemoRow = { kind: "demo"; name: string; score: number | null; candidate: CandidateTableSummary };
 type UploadRow = { kind: "upload"; name: string; score: number | null; filename: string; assessment: Assessment };
 type Row = DemoRow | UploadRow;
 
-function Score({ assessment }: { assessment: Assessment | null }) {
-  if (!assessment) return <span className="mission-muted">Pending snapshot</span>;
-  const { score, lower, upper } = assessment.scoring;
+function Score({ score, lower, upper, available }: { score: number | null; lower: number | null; upper: number | null; available: boolean }) {
+  if (!available) return <span className="mission-muted">Pending snapshot</span>;
   if (score !== null) return <strong className="mission-score">{score.toFixed(1)} <small>/ 100</small></strong>;
   if (lower !== null && upper !== null) return <span className="mission-muted">{lower.toFixed(1)}–{upper.toFixed(1)} range</span>;
   return <span className="mission-muted">Unavailable</span>;
@@ -81,7 +80,7 @@ function CandidateWorkspace({ job, candidates }: { job: JobDetail; candidates: C
   }
 
   const rows: Row[] = sortByMatchScore<Row>([
-    ...candidates.map((candidate): DemoRow => ({ kind: "demo", name: candidate.display_name, score: null, candidate })),
+    ...candidates.map((candidate): DemoRow => ({ kind: "demo", name: candidate.display_name, score: candidate.match_score, candidate })),
     ...(upload ? [upload] : []),
   ]);
 
@@ -97,11 +96,11 @@ function CandidateWorkspace({ job, candidates }: { job: JobDetail; candidates: C
         <td><div className="mission-person"><span className="mission-avatar">{row.kind === "demo" ? row.name.split(" ").map((part) => part[0]).join("") : "↑"}</span><div>{row.kind === "demo" ? <Link href={`/jobs/${job.id}/candidates/${row.candidate.id}`}>{row.name}</Link> : <button type="button" onClick={() => setShowDetails(true)}>{row.name} <b>JUST ADDED</b></button>}<small>{row.kind === "demo" ? "Synthetic demo candidate" : row.filename}</small></div></div></td>
         <td>{row.kind === "demo" ? row.candidate.headline : "Not extracted"}</td>
         <td>{row.kind === "demo" && row.candidate.stated_experience ? <>{row.candidate.stated_experience}<small className="mission-stated">stated</small></> : <span className="mission-muted">Unknown</span>}</td>
-        <td><Score assessment={row.kind === "upload" ? row.assessment : null} /></td>
+        <td><Score score={row.score} lower={row.kind === "upload" ? row.assessment.scoring.lower : row.candidate.score_lower} upper={row.kind === "upload" ? row.assessment.scoring.upper : row.candidate.score_upper} available={row.kind === "upload" || row.candidate.snapshot_available} /></td>
         <td><span className="mission-tag">{row.kind === "demo" ? "Demo" : "Temporary"}</span></td>
         <td>{row.kind === "demo" ? <Link className="mission-outline-button" href={`/jobs/${job.id}/candidates/${row.candidate.id}`}>View details ↗</Link> : <button type="button" className="mission-outline-button" onClick={() => setShowDetails(true)}>View details ↗</button>}</td>
       </tr>)}
-    </tbody></table></div><div className="mission-table-foot"><span>Demo match scores require the planned cached-assessment module.</span><span>Uploaded results clear on refresh or navigation.</span></div></div>
+    </tbody></table></div><div className="mission-table-foot"><span>Demo scores come from the last validated snapshot.</span><span>Uploaded results clear on refresh or navigation.</span></div></div>
     {upload && showDetails && <section ref={details} tabIndex={-1} aria-labelledby="uploaded-candidate-heading" className="mission-detail-panel"><div className="mission-detail-top"><div><p className="mission-kicker">TEMPORARY CANDIDATE / SOURCE REVIEW</p><h2 id="uploaded-candidate-heading">Uploaded candidate</h2><p>Identity and title are not in the current extraction contract. Review the source evidence before using this assessment.</p></div><button type="button" className="mission-outline-button" onClick={() => setShowDetails(false)}>Close details</button></div><AssessmentResult assessment={upload.assessment} job={job} /></section>}
     <p className="mission-review-note">Assessments support human review. Screening will be added after consent and text alternative workflows are ready.</p>
   </>;

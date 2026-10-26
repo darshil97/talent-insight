@@ -101,6 +101,16 @@ def test_empty_environment_value_uses_yaml_default(monkeypatch: pytest.MonkeyPat
     assert Settings().docs_enabled is True
 
 
+def test_output_budget_covers_text_rich_resumes_without_exceeding_allowed_limit() -> None:
+    assert Settings().ai_max_output_tokens == 8192
+    assert load_settings().ai_max_output_tokens == 8192
+
+
+def test_provider_stage_deadline_allows_two_longer_requests() -> None:
+    assert Settings().ai_timeout_seconds == 130
+    assert load_settings().ai_timeout_seconds == 130
+
+
 def test_empty_dotenv_value_uses_yaml_default(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
