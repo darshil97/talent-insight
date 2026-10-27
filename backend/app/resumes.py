@@ -2,12 +2,17 @@
 
 import asyncio
 import json
+import logging
+import os
 import sys
+import time
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.config import Settings
+
+logger = logging.getLogger(__name__)
 
 
 class ResumeLimits(BaseModel):
@@ -59,13 +64,40 @@ class ResumeFailure(Exception):
         super().__init__(self.code)
 
 
+def worker_environment() -> dict[str, str]:
+    """The untrusted-PDF parser gets no credentials or other inherited configuration."""
+    return {
+        "PATH": os.environ.get("PATH", ""),
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONUTF8": "1",
+        "PYTHONIOENCODING": "utf-8",
+    }
+
+
 async def extract_pdf(data: bytes, settings: Settings) -> ExtractedResume:
+    started = time.perf_counter()
+    try:
+        result = await _extract_pdf(data, settings)
+    except ResumeFailure as exc:
+        logger.warning("PDF extraction failed with %s", exc.code)
+        raise
+    logger.info(
+        "PDF extracted: %d pages, %d characters in %.0f ms",
+        result.page_count,
+        result.character_count,
+        (time.perf_counter() - started) * 1000,
+    )
+    return result
+
+
+async def _extract_pdf(data: bytes, settings: Settings) -> ExtractedResume:
     process = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
         "app.pdf_worker",
         str(settings.resume_max_pages),
         str(settings.resume_max_characters),
+        env=worker_environment(),
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.DEVNULL,

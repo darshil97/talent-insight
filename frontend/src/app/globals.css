@@ -254,3 +254,43 @@ main:focus {
     animation-duration: 0s !important;
   }
 }
+/* Add-candidate panel: optional availability before upload, editable identity after. */
+.mission-add-panel { margin: 26px 0 8px; padding: 22px 24px; border: 1px solid #567071; background: #17252a; outline: none; display: grid; gap: 14px; max-width: 760px; }
+.mission-add-panel:focus { box-shadow: 0 0 0 2px #f2a762; }
+.mission-add-panel h3 { margin: 0; font: 700 15px Arial, sans-serif; color: #e5efed; }
+.mission-identity { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.mission-identity .mission-help { grid-column: 1 / -1; margin: 0; }
+.mission-identity label, .mission-fieldset label { display: grid; gap: 6px; color: #b9c8c4; font: 700 11px Arial, sans-serif; letter-spacing: .04em; }
+.mission-fieldset { border: 1px solid #3c4d50; padding: 14px 16px; display: grid; gap: 8px; margin: 0; }
+.mission-fieldset legend { padding: 0 6px; color: #e5efed; font: 700 12px Arial, sans-serif; }
+.mission-fieldset legend small { color: #9cadaa; font-weight: 400; margin-left: 6px; }
+.mission-fieldset .mission-help { margin: 4px 0 0; }
+.mission-add-panel input, .mission-add-panel select { min-height: 42px; background: #101b20; color: #e5efed; border: 1px solid #567071; padding: 8px 10px; font: 14px Arial, sans-serif; width: 100%; max-width: 360px; }
+.mission-add-panel input:focus-visible, .mission-add-panel select:focus-visible { outline: 2px solid #f2a762; outline-offset: 1px; }
+/* Overview "What it checks": ruled rows beside a narrow credit column, distinct from the workflow cards. */
+.mission-overview-features { margin-top: 55px; }
+.mission-checks-layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); gap: 40px; align-items: start; margin-top: 8px; }
+.mission-check-list { margin: 0; padding: 0; list-style: none; }
+.mission-check-list li { display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: 24px; padding: 22px 0; border-bottom: 1px dashed #355056; }
+.mission-check-list li>span { padding-top: 5px; color: #f2a762; font: 800 10px Arial, sans-serif; letter-spacing: .16em; }
+.mission-check-list h3 { margin: 0 0 6px; font-size: 18px; font-weight: 800; }
+.mission-check-list p { margin: 0; max-width: 560px; color: #a7bab6; font: 13px/1.7 Arial, sans-serif; }
+.mission-credit-panel { margin-top: 22px; padding: 24px; border-left: 3px solid #f2a762; background: #16282c; }
+.mission-credit-panel h3 { margin: 0 0 10px; font-size: 17px; font-weight: 800; }
+.mission-credit-panel>p { margin: 0 0 22px; color: #a7bab6; font: 12px/1.7 Arial, sans-serif; }
+.mission-credit-scale { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.mission-credit-scale li { display: grid; grid-template-columns: minmax(0, 1fr) 46px; grid-template-areas: "label value" "bar bar"; gap: 6px 12px; align-items: end; }
+.mission-credit-label { grid-area: label; display: grid; color: #e5efed; font: 700 13px Arial, sans-serif; }
+.mission-credit-label small { color: #9cadaa; font: 11px Arial, sans-serif; }
+.mission-credit-bar { grid-area: bar; height: 7px; border: 1px solid #355056; background: #101b20; }
+.mission-credit-bar i { display: block; height: 100%; background: #f2a762; }
+.mission-credit-range i { width: 50%; background: repeating-linear-gradient(90deg, #f2a76299 0 6px, transparent 6px 12px); }
+.mission-credit-scale strong { grid-area: value; color: #f2a762; font: 800 13px Arial, sans-serif; text-align: right; }
+@media (max-width: 1100px) { .mission-checks-layout { grid-template-columns: 1fr; gap: 10px; } }
+@media (max-width: 560px) { .mission-check-list li { grid-template-columns: 1fr; gap: 8px; } .mission-check-list li>span { padding-top: 0; } }
+/* Confidence beside the match estimate: more unknown weight, lower confidence. */
+.mission-confidence { display: block; margin-top: 4px; font: 700 10px Arial, sans-serif; letter-spacing: .04em; }
+.mission-confidence-very_high { color: #8fd4a6; }
+.mission-confidence-high { color: #b7d98f; }
+.mission-confidence-medium { color: #f2c86b; }
+.mission-confidence-low { color: #e99a7a; }

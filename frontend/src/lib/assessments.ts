@@ -1,22 +1,25 @@
 /** Temporary assessment contracts. The backend owns interpretation and scoring. */
 import { apiBaseUrl, type JobDetail, type RequirementCategory } from "./catalog.ts";
 import { splitResume } from "./candidates.ts";
+import { isEstimate, type Confidence } from "./estimate.ts";
 import { ResumeError, validateResumeFile, type ResumeLimits } from "./resumes.ts";
 
 type FactKind = "skill" | "experience" | "qualification" | "project";
-export type JudgmentStatus = "met" | "partial" | "not_met" | "unknown";
+export type JudgmentStatus = "met" | "transferable" | "partial" | "not_met" | "unknown";
 export interface Citation { page_number: number; quote: string; start: number; end: number }
+export interface VerifiedText { value: string; page_number: number; start: number; end: number }
+export interface CandidateIdentity { name: VerifiedText | null; current_title: VerifiedText | null }
 export interface Fact { kind: FactKind; value: string; evidence: Citation[] }
 export interface Judgment { requirement_id: string; status: JudgmentStatus; fact_indices: number[]; reason: string }
 export interface CategoryScore { category: RequirementCategory; requirement_count: number; resolved_count: number; unknown_count: number; effective_weight: number; lower: number; upper: number }
 export interface Assessment {
   structured: {
     source: { kind: "uploaded_pdf" | "synthetic_demo"; candidate_id: string | null; pages: { page_number: number; text: string }[] };
-    mode: "mock" | "bedrock"; model_id: string | null; facts: Fact[];
+    mode: "mock" | "bedrock"; model_id: string | null; facts: Fact[]; identity: CandidateIdentity | null;
     unknown_categories: FactKind[]; offset_unit: "unicode_code_point"; notice: string;
   };
   judgments: Judgment[];
-  scoring: { score: number | null; lower: number | null; upper: number | null; resolved_count: number; unknown_count: number; mandatory_met: number; mandatory_total: number; categories: CategoryScore[] };
+  scoring: { score: number | null; lower: number | null; upper: number | null; estimate: number | null; confidence: Confidence | null; resolved_count: number; unknown_count: number; mandatory_met: number; mandatory_total: number; categories: CategoryScore[] };
   notice: string;
 }
 
@@ -48,7 +51,7 @@ const integer = (value: unknown, min: number, max: number): value is number => N
 const percent = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100;
 const kinds: FactKind[] = ["skill", "experience", "qualification", "project"];
 const categories: RequirementCategory[] = ["mandatory", "experience", "preferred", "qualification"];
-const statuses: JudgmentStatus[] = ["met", "partial", "not_met", "unknown"];
+const statuses: JudgmentStatus[] = ["met", "transferable", "partial", "not_met", "unknown"];
 const pdfErrors = new Set(["unsupported_media_type", "invalid_pdf_signature", "empty_upload", "payload_too_large", "encrypted_pdf", "invalid_pdf", "empty_pdf", "no_extractable_text", "too_many_pages", "too_much_text", "pdf_complexity_limit", "extraction_timeout", "upload_timeout", "resume_busy"]);
 const fail = (): never => { throw new AssessmentError(); };
 
@@ -77,6 +80,12 @@ export function decodeAssessment(value: unknown, job: JobDetail, kind: "uploaded
       structured.unknown_categories.some((item: unknown) => !kinds.includes(item as FactKind)) ||
       new Set(structured.unknown_categories).size !== structured.unknown_categories.length) return fail();
   const pages = structured.source.pages as { page_number: number; text: string }[];
+  // Identity is a display aid: each value must be the exact source text at its offsets.
+  const verifiedText = (item: unknown) => item === null || (object(item) && text(item.value) && integer(item.page_number, 1, pages.length) &&
+    integer(item.start, 0, 200_000) && integer(item.end, Number(item.start) + 1, 200_000) &&
+    splitResume(pages[Number(item.page_number) - 1].text, Number(item.start), Number(item.end)).excerpt === item.value);
+  const identity = structured.identity;
+  if (!(identity === null || (object(identity) && verifiedText(identity.name) && verifiedText(identity.current_title)))) return fail();
   const facts = structured.facts as unknown[];
   if (facts.some((fact: unknown) => {
     if (!object(fact) || !kinds.includes(fact.kind as FactKind) || !text(fact.value) || !Array.isArray(fact.evidence) || !integer(fact.evidence.length, 1, 3)) return true;
@@ -110,6 +119,7 @@ export function decodeAssessment(value: unknown, job: JobDetail, kind: "uploaded
           !percent(row.effective_weight) || !percent(row.lower) || !percent(row.upper) || row.lower > row.upper;
       }) || new Set(scoring.categories.map((row: CategoryScore) => row.category)).size !== scoring.categories.length) return fail();
   const activeWeight = (scoring.categories as CategoryScore[]).reduce((sum, row) => sum + row.effective_weight, 0);
+  if (!isEstimate(scoring.estimate, scoring.confidence, scoring.lower, scoring.upper)) return fail();
   if (ids.size === 0 || activeWeight === 0) {
     if (scoring.score !== null || scoring.lower !== null || scoring.upper !== null) return fail();
   } else if (!percent(scoring.lower) || !percent(scoring.upper) || scoring.lower > scoring.upper ||

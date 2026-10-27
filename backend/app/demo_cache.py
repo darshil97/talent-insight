@@ -2,23 +2,39 @@
 
 import hashlib
 import json
+from functools import cache
 from importlib.resources import files
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 from app.config import Settings
-from app.extraction_contracts import ExtractionJob, ExtractionSource
-from app.matching import Assessment
+from app.pipeline.contracts import Assessment, ExtractionJob, ExtractionSource
 
 CACHE_PATH = Path(__file__).with_name("fixtures") / "assessments.json"
-LOGIC_FILES = (
-    "extraction.py",
-    "extraction_contracts.py",
-    "matching.py",
-    "bedrock_worker.py",
-    "refresh_demo.py",
-)
+# Any change to pipeline code, provider adapters or prompt text invalidates every snapshot.
+LOGIC_DIRECTORIES = ("pipeline", "llm", "prompts")
+LOGIC_FILES = ("refresh_demo.py",)
+
+
+@cache
+def _code_hashes() -> tuple[tuple[str, str], ...]:
+    """Hash packaged logic once per process; every candidate read reuses the result."""
+    app_files = files("app")
+    found = {name: app_files.joinpath(name).read_bytes() for name in LOGIC_FILES}
+    pending = [(directory, app_files.joinpath(directory)) for directory in LOGIC_DIRECTORIES]
+    while pending:
+        prefix, folder = pending.pop()
+        for item in folder.iterdir():
+            name = f"{prefix}/{item.name}"
+            if item.is_dir():
+                if item.name != "__pycache__":
+                    pending.append((name, item))
+            elif item.name.endswith((".py", ".md")):
+                found[name] = item.read_bytes()
+    return tuple(
+        sorted((name, hashlib.sha256(content).hexdigest()) for name, content in found.items())
+    )
 
 
 class CacheEntry(BaseModel):
@@ -39,12 +55,8 @@ class CacheDocument(BaseModel):
 
 
 def fingerprint(job: ExtractionJob, source: ExtractionSource, settings: Settings) -> str:
-    """Invalidate snapshots when source, criteria, weights or pipeline code changes."""
-    app_files = files("app")
-    code_hashes = {
-        name: hashlib.sha256(app_files.joinpath(name).read_bytes()).hexdigest()
-        for name in LOGIC_FILES
-    }
+    """Invalidate snapshots when source, criteria, weights, credits or pipeline code changes."""
+    code_hashes = dict(_code_hashes())
     payload = {
         "job": job.model_dump(mode="json"),
         "source": source.model_dump(mode="json"),
@@ -54,6 +66,7 @@ def fingerprint(job: ExtractionJob, source: ExtractionSource, settings: Settings
             settings.match_weight_preferred,
             settings.match_weight_qualification,
         ],
+        "credits": [settings.match_credit_transferable, settings.match_credit_partial],
         "code": code_hashes,
     }
     encoded = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode()

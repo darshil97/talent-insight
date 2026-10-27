@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import hashlib
 import json
+import logging
 import os
 import tempfile
 from pathlib import Path
@@ -11,6 +12,8 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 from app.config import Settings, load_settings
+from app.core.logging import configure_logging
+from app.core.request_context import reset_request_id, set_request_id
 from app.demo_cache import (
     CACHE_PATH,
     CacheDocument,
@@ -20,17 +23,19 @@ from app.demo_cache import (
     load_cache,
     valid_assessment,
 )
-from app.extraction import structure_resume
-from app.extraction_contracts import (
+from app.pipeline.assessment import assess_resume
+from app.pipeline.contracts import (
+    Assessment,
     ExtractionFailure,
     ExtractionJob,
     ExtractionSource,
     StructuredResume,
-    verify_facts,
 )
-from app.matching import assess_resume
-from app.resumes import ResumePage
+from app.pipeline.evidence import reverify
+from app.pipeline.extraction import structure_resume
 from app.seed import CatalogSeed, load_seed
+
+logger = logging.getLogger("app.refresh_demo")
 
 
 class RefreshFailure(Exception):
@@ -91,26 +96,7 @@ def valid_extraction(
         or structured.model_id != settings.bedrock_model_id
     ):
         return None
-    try:
-        verified = verify_facts(
-            {
-                "facts": [
-                    {
-                        "kind": fact.kind,
-                        "value": fact.value,
-                        "evidence": [
-                            {"page_number": item.page_number, "quote": item.quote}
-                            for item in fact.evidence
-                        ],
-                    }
-                    for fact in structured.facts
-                ]
-            },
-            source,
-        )
-    except ExtractionFailure:
-        return None
-    return structured if verified == structured.facts else None
+    return structured if reverify(structured) else None
 
 
 async def build_cache(
@@ -141,36 +127,19 @@ async def build_cache(
                 for index, row in enumerate(job_row.requirements)
             ],
         )
-        source = ExtractionSource(
-            kind="synthetic_demo",
-            candidate_id=candidate.id,
-            pages=[ResumePage(page_number=1, text=candidate.resume_text)],
-        )
+        source = ExtractionSource.synthetic(candidate.id, candidate.resume_text)
         assessment = valid_assessment(recovered, job, source, settings)
         fresh = assessment is None
-        if fresh:
-            structured = valid_extraction(extracted, job, source, settings)
-            if structured is None:
-                try:
-                    structured = await structure_resume(job, source, settings)
-                except ExtractionFailure as exc:
-                    raise RefreshFailure(job.id, candidate.id, "extraction", exc.code) from None
-                if extraction_progress_path is not None:
-                    extracted[(job.id, candidate.id)] = ExtractionCheckpoint(
-                        job_id=job.id,
-                        candidate_id=candidate.id,
-                        fingerprint=fingerprint(job, source, settings),
-                        digest=hashlib.sha256(structured.model_dump_json().encode()).hexdigest(),
-                        structured=structured,
-                    )
-                    write_extraction_progress(
-                        ExtractionProgress(version=1, entries=list(extracted.values())),
-                        extraction_progress_path,
-                    )
-            try:
-                assessment = await assess_resume(structured, settings)
-            except ExtractionFailure as exc:
-                raise RefreshFailure(job.id, candidate.id, "interpretation", exc.code) from None
+        token = set_request_id(f"refresh-{job.id}-{candidate.id}")
+        try:
+            if fresh:
+                assessment = await _refresh_one(
+                    job, source, settings, extracted, extraction_progress_path
+                )
+            else:
+                logger.info("Reusing validated assessment checkpoint")
+        finally:
+            reset_request_id(token)
         entries.append(
             CacheEntry(
                 job_id=job.id,
@@ -183,6 +152,40 @@ async def build_cache(
         if progress_path is not None and fresh:
             write_cache(CacheDocument(version=1, entries=entries), progress_path)
     return CacheDocument(version=1, entries=entries)
+
+
+async def _refresh_one(
+    job: ExtractionJob,
+    source: ExtractionSource,
+    settings: Settings,
+    extracted: dict[tuple[str, str], ExtractionCheckpoint],
+    extraction_progress_path: Path | None,
+) -> Assessment:
+    candidate_id = source.candidate_id or ""
+    structured = valid_extraction(extracted, job, source, settings)
+    if structured is None:
+        try:
+            structured = await structure_resume(job, source, settings)
+        except ExtractionFailure as exc:
+            raise RefreshFailure(job.id, candidate_id, "extraction", exc.code) from None
+        if extraction_progress_path is not None:
+            extracted[(job.id, candidate_id)] = ExtractionCheckpoint(
+                job_id=job.id,
+                candidate_id=candidate_id,
+                fingerprint=fingerprint(job, source, settings),
+                digest=hashlib.sha256(structured.model_dump_json().encode()).hexdigest(),
+                structured=structured,
+            )
+            write_extraction_progress(
+                ExtractionProgress(version=1, entries=list(extracted.values())),
+                extraction_progress_path,
+            )
+    else:
+        logger.info("Reusing validated extraction checkpoint")
+    try:
+        return await assess_resume(structured, settings)
+    except ExtractionFailure as exc:
+        raise RefreshFailure(job.id, candidate_id, "interpretation", exc.code) from None
 
 
 def _write_document(document: BaseModel, path: Path) -> None:
@@ -232,6 +235,7 @@ def main() -> None:
         )
         return
     settings = load_settings()
+    configure_logging(settings.log_level)
     if settings.ai_mode != "bedrock":
         raise SystemExit("Set AI_MODE=bedrock to produce meaningful demo snapshots.")
     try:

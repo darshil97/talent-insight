@@ -7,13 +7,18 @@ Modules 5 and 6 are approved. Module 7 added a read-only candidate pool and prof
 | FastAPI route | Response |
 | --- | --- |
 | `GET /jobs/{job_id}/candidates` | `{"job": JobSummary, "candidates": CandidateTableSummary[]}` |
-| `GET /jobs/{job_id}/candidates/{candidate_id}` | `{"job": JobSummary, "candidate": CandidateDetail, "assessment": Assessment or null}` |
+| `GET /jobs/{job_id}/candidates/{candidate_id}` | `{"job": JobSummary, "candidate": CandidateDetail, "availability": Availability, "assessment": Assessment or null}` |
+| `POST /availability` | Body `{"availability": AvailabilityInput, "match_score": number or null}` → `{"availability": Availability, "ranking_score": number or null}`; stateless, no-store, never logged |
 
 Both IDs use the existing stable `demo_...` syntax (at most 64 characters). The backend first verifies the job exists. It lists candidates or loads a profile through actual `job_candidates` membership, never by interpreting an ID prefix. A missing job or a candidate outside that job returns a safe 404; invalid ID syntax returns 422. An existing job with no members returns an empty pool. Database failures return sanitized 503 responses.
 
 The routes reuse the module 6 read-only session and five-second SQL statement timeout. Responses and errors are `no-store`. Only GET routes were added. Startup/health still do not query, seed or migrate. No database schema or configuration changes were needed.
 
 `CandidateSummary` contains `id`, `display_name`, `headline`, `summary` and `is_demo: true`. The job-scoped list adds `stated_experience`, taken only from a validated source experience claim or `null`; it is a source claim, not verified years of relevant experience. The list also returns `snapshot_available`, `match_score`, `score_lower` and `score_upper` from the current snapshot. Detail adds `resume_text`, `claims` and `offset_unit: "unicode_code_point"`. Claims contain `kind` (`skill`, `experience`, `qualification`), `label`, `quote`, `start` and `end`. Internal scenario labels remain private fixture metadata.
+
+### Availability and ranking
+
+Each demo candidate may carry self-reported availability in `candidates.json` (`availability: {status, last_working_day | notice_days}` or `null`), stored in the `demo_candidates` columns. `app/ranking.py` turns it into `days_to_join` (0 when available now, days until the last working day, or the notice length) and a small bonus from `ranking.availability_tiers` (default ≤15 days +5, ≤30 +4, ≤45 +3, ≤60 +2, ≤90 +1, otherwise 0). Not provided is `null` days and bonus 0: no deduction. Pool rows return `match_estimate`, `confidence`, `availability` and `ranking_score` = match estimate + bonus (`null` only when no assessment exists); every candidate with an assessment is ranked by it, with ties by name. The match score, range and AI snapshot never include availability, so editing notice details needs no refresh. Demo last working days are fixed dates; once one passes, that candidate counts as available now.
 
 ## Source evidence
 

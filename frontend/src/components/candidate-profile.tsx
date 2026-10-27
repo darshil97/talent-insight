@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useState } from "react";
 import { CatalogLoading, CatalogUnavailable, useCatalog } from "@/components/catalog-resource";
 import { CandidateNotFound } from "@/components/candidate-not-found";
+import { availabilityLabel } from "@/lib/availability";
 import { decodeCandidateProfile, splitResume, type EvidenceClaim } from "@/lib/candidates";
 import { DemoAssessment } from "@/components/demo-assessment";
 
@@ -44,7 +45,7 @@ export function CandidateProfileView({ jobId, candidateId }: { jobId: string; ca
   const [selected, setSelected] = useState<EvidenceClaim | null>(null);
   if (resource.status === "loading") return <CatalogLoading label="Loading the candidate profile…" />;
   if (resource.status === "error") return resource.notFound ? <CandidateNotFound jobId={jobId} /> : <CatalogUnavailable retry={retry} subject="candidate profile" />;
-  const { job, candidate } = resource.data;
+  const { job, candidate, availability } = resource.data;
   const highlighted = selected ? splitResume(candidate.resume_text, selected.start, selected.end) : null;
 
   return (
@@ -54,6 +55,7 @@ export function CandidateProfileView({ jobId, candidateId }: { jobId: string; ca
         <span className="inline-block rounded-full border border-[#becbad] px-3 py-1 text-xs font-medium text-[#466344]">Synthetic demo candidate</span>
         <h2 id="candidate-heading" className="mt-5 text-2xl font-semibold sm:text-3xl">{candidate.display_name}</h2>
         <p className="mt-2 text-base text-[#475a49]">{candidate.headline}</p>
+        <p className="mt-3 text-sm text-[#475a49]"><span className="font-semibold">Availability:</span> {availabilityLabel(availability)}{availability.status === "serving_notice" && availability.last_working_day ? ` (last working day ${availability.last_working_day})` : ""} · self-reported, used only as a small ranking bonus</p>
         <p className="mt-5 text-xs font-semibold text-[#59665d]">Authored demo summary</p>
         <p className="mt-2 text-sm leading-7 text-[#475a49]">{candidate.summary}</p>
         <p className="mt-5 text-sm text-[#475a49]">Reviewing for <Link href={`/jobs/${jobId}`} className="rounded-sm font-semibold underline underline-offset-4">{job.title}</Link> · {job.client}</p>

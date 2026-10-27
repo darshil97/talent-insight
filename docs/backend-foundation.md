@@ -10,6 +10,7 @@ The backend uses [Pydantic Settings](https://docs.pydantic.dev/latest/concepts/p
 | --- | --- | --- |
 | `DOCS_ENABLED` | Boolean controlling API docs/schema visibility | `true` |
 | `CORS_ALLOWED_ORIGINS` | JSON array of exact HTTP(S) browser origins | `[]` |
+| `LOG_LEVEL` | `DEBUG`, `INFO`, `WARNING` or `ERROR` for the `app` logger | `INFO` |
 | `DATABASE_URL` | Secret PostgreSQL runtime URL for `talent-insight` | unset |
 | `DIRECT_DATABASE_URL` | Secret direct URL for the same database, used by migrations | unset |
 
@@ -50,6 +51,19 @@ Invalid request data returns HTTP 422 with `validation_error` and `Request valid
 A small ASGI error boundary catches pre-response failures inside CORS, logs only the exception class, and returns the safe envelope. This avoids the ordinary unhandled-error rethrow exposing the original message through a server traceback. After response headers have been sent, HTTP status/body cannot be replaced; the boundary logs the class and raises a sanitized error to terminate the incomplete response. Provider streaming/session adapters must handle their own completion and recovery when implemented. Lifespan/startup failures are not converted to successful HTTP responses.
 
 The documented Uvicorn commands disable access logs, which would otherwise record request URLs. There is no request body, transcript, settings-value or exception-message logging. A future centralized logging/instrumentation setup must preserve these boundaries.
+
+### Request IDs and application logs
+
+`app/core/request_context.py` adds a pure-ASGI middleware between CORS and the error boundary. It accepts a caller's `X-Request-ID` only when it is 1–64 characters of `A–Z a–z 0–9 . _ -`; otherwise it generates a 32-character hex ID. The ID is stored in a context variable for the request, returned in the `X-Request-ID` response header on every response (including 404, 422 and sanitized 500 responses) and exposed to allowed browser origins through `Access-Control-Expose-Headers`.
+
+`app/core/logging.py` configures only the `app` logger, at `LOG_LEVEL`, with the format `time | request_id | level | logger | message`. Uvicorn and SDK loggers keep their own configuration. Each request ends with one line containing the method, the **route template** (for example `/jobs/{job_id}/resumes/assess`, never the raw URL or query), status and duration; `/health` logs at DEBUG. The main points also log identifiers, counts and codes only:
+
+- PDF parsing: page and character counts and duration, or the failure code; busy rejections.
+- AI admission rejections (`ai_busy`, `ai_rate_limited`) and every `ExtractionFailure` code with its HTTP status.
+- Each model attempt: stage, provider, model, attempt number, stop reason, input/output tokens and duration, or the failure code and exception class.
+- Validation outcomes: facts kept/returned with discard counts by reason, requirements forced to unknown, retries and their reason, and whether a point score is available.
+
+Resume text, prompts, model output, names, credentials and exception messages are never logged. The manual demo refresh binds `refresh-<job>-<candidate>` as its request ID so batch logs are traceable per synthetic membership.
 
 ## Verification and scope
 

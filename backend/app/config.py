@@ -27,6 +27,7 @@ _placeholder = re.compile(r"\$\{([A-Z][A-Z0-9_]*)(?::-([^}]*))?\}")
 _yaml_fields = {
     "api.docs_enabled": "docs_enabled",
     "api.cors_allowed_origins": "cors_allowed_origins",
+    "api.log_level": "log_level",
     "database.url": "database_url",
     "database.direct_url": "direct_database_url",
     "resumes.max_bytes": "resume_max_bytes",
@@ -36,6 +37,7 @@ _yaml_fields = {
     "resumes.upload_timeout_seconds": "resume_upload_timeout_seconds",
     "resumes.max_concurrent": "resume_max_concurrent",
     "ai.mode": "ai_mode",
+    "ai.temperature": "ai_temperature",
     "ai.max_input_characters": "ai_max_input_characters",
     "ai.max_output_tokens": "ai_max_output_tokens",
     "ai.timeout_seconds": "ai_timeout_seconds",
@@ -50,10 +52,14 @@ _yaml_fields = {
     "ai.bedrock.secret_access_key": "aws_secret_access_key",
     "ai.bedrock.session_token": "aws_session_token",
     "ai.bedrock.structured_method": "bedrock_structured_method",
+    "ai.bedrock.reasoning_effort": "bedrock_reasoning_effort",
     "matching.weights.mandatory": "match_weight_mandatory",
     "matching.weights.experience": "match_weight_experience",
     "matching.weights.preferred": "match_weight_preferred",
     "matching.weights.qualification": "match_weight_qualification",
+    "matching.credits.transferable": "match_credit_transferable",
+    "matching.credits.partial": "match_credit_partial",
+    "ranking.availability_tiers": "ranking_availability_tiers",
 }
 
 
@@ -147,7 +153,12 @@ class Settings(BaseSettings):
     resume_max_concurrent: int = Field(
         default=2, ge=1, le=4, validation_alias="RESUME_MAX_CONCURRENT"
     )
-    ai_mode: Literal["mock", "bedrock"] | None = Field(default=None, validation_alias="AI_MODE")
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = Field(
+        default="INFO", validation_alias="LOG_LEVEL"
+    )
+    # "mock" or a registered LLM provider name; see app/llm/providers.
+    ai_mode: str | None = Field(default=None, validation_alias="AI_MODE")
+    ai_temperature: float = Field(default=0, ge=0, le=1, validation_alias="AI_TEMPERATURE")
     aws_region: str | None = Field(
         default=None, pattern=r"^[a-z]{2}(?:-[a-z]+)+-\d$", validation_alias="AWS_REGION"
     )
@@ -171,6 +182,9 @@ class Settings(BaseSettings):
     aws_session_token: SecretStr | None = Field(default=None, validation_alias="AWS_SESSION_TOKEN")
     bedrock_structured_method: Literal["json_schema", "function_calling"] = Field(
         default="json_schema", validation_alias="BEDROCK_STRUCTURED_METHOD"
+    )
+    bedrock_reasoning_effort: Literal["low", "medium", "high"] | None = Field(
+        default=None, validation_alias="BEDROCK_REASONING_EFFORT"
     )
     ai_max_input_characters: int = Field(
         default=20_000, ge=100, le=50_000, validation_alias="AI_MAX_INPUT_CHARACTERS"
@@ -198,6 +212,19 @@ class Settings(BaseSettings):
     match_weight_qualification: int = Field(
         default=10, ge=0, le=100, validation_alias="MATCH_WEIGHT_QUALIFICATION"
     )
+    # Requirement credit: met is 1 and not_met is 0; the middle levels are configurable.
+    match_credit_transferable: float = Field(
+        default=0.75, gt=0, lt=1, validation_alias="MATCH_CREDIT_TRANSFERABLE"
+    )
+    match_credit_partial: float = Field(
+        default=0.5, gt=0, lt=1, validation_alias="MATCH_CREDIT_PARTIAL"
+    )
+    # (maximum days to join, ranking bonus) pairs; slower or unknown availability earns 0.
+    ranking_availability_tiers: tuple[tuple[int, int], ...] = Field(
+        default=((15, 5), (30, 4), (45, 3), (60, 2), (90, 1)),
+        max_length=10,
+        validation_alias="RANKING_AVAILABILITY_TIERS",
+    )
 
     @model_validator(mode="after")
     def scoring_weights_sum_to_100(self):
@@ -214,6 +241,26 @@ class Settings(BaseSettings):
         ):
             raise ValueError("Matching weights must sum to 100")
         return self
+
+    @model_validator(mode="after")
+    def credits_are_ordered(self):
+        if not self.match_credit_partial < self.match_credit_transferable:
+            raise ValueError("Partial credit must be below transferable credit")
+        return self
+
+    @field_validator("ranking_availability_tiers")
+    @classmethod
+    def tiers_are_ordered(cls, tiers: tuple[tuple[int, int], ...]) -> tuple[tuple[int, int], ...]:
+        days = [day for day, _ in tiers]
+        bonuses = [bonus for _, bonus in tiers]
+        if (
+            any(day < 0 or day > 365 for day in days)
+            or any(bonus < 0 or bonus > 10 for bonus in bonuses)
+            or days != sorted(set(days))
+            or bonuses != sorted(bonuses, reverse=True)
+        ):
+            raise ValueError("Availability tiers need ascending days and non-increasing bonuses")
+        return tiers
 
     @field_validator("cors_allowed_origins")
     @classmethod
@@ -237,6 +284,15 @@ class Settings(BaseSettings):
                 )
             normalized.append(str(url).removesuffix("/"))
         return tuple(dict.fromkeys(normalized))
+
+    @field_validator("ai_mode")
+    @classmethod
+    def registered_ai_mode(cls, value: str | None) -> str | None:
+        from app.llm.factory import ai_modes
+
+        if value is not None and value not in ai_modes():
+            raise ValueError("AI_MODE must be mock or a registered LLM provider")
+        return value
 
     @field_validator("bedrock_model_id")
     @classmethod
@@ -262,8 +318,8 @@ def load_settings() -> Settings:
     except (ValidationError, SettingsError, OSError, UnicodeError, ValueError, yaml.YAMLError):
         raise RuntimeError(
             "Invalid backend configuration. Check app/config.yaml, DOCS_ENABLED, "
-            "CORS_ALLOWED_ORIGINS, "
-            "database URLs, RESUME_*/AI_*/MATCH_WEIGHT_* settings, "
+            "CORS_ALLOWED_ORIGINS, LOG_LEVEL, "
+            "database URLs, RESUME_*/AI_*/MATCH_*/RANKING_* settings, "
             "AWS/Bedrock settings and backend/.env; "
             "remove legacy APP_ENV."
         ) from None

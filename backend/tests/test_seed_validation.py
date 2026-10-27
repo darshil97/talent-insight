@@ -160,3 +160,29 @@ def test_split_job_files_fail_validation_before_database_access(
         job_file.write_text(json.dumps(job))
     with pytest.raises(ValueError):
         load_seed(root)
+
+
+def test_fixture_availability_mixes_states_including_not_provided() -> None:
+    data = load_seed()
+    statuses = {row.availability.status if row.availability else None for row in data.candidates}
+    assert statuses == {None, "immediate", "serving_notice", "not_serving"}
+    for row in data.candidates:
+        columns = row.columns()
+        assert set(columns) >= {"notice_status", "last_working_day", "notice_days", "profile"}
+        assert "availability" not in columns and "claims" not in columns
+
+
+@pytest.mark.parametrize(
+    "availability",
+    [
+        {"status": "serving_notice"},
+        {"status": "not_serving", "notice_days": 400},
+        {"status": "immediate", "last_working_day": "2026-11-01"},
+        {"status": "unknown"},
+    ],
+)
+def test_inconsistent_fixture_availability_is_rejected(availability) -> None:
+    raw = load_seed().model_dump(mode="json")
+    raw["candidates"][0]["availability"] = availability
+    with pytest.raises(ValidationError):
+        CatalogSeed.model_validate(raw)

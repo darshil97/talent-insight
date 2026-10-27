@@ -8,7 +8,7 @@ import httpx
 import pytest
 from sqlalchemy.exc import OperationalError
 
-from app.api.jobs import catalog_session
+from app.api.deps import catalog_session
 from app.application import create_app
 from app.config import Settings
 from app.models import Job, JobRequirement
@@ -102,7 +102,7 @@ def test_transaction_is_read_only_bounded_closed_and_database_errors_are_safe(
     session.scalars.side_effect = OperationalError("SQL secret", {}, Exception("credential"))
     factory = MagicMock()
     factory.return_value.__enter__.return_value = session
-    monkeypatch.setattr("app.api.jobs.Session", factory)
+    monkeypatch.setattr("app.api.deps.Session", factory)
     response = api_request(app, "GET", "/jobs", headers={"Origin": "http://127.0.0.1:3000"})
     assert response.status_code == 503
     assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:3000"

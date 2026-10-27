@@ -1,25 +1,29 @@
 """Canonical catalog context, bounded temporary extraction, no scoring or persistence."""
 
-import time
-from contextlib import asynccontextmanager, contextmanager
+import logging
+from contextlib import contextmanager
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from starlette.responses import JSONResponse
 
 from app import catalog
-from app.api.jobs import JobDetail, JobId, catalog_session
+from app.api.admission import ai_slot
+from app.api.deps import JobId, catalog_session
+from app.api.jobs import JobDetail
 from app.api.resumes import extract_upload
 from app.errors import ErrorResponse, error_response
-from app.extraction import configured_provider, structure_resume
-from app.extraction_contracts import (
+from app.pipeline.assessment import assess_resume
+from app.pipeline.contracts import (
+    Assessment,
     ExtractionFailure,
     ExtractionJob,
     ExtractionSource,
     StructuredResume,
 )
-from app.matching import Assessment, assess_resume
+from app.pipeline.extraction import structure_resume
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["structured extraction"])
 ERRORS = {
     "ai_not_configured": (
@@ -73,6 +77,7 @@ ERRORS = {
 async def extraction_error_handler(_request: Request, exc: ExtractionFailure) -> JSONResponse:
     code = exc.code if exc.code in ERRORS else "ai_unavailable"
     status, message = ERRORS[code]
+    logger.warning("AI request failed with %s (HTTP %d)", code, status)
     result = error_response(status, code, message)
     if code in {"ai_busy", "provider_throttled", "ai_rate_limited"}:
         result.headers["Retry-After"] = "60" if code == "ai_rate_limited" else "5"
@@ -85,35 +90,11 @@ def load_context(request: Request, job_id: str) -> ExtractionJob:
         row = catalog.get_job(session, job_id)
         if row is None:
             raise HTTPException(404)
-        detail = JobDetail.model_validate(row)
-        job = ExtractionJob(
-            id=detail.id, title=detail.title, skills=detail.skills, requirements=detail.requirements
-        )
-        return job
+        return ExtractionJob.from_detail(JobDetail.model_validate(row))
 
 
 def job_context(request: Request, job_id: JobId) -> ExtractionJob:
     return load_context(request, job_id)
-
-
-@asynccontextmanager
-async def extraction_slot(request: Request):
-    settings = request.app.state.settings
-    configured_provider(settings)  # No call, fallback or quota charge when unconfigured.
-    if request.app.state.ai_active >= settings.ai_max_concurrent:
-        raise ExtractionFailure("ai_busy")
-    now = time.monotonic()
-    recent = request.app.state.ai_requests
-    while recent and recent[0] <= now - 60:
-        recent.popleft()
-    if len(recent) >= settings.ai_requests_per_minute:
-        raise ExtractionFailure("ai_rate_limited")
-    recent.append(now)
-    request.app.state.ai_active += 1
-    try:
-        yield
-    finally:
-        request.app.state.ai_active -= 1
 
 
 responses = {
@@ -135,7 +116,7 @@ responses = {
 async def structure_upload(
     request: Request, response: Response, job: Annotated[ExtractionJob, Depends(job_context)]
 ) -> StructuredResume | JSONResponse:
-    async with extraction_slot(request):
+    async with ai_slot(request):
         extracted = await extract_upload(request, response)
         if isinstance(extracted, JSONResponse):
             return extracted
@@ -159,7 +140,7 @@ async def structure_upload(
 async def assess_upload(
     request: Request, response: Response, job: Annotated[ExtractionJob, Depends(job_context)]
 ) -> Assessment | JSONResponse:
-    async with extraction_slot(request):
+    async with ai_slot(request):
         extracted = await extract_upload(request, response)
         if isinstance(extracted, JSONResponse):
             return extracted

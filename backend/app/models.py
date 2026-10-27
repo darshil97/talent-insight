@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    Date,
     ForeignKey,
     MetaData,
     Numeric,
@@ -87,6 +89,20 @@ class DemoCandidate(Base):
         CheckConstraint("is_demo = true", name="demo_only"),
         CheckConstraint("length(trim(resume_text)) > 0", name="resume_nonempty"),
         CheckConstraint("jsonb_typeof(profile) = 'object'", name="profile_object"),
+        CheckConstraint(
+            "notice_status IS NULL"
+            " OR notice_status IN ('immediate','serving_notice','not_serving')",
+            name="notice_status",
+        ),
+        CheckConstraint(
+            "(notice_status IS NULL AND last_working_day IS NULL AND notice_days IS NULL)"
+            " OR (notice_status = 'immediate' AND last_working_day IS NULL AND notice_days IS NULL)"
+            " OR (notice_status = 'serving_notice' AND last_working_day IS NOT NULL"
+            " AND notice_days IS NULL)"
+            " OR (notice_status = 'not_serving' AND last_working_day IS NULL"
+            " AND notice_days BETWEEN 0 AND 365)",
+            name="notice_fields",
+        ),
     )
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
@@ -96,6 +112,10 @@ class DemoCandidate(Base):
     resume_text: Mapped[str] = mapped_column(Text)
     profile: Mapped[dict[str, Any]] = mapped_column(JSONB)
     is_demo: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    # Optional self-reported availability; null means not provided, never a penalty.
+    notice_status: Mapped[str | None] = mapped_column(String(24))
+    last_working_day: Mapped[date | None] = mapped_column(Date)
+    notice_days: Mapped[int | None]
 
 
 class JobCandidate(Base):

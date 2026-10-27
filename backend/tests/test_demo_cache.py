@@ -6,9 +6,9 @@ import pytest
 
 from app.config import Settings
 from app.demo_cache import CacheEntry, assessment_digest, load_cache, valid_assessment
-from app.extraction import structure_resume as real_structure_resume
-from app.extraction_contracts import ExtractionFailure
-from app.matching import assess_resume as real_assess_resume
+from app.pipeline.assessment import assess_resume as real_assess_resume
+from app.pipeline.contracts import ExtractionFailure
+from app.pipeline.extraction import structure_resume as real_structure_resume
 from app.refresh_demo import (
     RefreshFailure,
     build_cache,

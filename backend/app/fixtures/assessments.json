@@ -2,1658 +2,10 @@
   "version": 1,
   "entries": [
     {
-      "job_id": "demo_ds",
-      "candidate_id": "demo_ds_avery",
-      "fingerprint": "15113aaa7550d3ed7f649c39de194eab08f8fe4a1cf5ad0220fc6c57561b8822",
-      "assessment_digest": "55541c74023fad1f81f17b82dcdbc0ce295d190418441be902e1a45cb198861b",
-      "assessment": {
-        "structured": {
-          "job": {
-            "id": "demo_ds",
-            "title": "Senior Data Scientist",
-            "skills": [
-              "Python",
-              "SQL",
-              "statistics",
-              "experimentation",
-              "causal inference",
-              "dbt"
-            ],
-            "requirements": [
-              {
-                "id": "demo_ds_python",
-                "category": "mandatory",
-                "description": "Build reproducible data analysis in Python.",
-                "minimum_years": null,
-                "sort_order": 0
-              },
-              {
-                "id": "demo_ds_sql",
-                "category": "mandatory",
-                "description": "Write SQL joins, aggregations and analytical queries.",
-                "minimum_years": null,
-                "sort_order": 1
-              },
-              {
-                "id": "demo_ds_experiments",
-                "category": "mandatory",
-                "description": "Design and interpret controlled experiments or causal studies with statistical uncertainty.",
-                "minimum_years": null,
-                "sort_order": 2
-              },
-              {
-                "id": "demo_ds_experience",
-                "category": "experience",
-                "description": "At least 5 years of relevant applied data science or quantitative analysis experience.",
-                "minimum_years": 5.0,
-                "sort_order": 3
-              },
-              {
-                "id": "demo_ds_dbt",
-                "category": "preferred",
-                "description": "Experience with dbt or reproducible warehouse transformations.",
-                "minimum_years": null,
-                "sort_order": 4
-              },
-              {
-                "id": "demo_ds_degree",
-                "category": "qualification",
-                "description": "A quantitative degree or equivalent documented applied study.",
-                "minimum_years": null,
-                "sort_order": 5
-              }
-            ]
-          },
-          "source": {
-            "kind": "synthetic_demo",
-            "candidate_id": "demo_ds_avery",
-            "pages": [
-              {
-                "page_number": 1,
-                "text": "SYNTHETIC DEMO RESUME\nAvery Chen\nSenior Product Data Scientist\nOwns product experiments and reproducible analyses with explicit uncertainty checks.\nWORK EXPERIENCE\n- 6 years of applied product data science in synthetic marketplace and subscription teams, with ownership of experiment readouts.\n- Used Python and SQL to build reproducible analyses and checked cohort definitions with analytics engineers.\n- Designed A/B tests, set guardrail metrics, and reported uncertainty intervals rather than treating directional changes as proof.\nSELECTED PROJECTS\n- Pricing change study combined randomized results with observational sensitivity checks for segments outside the rollout.\n- Warehouse measurement project used dbt models to document event definitions and missing-data checks.\nSKILLS\n- Python, SQL, statistics, experimentation, causal inference, dbt and stakeholder communication.\nEDUCATION AND TRAINING\n- BSc Statistics (synthetic demo qualification)."
-              }
-            ]
-          },
-          "mode": "bedrock",
-          "model_id": "openai.gpt-oss-120b-1:0",
-          "facts": [
-            {
-              "kind": "skill",
-              "value": "Python",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Used Python and SQL to build reproducible analyses and checked cohort definitions with analytics engineers.",
-                  "start": 294,
-                  "end": 403
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "SQL",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Used Python and SQL to build reproducible analyses and checked cohort definitions with analytics engineers.",
-                  "start": 294,
-                  "end": 403
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "statistics",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Python, SQL, statistics, experimentation, causal inference, dbt and stakeholder communication.",
-                  "start": 786,
-                  "end": 882
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "experimentation",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Python, SQL, statistics, experimentation, causal inference, dbt and stakeholder communication.",
-                  "start": 786,
-                  "end": 882
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "causal inference",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Python, SQL, statistics, experimentation, causal inference, dbt and stakeholder communication.",
-                  "start": 786,
-                  "end": 882
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "dbt",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Python, SQL, statistics, experimentation, causal inference, dbt and stakeholder communication.",
-                  "start": 786,
-                  "end": 882
-                }
-              ]
-            },
-            {
-              "kind": "experience",
-              "value": "6 years of applied product data science",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- 6 years of applied product data science in synthetic marketplace and subscription teams, with ownership of experiment readouts.",
-                  "start": 164,
-                  "end": 293
-                }
-              ]
-            },
-            {
-              "kind": "experience",
-              "value": "Designed A/B tests",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Designed A/B tests, set guardrail metrics, and reported uncertainty intervals rather than treating directional changes as proof.",
-                  "start": 404,
-                  "end": 534
-                }
-              ]
-            },
-            {
-              "kind": "project",
-              "value": "Pricing change study",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Pricing change study combined randomized results with observational sensitivity checks for segments outside the rollout.",
-                  "start": 553,
-                  "end": 675
-                }
-              ]
-            },
-            {
-              "kind": "project",
-              "value": "Warehouse measurement project",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Warehouse measurement project used dbt models to document event definitions and missing-data checks.",
-                  "start": 676,
-                  "end": 778
-                }
-              ]
-            },
-            {
-              "kind": "qualification",
-              "value": "BSc Statistics",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- BSc Statistics (synthetic demo qualification).",
-                  "start": 906,
-                  "end": 954
-                }
-              ]
-            },
-            {
-              "kind": "experience",
-              "value": "Owns product experiments",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "Owns product experiments and reproducible analyses with explicit uncertainty checks.",
-                  "start": 63,
-                  "end": 147
-                }
-              ]
-            }
-          ],
-          "unknown_categories": [],
-          "offset_unit": "unicode_code_point",
-          "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
-        },
-        "judgments": [
-          {
-            "requirement_id": "demo_ds_python",
-            "status": "met",
-            "fact_indices": [
-              0
-            ],
-            "reason": "Resume cites Python skill and building reproducible analyses with Python."
-          },
-          {
-            "requirement_id": "demo_ds_sql",
-            "status": "partial",
-            "fact_indices": [
-              1
-            ],
-            "reason": "SQL skill is listed but specific joins/aggregations not explicitly mentioned."
-          },
-          {
-            "requirement_id": "demo_ds_experiments",
-            "status": "met",
-            "fact_indices": [
-              7,
-              10
-            ],
-            "reason": "Designed A/B tests and explicitly owns product experiments with uncertainty checks, showing experiment design and interpretation."
-          },
-          {
-            "requirement_id": "demo_ds_experience",
-            "status": "met",
-            "fact_indices": [
-              6
-            ],
-            "reason": "Resume states 6 years of applied product data science experience, exceeding the 5‑year minimum."
-          },
-          {
-            "requirement_id": "demo_ds_dbt",
-            "status": "met",
-            "fact_indices": [
-              5,
-              9
-            ],
-            "reason": "dbt skill is listed and a warehouse project using dbt models is described."
-          },
-          {
-            "requirement_id": "demo_ds_degree",
-            "status": "met",
-            "fact_indices": [
-              11
-            ],
-            "reason": "BSc in Statistics provides a quantitative degree."
-          }
-        ],
-        "scoring": {
-          "score": 91.7,
-          "lower": 91.7,
-          "upper": 91.7,
-          "resolved_count": 6,
-          "unknown_count": 0,
-          "mandatory_met": 2,
-          "mandatory_total": 3,
-          "categories": [
-            {
-              "category": "mandatory",
-              "requirement_count": 3,
-              "resolved_count": 3,
-              "unknown_count": 0,
-              "effective_weight": 50.0,
-              "lower": 41.7,
-              "upper": 41.7
-            },
-            {
-              "category": "experience",
-              "requirement_count": 1,
-              "resolved_count": 1,
-              "unknown_count": 0,
-              "effective_weight": 25.0,
-              "lower": 25.0,
-              "upper": 25.0
-            },
-            {
-              "category": "preferred",
-              "requirement_count": 1,
-              "resolved_count": 1,
-              "unknown_count": 0,
-              "effective_weight": 15.0,
-              "lower": 15.0,
-              "upper": 15.0
-            },
-            {
-              "category": "qualification",
-              "requirement_count": 1,
-              "resolved_count": 1,
-              "unknown_count": 0,
-              "effective_weight": 10.0,
-              "lower": 10.0,
-              "upper": 10.0
-            }
-          ]
-        },
-        "notice": "AI interpretation requires human review. Evidence citations prove text location, not competence. The unvalidated rubric is not a hiring decision or performance probability."
-      }
-    },
-    {
-      "job_id": "demo_ds",
-      "candidate_id": "demo_ds_mina",
-      "fingerprint": "c6aa9dfb6452ff60a2e1d79620f32bef5866fcd15753f4d71e152d3233dbffc8",
-      "assessment_digest": "a4300a2792c09c7a0323c0e11a358e2ea5d2613b8cdcfd0a28a16d95da81693e",
-      "assessment": {
-        "structured": {
-          "job": {
-            "id": "demo_ds",
-            "title": "Senior Data Scientist",
-            "skills": [
-              "Python",
-              "SQL",
-              "statistics",
-              "experimentation",
-              "causal inference",
-              "dbt"
-            ],
-            "requirements": [
-              {
-                "id": "demo_ds_python",
-                "category": "mandatory",
-                "description": "Build reproducible data analysis in Python.",
-                "minimum_years": null,
-                "sort_order": 0
-              },
-              {
-                "id": "demo_ds_sql",
-                "category": "mandatory",
-                "description": "Write SQL joins, aggregations and analytical queries.",
-                "minimum_years": null,
-                "sort_order": 1
-              },
-              {
-                "id": "demo_ds_experiments",
-                "category": "mandatory",
-                "description": "Design and interpret controlled experiments or causal studies with statistical uncertainty.",
-                "minimum_years": null,
-                "sort_order": 2
-              },
-              {
-                "id": "demo_ds_experience",
-                "category": "experience",
-                "description": "At least 5 years of relevant applied data science or quantitative analysis experience.",
-                "minimum_years": 5.0,
-                "sort_order": 3
-              },
-              {
-                "id": "demo_ds_dbt",
-                "category": "preferred",
-                "description": "Experience with dbt or reproducible warehouse transformations.",
-                "minimum_years": null,
-                "sort_order": 4
-              },
-              {
-                "id": "demo_ds_degree",
-                "category": "qualification",
-                "description": "A quantitative degree or equivalent documented applied study.",
-                "minimum_years": null,
-                "sort_order": 5
-              }
-            ]
-          },
-          "source": {
-            "kind": "synthetic_demo",
-            "candidate_id": "demo_ds_mina",
-            "pages": [
-              {
-                "page_number": 1,
-                "text": "SYNTHETIC DEMO RESUME\nMina Patel\nOperations Analyst\nBrings operational analysis and reporting experience with limited experiment ownership.\nWORK EXPERIENCE\n- 5 years of operations analysis, including SQL reporting and process dashboards for a synthetic supply team.\n- Wrote Python reconciliation scripts for inventory records and documented manual validation checks.\n- Reviewed before-and-after process changes; randomized experiment design or causal identification is not documented.\nSELECTED PROJECTS\n- Inventory quality project compared warehouse and order records and documented unresolved mismatches.\n- Operations dashboard project defined weekly service measures and explained data gaps to managers.\nSKILLS\n- SQL, Python, spreadsheet analysis, dashboard review and process documentation.\nEDUCATION AND TRAINING\n- BCom Operations (synthetic demo qualification)."
-              }
-            ]
-          },
-          "mode": "bedrock",
-          "model_id": "openai.gpt-oss-120b-1:0",
-          "facts": [
-            {
-              "kind": "skill",
-              "value": "Python",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Wrote Python reconciliation scripts for inventory records and documented manual validation checks.",
-                  "start": 266,
-                  "end": 366
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "SQL",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- SQL, Python, spreadsheet analysis, dashboard review and process documentation.",
-                  "start": 713,
-                  "end": 793
-                }
-              ]
-            },
-            {
-              "kind": "experience",
-              "value": "5 years of operations analysis",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- 5 years of operations analysis, including SQL reporting and process dashboards for a synthetic supply team.",
-                  "start": 156,
-                  "end": 265
-                }
-              ]
-            },
-            {
-              "kind": "experience",
-              "value": "randomized experiment design",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Reviewed before-and-after process changes; randomized experiment design or causal identification is not documented.",
-                  "start": 367,
-                  "end": 484
-                }
-              ]
-            },
-            {
-              "kind": "qualification",
-              "value": "BCom Operations",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- BCom Operations (synthetic demo qualification).",
-                  "start": 817,
-                  "end": 866
-                }
-              ]
-            },
-            {
-              "kind": "project",
-              "value": "Inventory quality project",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Inventory quality project compared warehouse and order records and documented unresolved mismatches.",
-                  "start": 503,
-                  "end": 605
-                }
-              ]
-            }
-          ],
-          "unknown_categories": [],
-          "offset_unit": "unicode_code_point",
-          "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
-        },
-        "judgments": [
-          {
-            "requirement_id": "demo_ds_python",
-            "status": "partial",
-            "fact_indices": [
-              0
-            ],
-            "reason": "Python scripting experience shown but reproducibility not explicitly stated."
-          },
-          {
-            "requirement_id": "demo_ds_sql",
-            "status": "partial",
-            "fact_indices": [
-              1
-            ],
-            "reason": "SQL skill mentioned, but specific joins/aggregations not detailed."
-          },
-          {
-            "requirement_id": "demo_ds_experiments",
-            "status": "partial",
-            "fact_indices": [
-              3
-            ],
-            "reason": "Randomized experiment design mentioned but not documented as performed or interpreted."
-          },
-          {
-            "requirement_id": "demo_ds_experience",
-            "status": "met",
-            "fact_indices": [
-              2
-            ],
-            "reason": "Explicit 5 years of operations analysis experience."
-          },
-          {
-            "requirement_id": "demo_ds_dbt",
-            "status": "unknown",
-            "fact_indices": [],
-            "reason": "No evidence of dbt experience."
-          },
-          {
-            "requirement_id": "demo_ds_degree",
-            "status": "partial",
-            "fact_indices": [
-              4
-            ],
-            "reason": "Degree listed but not clearly quantitative."
-          }
-        ],
-        "scoring": {
-          "score": null,
-          "lower": 55.0,
-          "upper": 70.0,
-          "resolved_count": 5,
-          "unknown_count": 1,
-          "mandatory_met": 0,
-          "mandatory_total": 3,
-          "categories": [
-            {
-              "category": "mandatory",
-              "requirement_count": 3,
-              "resolved_count": 3,
-              "unknown_count": 0,
-              "effective_weight": 50.0,
-              "lower": 25.0,
-              "upper": 25.0
-            },
-            {
-              "category": "experience",
-              "requirement_count": 1,
-              "resolved_count": 1,
-              "unknown_count": 0,
-              "effective_weight": 25.0,
-              "lower": 25.0,
-              "upper": 25.0
-            },
-            {
-              "category": "preferred",
-              "requirement_count": 1,
-              "resolved_count": 0,
-              "unknown_count": 1,
-              "effective_weight": 15.0,
-              "lower": 0.0,
-              "upper": 15.0
-            },
-            {
-              "category": "qualification",
-              "requirement_count": 1,
-              "resolved_count": 1,
-              "unknown_count": 0,
-              "effective_weight": 10.0,
-              "lower": 5.0,
-              "upper": 5.0
-            }
-          ]
-        },
-        "notice": "AI interpretation requires human review. Evidence citations prove text location, not competence. The unvalidated rubric is not a hiring decision or performance probability."
-      }
-    },
-    {
-      "job_id": "demo_ds",
-      "candidate_id": "demo_ds_jordan",
-      "fingerprint": "69102605474aa577735d5dcd07a58b00e7d6f6538d0843f297e8d313f4611169",
-      "assessment_digest": "cb4d7adb630ac9cd73e3fe059dc9725ae46d90a30a85de351caa64a35069c7b8",
-      "assessment": {
-        "structured": {
-          "job": {
-            "id": "demo_ds",
-            "title": "Senior Data Scientist",
-            "skills": [
-              "Python",
-              "SQL",
-              "statistics",
-              "experimentation",
-              "causal inference",
-              "dbt"
-            ],
-            "requirements": [
-              {
-                "id": "demo_ds_python",
-                "category": "mandatory",
-                "description": "Build reproducible data analysis in Python.",
-                "minimum_years": null,
-                "sort_order": 0
-              },
-              {
-                "id": "demo_ds_sql",
-                "category": "mandatory",
-                "description": "Write SQL joins, aggregations and analytical queries.",
-                "minimum_years": null,
-                "sort_order": 1
-              },
-              {
-                "id": "demo_ds_experiments",
-                "category": "mandatory",
-                "description": "Design and interpret controlled experiments or causal studies with statistical uncertainty.",
-                "minimum_years": null,
-                "sort_order": 2
-              },
-              {
-                "id": "demo_ds_experience",
-                "category": "experience",
-                "description": "At least 5 years of relevant applied data science or quantitative analysis experience.",
-                "minimum_years": 5.0,
-                "sort_order": 3
-              },
-              {
-                "id": "demo_ds_dbt",
-                "category": "preferred",
-                "description": "Experience with dbt or reproducible warehouse transformations.",
-                "minimum_years": null,
-                "sort_order": 4
-              },
-              {
-                "id": "demo_ds_degree",
-                "category": "qualification",
-                "description": "A quantitative degree or equivalent documented applied study.",
-                "minimum_years": null,
-                "sort_order": 5
-              }
-            ]
-          },
-          "source": {
-            "kind": "synthetic_demo",
-            "candidate_id": "demo_ds_jordan",
-            "pages": [
-              {
-                "page_number": 1,
-                "text": "SYNTHETIC DEMO RESUME\nJordan Ellis\nAnalytics Team Contributor\nDescribes useful team analysis work without clear dates or individual ownership.\nWORK EXPERIENCE\n- Contributed SQL aggregations to a team dashboard for service trends; the specific query ownership is not stated.\n- Helped prepare descriptive charts, but the source does not identify an experiment design or causal study owned by Jordan.\nSELECTED PROJECTS\n- Support queue trend dashboard summarized weekly volumes and caveats about incomplete event tracking.\nSKILLS\n- SQL, descriptive reporting and chart review are mentioned without proficiency level.\nEDUCATION AND TRAINING\n- Education details and dates are not provided in this synthetic source."
-              }
-            ]
-          },
-          "mode": "bedrock",
-          "model_id": "openai.gpt-oss-120b-1:0",
-          "facts": [
-            {
-              "kind": "skill",
-              "value": "SQL aggregations",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Contributed SQL aggregations to a team dashboard for service trends; the specific query ownership is not stated.",
-                  "start": 159,
-                  "end": 273
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "SQL",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- SQL, descriptive reporting and chart review are mentioned without proficiency level.",
-                  "start": 526,
-                  "end": 612
-                }
-              ]
-            },
-            {
-              "kind": "project",
-              "value": "Support queue trend dashboard",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Support queue trend dashboard summarized weekly volumes and caveats about incomplete event tracking.",
-                  "start": 416,
-                  "end": 518
-                }
-              ]
-            }
-          ],
-          "unknown_categories": [
-            "experience",
-            "qualification"
-          ],
-          "offset_unit": "unicode_code_point",
-          "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
-        },
-        "judgments": [
-          {
-            "requirement_id": "demo_ds_python",
-            "status": "unknown",
-            "fact_indices": [],
-            "reason": "No evidence of Python usage or data analysis in Python is present in the resume."
-          },
-          {
-            "requirement_id": "demo_ds_sql",
-            "status": "partial",
-            "fact_indices": [
-              0,
-              1
-            ],
-            "reason": "Resume mentions SQL aggregations and general SQL skill, confirming some SQL capability but does not explicitly show joins or full analytical query experience."
-          },
-          {
-            "requirement_id": "demo_ds_experiments",
-            "status": "unknown",
-            "fact_indices": [],
-            "reason": "No mention of designing or interpreting experiments or causal studies."
-          },
-          {
-            "requirement_id": "demo_ds_experience",
-            "status": "unknown",
-            "fact_indices": [],
-            "reason": "Resume lacks dates or duration information to assess years of experience."
-          },
-          {
-            "requirement_id": "demo_ds_dbt",
-            "status": "unknown",
-            "fact_indices": [],
-            "reason": "No mention of dbt or related warehouse transformation tools."
-          },
-          {
-            "requirement_id": "demo_ds_degree",
-            "status": "unknown",
-            "fact_indices": [],
-            "reason": "Education details are not provided in the resume."
-          }
-        ],
-        "scoring": {
-          "score": null,
-          "lower": 8.3,
-          "upper": 91.7,
-          "resolved_count": 1,
-          "unknown_count": 5,
-          "mandatory_met": 0,
-          "mandatory_total": 3,
-          "categories": [
-            {
-              "category": "mandatory",
-              "requirement_count": 3,
-              "resolved_count": 1,
-              "unknown_count": 2,
-              "effective_weight": 50.0,
-              "lower": 8.3,
-              "upper": 41.7
-            },
-            {
-              "category": "experience",
-              "requirement_count": 1,
-              "resolved_count": 0,
-              "unknown_count": 1,
-              "effective_weight": 25.0,
-              "lower": 0.0,
-              "upper": 25.0
-            },
-            {
-              "category": "preferred",
-              "requirement_count": 1,
-              "resolved_count": 0,
-              "unknown_count": 1,
-              "effective_weight": 15.0,
-              "lower": 0.0,
-              "upper": 15.0
-            },
-            {
-              "category": "qualification",
-              "requirement_count": 1,
-              "resolved_count": 0,
-              "unknown_count": 1,
-              "effective_weight": 10.0,
-              "lower": 0.0,
-              "upper": 10.0
-            }
-          ]
-        },
-        "notice": "AI interpretation requires human review. Evidence citations prove text location, not competence. The unvalidated rubric is not a hiring decision or performance probability."
-      }
-    },
-    {
-      "job_id": "demo_backend",
-      "candidate_id": "demo_backend_priya",
-      "fingerprint": "4edfebfee03beb9931050b1ffd7127f92a22d3f6227c98089439737a745991da",
-      "assessment_digest": "5d9a4e7f8a8413dc783c03166408c3a7174fca76215727462a8d273e242122c7",
-      "assessment": {
-        "structured": {
-          "job": {
-            "id": "demo_backend",
-            "title": "Backend Engineer",
-            "skills": [
-              "Python",
-              "PostgreSQL",
-              "HTTP APIs",
-              "transactions",
-              "observability"
-            ],
-            "requirements": [
-              {
-                "id": "demo_backend_python",
-                "category": "mandatory",
-                "description": "Implement and test Python backend services.",
-                "minimum_years": null,
-                "sort_order": 0
-              },
-              {
-                "id": "demo_backend_postgres",
-                "category": "mandatory",
-                "description": "Design PostgreSQL queries, indexes and transaction boundaries.",
-                "minimum_years": null,
-                "sort_order": 1
-              },
-              {
-                "id": "demo_backend_api",
-                "category": "mandatory",
-                "description": "Design and test HTTP APIs with validation and explicit failure handling.",
-                "minimum_years": null,
-                "sort_order": 2
-              },
-              {
-                "id": "demo_backend_experience",
-                "category": "experience",
-                "description": "At least 3 years of backend engineering experience.",
-                "minimum_years": 3.0,
-                "sort_order": 3
-              },
-              {
-                "id": "demo_backend_observability",
-                "category": "preferred",
-                "description": "Use service observability to investigate operational failures.",
-                "minimum_years": null,
-                "sort_order": 4
-              },
-              {
-                "id": "demo_backend_degree",
-                "category": "qualification",
-                "description": "Computing qualification or equivalent documented engineering study.",
-                "minimum_years": null,
-                "sort_order": 5
-              }
-            ]
-          },
-          "source": {
-            "kind": "synthetic_demo",
-            "candidate_id": "demo_backend_priya",
-            "pages": [
-              {
-                "page_number": 1,
-                "text": "SYNTHETIC DEMO RESUME\nPriya Nair\nBackend Platform Engineer\nOwns tested Python services, PostgreSQL data paths and production diagnosis.\nWORK EXPERIENCE\n- 5 years of backend engineering on synthetic billing and account services.\n- Built Python HTTP APIs with schema validation, explicit error responses and contract tests.\n- Designed PostgreSQL indexes and transaction boundaries for account updates and reviewed lock contention.\nSELECTED PROJECTS\n- Account preference API project added idempotent writes and documented retry behavior for callers.\n- Service diagnosis project used logs and metrics to trace failed requests through dependent services.\nSKILLS\n- Python, PostgreSQL, HTTP APIs, automated tests, transactions and observability.\nEDUCATION AND TRAINING\n- BEng Computer Science (synthetic demo qualification)."
-              }
-            ]
-          },
-          "mode": "bedrock",
-          "model_id": "openai.gpt-oss-120b-1:0",
-          "facts": [
-            {
-              "kind": "skill",
-              "value": "Python",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Python, PostgreSQL, HTTP APIs, automated tests, transactions and observability.",
-                  "start": 657,
-                  "end": 738
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "PostgreSQL",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Python, PostgreSQL, HTTP APIs, automated tests, transactions and observability.",
-                  "start": 657,
-                  "end": 738
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "HTTP APIs",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Python, PostgreSQL, HTTP APIs, automated tests, transactions and observability.",
-                  "start": 657,
-                  "end": 738
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "transactions",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Python, PostgreSQL, HTTP APIs, automated tests, transactions and observability.",
-                  "start": 657,
-                  "end": 738
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "observability",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Python, PostgreSQL, HTTP APIs, automated tests, transactions and observability.",
-                  "start": 657,
-                  "end": 738
-                }
-              ]
-            },
-            {
-              "kind": "experience",
-              "value": "5 years of backend engineering on synthetic billing and account services.",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- 5 years of backend engineering on synthetic billing and account services.",
-                  "start": 152,
-                  "end": 227
-                }
-              ]
-            },
-            {
-              "kind": "experience",
-              "value": "Built Python HTTP APIs with schema validation, explicit error responses and contract tests.",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Built Python HTTP APIs with schema validation, explicit error responses and contract tests.",
-                  "start": 228,
-                  "end": 321
-                }
-              ]
-            },
-            {
-              "kind": "project",
-              "value": "Account preference API project added idempotent writes and documented retry behavior for callers.",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Account preference API project added idempotent writes and documented retry behavior for callers.",
-                  "start": 447,
-                  "end": 546
-                }
-              ]
-            },
-            {
-              "kind": "project",
-              "value": "Service diagnosis project used logs and metrics to trace failed requests through dependent services.",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Service diagnosis project used logs and metrics to trace failed requests through dependent services.",
-                  "start": 547,
-                  "end": 649
-                }
-              ]
-            },
-            {
-              "kind": "qualification",
-              "value": "BEng Computer Science (synthetic demo qualification).",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- BEng Computer Science (synthetic demo qualification).",
-                  "start": 762,
-                  "end": 817
-                }
-              ]
-            }
-          ],
-          "unknown_categories": [],
-          "offset_unit": "unicode_code_point",
-          "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
-        },
-        "judgments": [
-          {
-            "requirement_id": "demo_backend_python",
-            "status": "met",
-            "fact_indices": [
-              0,
-              6
-            ],
-            "reason": "Skill in Python and experience building and testing Python HTTP APIs with validation and contract tests."
-          },
-          {
-            "requirement_id": "demo_backend_postgres",
-            "status": "partial",
-            "fact_indices": [
-              1,
-              3
-            ],
-            "reason": "Skill in PostgreSQL and transactions indicates knowledge, but no explicit verified evidence of designing queries, indexes, or transaction boundaries."
-          },
-          {
-            "requirement_id": "demo_backend_api",
-            "status": "met",
-            "fact_indices": [
-              2,
-              6
-            ],
-            "reason": "Skill in HTTP APIs and experience building Python HTTP APIs with schema validation, explicit error responses, and contract tests."
-          },
-          {
-            "requirement_id": "demo_backend_experience",
-            "status": "met",
-            "fact_indices": [
-              5
-            ],
-            "reason": "Verified statement of 5 years of backend engineering experience exceeds the 3‑year minimum."
-          },
-          {
-            "requirement_id": "demo_backend_observability",
-            "status": "met",
-            "fact_indices": [
-              4,
-              8
-            ],
-            "reason": "Skill in observability and a project that used logs and metrics to trace failed requests."
-          },
-          {
-            "requirement_id": "demo_backend_degree",
-            "status": "met",
-            "fact_indices": [
-              9
-            ],
-            "reason": "Qualification listed as BEng Computer Science, a computing qualification."
-          }
-        ],
-        "scoring": {
-          "score": 91.7,
-          "lower": 91.7,
-          "upper": 91.7,
-          "resolved_count": 6,
-          "unknown_count": 0,
-          "mandatory_met": 2,
-          "mandatory_total": 3,
-          "categories": [
-            {
-              "category": "mandatory",
-              "requirement_count": 3,
-              "resolved_count": 3,
-              "unknown_count": 0,
-              "effective_weight": 50.0,
-              "lower": 41.7,
-              "upper": 41.7
-            },
-            {
-              "category": "experience",
-              "requirement_count": 1,
-              "resolved_count": 1,
-              "unknown_count": 0,
-              "effective_weight": 25.0,
-              "lower": 25.0,
-              "upper": 25.0
-            },
-            {
-              "category": "preferred",
-              "requirement_count": 1,
-              "resolved_count": 1,
-              "unknown_count": 0,
-              "effective_weight": 15.0,
-              "lower": 15.0,
-              "upper": 15.0
-            },
-            {
-              "category": "qualification",
-              "requirement_count": 1,
-              "resolved_count": 1,
-              "unknown_count": 0,
-              "effective_weight": 10.0,
-              "lower": 10.0,
-              "upper": 10.0
-            }
-          ]
-        },
-        "notice": "AI interpretation requires human review. Evidence citations prove text location, not competence. The unvalidated rubric is not a hiring decision or performance probability."
-      }
-    },
-    {
-      "job_id": "demo_backend",
-      "candidate_id": "demo_backend_theo",
-      "fingerprint": "119d44e08b971bc4d044a079361bd6d375308534286b8b46eafd2165dd429176",
-      "assessment_digest": "88982839bda917ffe72fb8b241a302916b62b2113b771d9f3a5e702345815ffd",
-      "assessment": {
-        "structured": {
-          "job": {
-            "id": "demo_backend",
-            "title": "Backend Engineer",
-            "skills": [
-              "Python",
-              "PostgreSQL",
-              "HTTP APIs",
-              "transactions",
-              "observability"
-            ],
-            "requirements": [
-              {
-                "id": "demo_backend_python",
-                "category": "mandatory",
-                "description": "Implement and test Python backend services.",
-                "minimum_years": null,
-                "sort_order": 0
-              },
-              {
-                "id": "demo_backend_postgres",
-                "category": "mandatory",
-                "description": "Design PostgreSQL queries, indexes and transaction boundaries.",
-                "minimum_years": null,
-                "sort_order": 1
-              },
-              {
-                "id": "demo_backend_api",
-                "category": "mandatory",
-                "description": "Design and test HTTP APIs with validation and explicit failure handling.",
-                "minimum_years": null,
-                "sort_order": 2
-              },
-              {
-                "id": "demo_backend_experience",
-                "category": "experience",
-                "description": "At least 3 years of backend engineering experience.",
-                "minimum_years": 3.0,
-                "sort_order": 3
-              },
-              {
-                "id": "demo_backend_observability",
-                "category": "preferred",
-                "description": "Use service observability to investigate operational failures.",
-                "minimum_years": null,
-                "sort_order": 4
-              },
-              {
-                "id": "demo_backend_degree",
-                "category": "qualification",
-                "description": "Computing qualification or equivalent documented engineering study.",
-                "minimum_years": null,
-                "sort_order": 5
-              }
-            ]
-          },
-          "source": {
-            "kind": "synthetic_demo",
-            "candidate_id": "demo_backend_theo",
-            "pages": [
-              {
-                "page_number": 1,
-                "text": "SYNTHETIC DEMO RESUME\nTheo Grant\nGo Backend Engineer\nBuilds small backend services; no data science project or experiment ownership is documented.\nWORK EXPERIENCE\n- 2 years of backend engineering focused on Go services and local persistence prototypes.\n- Implemented HTTP API request validation and integration tests for device event ingestion.\n- Used SQLite for a prototype; production PostgreSQL transactions are not documented.\nSELECTED PROJECTS\n- Device event ingestion project accepted batched messages and recorded malformed-request examples.\n- Service review project documented retry behavior and basic request logs.\nSKILLS\n- Go, HTTP APIs, SQLite, integration testing and service logs.\nEDUCATION AND TRAINING\n- BSc Software Engineering (synthetic demo qualification)."
-              }
-            ]
-          },
-          "mode": "bedrock",
-          "model_id": "openai.gpt-oss-120b-1:0",
-          "facts": [
-            {
-              "kind": "skill",
-              "value": "HTTP APIs",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Go, HTTP APIs, SQLite, integration testing and service logs.",
-                  "start": 631,
-                  "end": 693
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "production PostgreSQL transactions",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Used SQLite for a prototype; production PostgreSQL transactions are not documented.",
-                  "start": 345,
-                  "end": 430
-                }
-              ]
-            },
-            {
-              "kind": "experience",
-              "value": "2 years of backend engineering focused on Go services and local persistence prototypes.",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- 2 years of backend engineering focused on Go services and local persistence prototypes.",
-                  "start": 163,
-                  "end": 252
-                }
-              ]
-            },
-            {
-              "kind": "qualification",
-              "value": "BSc Software Engineering (synthetic demo qualification).",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- BSc Software Engineering (synthetic demo qualification).",
-                  "start": 717,
-                  "end": 775
-                }
-              ]
-            },
-            {
-              "kind": "project",
-              "value": "Device event ingestion project accepted batched messages and recorded malformed-request examples.",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Device event ingestion project accepted batched messages and recorded malformed-request examples.",
-                  "start": 449,
-                  "end": 548
-                }
-              ]
-            },
-            {
-              "kind": "project",
-              "value": "Service review project documented retry behavior and basic request logs.",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Service review project documented retry behavior and basic request logs.",
-                  "start": 549,
-                  "end": 623
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "service logs",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Go, HTTP APIs, SQLite, integration testing and service logs.",
-                  "start": 631,
-                  "end": 693
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "integration testing",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Go, HTTP APIs, SQLite, integration testing and service logs.",
-                  "start": 631,
-                  "end": 693
-                }
-              ]
-            }
-          ],
-          "unknown_categories": [],
-          "offset_unit": "unicode_code_point",
-          "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
-        },
-        "judgments": [
-          {
-            "requirement_id": "demo_backend_python",
-            "status": "unknown",
-            "fact_indices": [],
-            "reason": "Resume provides no evidence of Python backend implementation or testing."
-          },
-          {
-            "requirement_id": "demo_backend_postgres",
-            "status": "unknown",
-            "fact_indices": [],
-            "reason": "Resume does not contain evidence of designing PostgreSQL queries, indexes, or transaction boundaries."
-          },
-          {
-            "requirement_id": "demo_backend_api",
-            "status": "met",
-            "fact_indices": [
-              0
-            ],
-            "reason": "Resume states implementation and testing of HTTP APIs with request validation."
-          },
-          {
-            "requirement_id": "demo_backend_experience",
-            "status": "not_met",
-            "fact_indices": [
-              2
-            ],
-            "reason": "Resume specifies only 2 years of backend engineering, which is below the required 3 years."
-          },
-          {
-            "requirement_id": "demo_backend_observability",
-            "status": "partial",
-            "fact_indices": [
-              6
-            ],
-            "reason": "Resume mentions service logs, suggesting some observability capability but not full observability practices."
-          },
-          {
-            "requirement_id": "demo_backend_degree",
-            "status": "met",
-            "fact_indices": [
-              3
-            ],
-            "reason": "Resume lists a BSc in Software Engineering, a recognized computing qualification."
-          }
-        ],
-        "scoring": {
-          "score": null,
-          "lower": 34.2,
-          "upper": 67.5,
-          "resolved_count": 4,
-          "unknown_count": 2,
-          "mandatory_met": 1,
-          "mandatory_total": 3,
-          "categories": [
-            {
-              "category": "mandatory",
-              "requirement_count": 3,
-              "resolved_count": 1,
-              "unknown_count": 2,
-              "effective_weight": 50.0,
-              "lower": 16.7,
-              "upper": 50.0
-            },
-            {
-              "category": "experience",
-              "requirement_count": 1,
-              "resolved_count": 1,
-              "unknown_count": 0,
-              "effective_weight": 25.0,
-              "lower": 0.0,
-              "upper": 0.0
-            },
-            {
-              "category": "preferred",
-              "requirement_count": 1,
-              "resolved_count": 1,
-              "unknown_count": 0,
-              "effective_weight": 15.0,
-              "lower": 7.5,
-              "upper": 7.5
-            },
-            {
-              "category": "qualification",
-              "requirement_count": 1,
-              "resolved_count": 1,
-              "unknown_count": 0,
-              "effective_weight": 10.0,
-              "lower": 10.0,
-              "upper": 10.0
-            }
-          ]
-        },
-        "notice": "AI interpretation requires human review. Evidence citations prove text location, not competence. The unvalidated rubric is not a hiring decision or performance probability."
-      }
-    },
-    {
-      "job_id": "demo_ds",
-      "candidate_id": "demo_backend_theo",
-      "fingerprint": "8089c89c8dd79d382f17ae8909acf07617636c2c34c795a92cb2d973079a3b62",
-      "assessment_digest": "b231f507cc6a941d3adb99114f3d6b2f8d69043d3b36396f83e5c28f09385142",
-      "assessment": {
-        "structured": {
-          "job": {
-            "id": "demo_ds",
-            "title": "Senior Data Scientist",
-            "skills": [
-              "Python",
-              "SQL",
-              "statistics",
-              "experimentation",
-              "causal inference",
-              "dbt"
-            ],
-            "requirements": [
-              {
-                "id": "demo_ds_python",
-                "category": "mandatory",
-                "description": "Build reproducible data analysis in Python.",
-                "minimum_years": null,
-                "sort_order": 0
-              },
-              {
-                "id": "demo_ds_sql",
-                "category": "mandatory",
-                "description": "Write SQL joins, aggregations and analytical queries.",
-                "minimum_years": null,
-                "sort_order": 1
-              },
-              {
-                "id": "demo_ds_experiments",
-                "category": "mandatory",
-                "description": "Design and interpret controlled experiments or causal studies with statistical uncertainty.",
-                "minimum_years": null,
-                "sort_order": 2
-              },
-              {
-                "id": "demo_ds_experience",
-                "category": "experience",
-                "description": "At least 5 years of relevant applied data science or quantitative analysis experience.",
-                "minimum_years": 5.0,
-                "sort_order": 3
-              },
-              {
-                "id": "demo_ds_dbt",
-                "category": "preferred",
-                "description": "Experience with dbt or reproducible warehouse transformations.",
-                "minimum_years": null,
-                "sort_order": 4
-              },
-              {
-                "id": "demo_ds_degree",
-                "category": "qualification",
-                "description": "A quantitative degree or equivalent documented applied study.",
-                "minimum_years": null,
-                "sort_order": 5
-              }
-            ]
-          },
-          "source": {
-            "kind": "synthetic_demo",
-            "candidate_id": "demo_backend_theo",
-            "pages": [
-              {
-                "page_number": 1,
-                "text": "SYNTHETIC DEMO RESUME\nTheo Grant\nGo Backend Engineer\nBuilds small backend services; no data science project or experiment ownership is documented.\nWORK EXPERIENCE\n- 2 years of backend engineering focused on Go services and local persistence prototypes.\n- Implemented HTTP API request validation and integration tests for device event ingestion.\n- Used SQLite for a prototype; production PostgreSQL transactions are not documented.\nSELECTED PROJECTS\n- Device event ingestion project accepted batched messages and recorded malformed-request examples.\n- Service review project documented retry behavior and basic request logs.\nSKILLS\n- Go, HTTP APIs, SQLite, integration testing and service logs.\nEDUCATION AND TRAINING\n- BSc Software Engineering (synthetic demo qualification)."
-              }
-            ]
-          },
-          "mode": "bedrock",
-          "model_id": "openai.gpt-oss-120b-1:0",
-          "facts": [
-            {
-              "kind": "skill",
-              "value": "Go",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "Go Backend Engineer",
-                  "start": 33,
-                  "end": 52
-                },
-                {
-                  "page_number": 1,
-                  "quote": "- Go, HTTP APIs, SQLite, integration testing and service logs.",
-                  "start": 631,
-                  "end": 693
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "HTTP APIs",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Go, HTTP APIs, SQLite, integration testing and service logs.",
-                  "start": 631,
-                  "end": 693
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "SQLite",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Go, HTTP APIs, SQLite, integration testing and service logs.",
-                  "start": 631,
-                  "end": 693
-                },
-                {
-                  "page_number": 1,
-                  "quote": "Used SQLite for a prototype; production PostgreSQL transactions are not documented.",
-                  "start": 347,
-                  "end": 430
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "integration testing",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Go, HTTP APIs, SQLite, integration testing and service logs.",
-                  "start": 631,
-                  "end": 693
-                }
-              ]
-            },
-            {
-              "kind": "experience",
-              "value": "2 years of backend engineering",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- 2 years of backend engineering focused on Go services and local persistence prototypes.",
-                  "start": 163,
-                  "end": 252
-                }
-              ]
-            },
-            {
-              "kind": "project",
-              "value": "Device event ingestion project",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Device event ingestion project accepted batched messages and recorded malformed-request examples.",
-                  "start": 449,
-                  "end": 548
-                }
-              ]
-            },
-            {
-              "kind": "project",
-              "value": "Service review project",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Service review project documented retry behavior and basic request logs.",
-                  "start": 549,
-                  "end": 623
-                }
-              ]
-            },
-            {
-              "kind": "qualification",
-              "value": "BSc Software Engineering",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- BSc Software Engineering (synthetic demo qualification).",
-                  "start": 717,
-                  "end": 775
-                }
-              ]
-            }
-          ],
-          "unknown_categories": [],
-          "offset_unit": "unicode_code_point",
-          "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
-        },
-        "judgments": [
-          {
-            "requirement_id": "demo_ds_python",
-            "status": "unknown",
-            "fact_indices": [],
-            "reason": "Resume does not mention Python or building reproducible data analysis."
-          },
-          {
-            "requirement_id": "demo_ds_sql",
-            "status": "partial",
-            "fact_indices": [
-              2
-            ],
-            "reason": "Resume shows experience with SQLite, indicating some SQL usage, but no evidence of joins, aggregations, or analytical queries."
-          },
-          {
-            "requirement_id": "demo_ds_experiments",
-            "status": "unknown",
-            "fact_indices": [],
-            "reason": "No mention of designing or interpreting experiments or causal studies."
-          },
-          {
-            "requirement_id": "demo_ds_experience",
-            "status": "not_met",
-            "fact_indices": [
-              4
-            ],
-            "reason": "Resume lists only 2 years of backend engineering, which is below the required 5 years of applied data science or quantitative analysis experience."
-          },
-          {
-            "requirement_id": "demo_ds_dbt",
-            "status": "unknown",
-            "fact_indices": [],
-            "reason": "Resume does not mention dbt or reproducible warehouse transformations."
-          },
-          {
-            "requirement_id": "demo_ds_degree",
-            "status": "met",
-            "fact_indices": [
-              7
-            ],
-            "reason": "Resume includes a BSc in Software Engineering, which qualifies as a quantitative degree."
-          }
-        ],
-        "scoring": {
-          "score": null,
-          "lower": 18.3,
-          "upper": 66.7,
-          "resolved_count": 3,
-          "unknown_count": 3,
-          "mandatory_met": 0,
-          "mandatory_total": 3,
-          "categories": [
-            {
-              "category": "mandatory",
-              "requirement_count": 3,
-              "resolved_count": 1,
-              "unknown_count": 2,
-              "effective_weight": 50.0,
-              "lower": 8.3,
-              "upper": 41.7
-            },
-            {
-              "category": "experience",
-              "requirement_count": 1,
-              "resolved_count": 1,
-              "unknown_count": 0,
-              "effective_weight": 25.0,
-              "lower": 0.0,
-              "upper": 0.0
-            },
-            {
-              "category": "preferred",
-              "requirement_count": 1,
-              "resolved_count": 0,
-              "unknown_count": 1,
-              "effective_weight": 15.0,
-              "lower": 0.0,
-              "upper": 15.0
-            },
-            {
-              "category": "qualification",
-              "requirement_count": 1,
-              "resolved_count": 1,
-              "unknown_count": 0,
-              "effective_weight": 10.0,
-              "lower": 10.0,
-              "upper": 10.0
-            }
-          ]
-        },
-        "notice": "AI interpretation requires human review. Evidence citations prove text location, not competence. The unvalidated rubric is not a hiring decision or performance probability."
-      }
-    },
-    {
       "job_id": "demo_backend",
       "candidate_id": "demo_backend_mara",
-      "fingerprint": "71a4d040d51424ef9400fffb97ccf54b8db96e2918267cd61276807cff556ac0",
-      "assessment_digest": "c4c81240fcb9ae3de4aea486cc0586fda8f963a1da506546b6360d268c19fe54",
+      "fingerprint": "46e6068d0f2715fee1bda2ceede1b379622be865fea4e44a9508c2d18f1777dd",
+      "assessment_digest": "454f1e7dc0d11c2d9e9c343fdc7af68a72d5d6b2565aabc2cb03903128893ac2",
       "assessment": {
         "structured": {
           "job": {
@@ -1738,7 +90,7 @@
             },
             {
               "kind": "skill",
-              "value": "HTTP endpoint validation",
+              "value": "Added HTTP endpoint validation and tests",
               "evidence": [
                 {
                   "page_number": 1,
@@ -1750,31 +102,7 @@
             },
             {
               "kind": "skill",
-              "value": "HTTP APIs",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- TypeScript, Node.js, HTTP APIs, tests and basic PostgreSQL query review.",
-                  "start": 639,
-                  "end": 713
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "basic PostgreSQL query review",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- TypeScript, Node.js, HTTP APIs, tests and basic PostgreSQL query review.",
-                  "start": 639,
-                  "end": 713
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "Read PostgreSQL queries",
+              "value": "Read PostgreSQL queries during support rotations",
               "evidence": [
                 {
                   "page_number": 1,
@@ -1785,21 +113,46 @@
               ]
             },
             {
-              "kind": "skill",
-              "value": "application API experience",
+              "kind": "project",
+              "value": "Notification service project mapped message preferences",
               "evidence": [
                 {
                   "page_number": 1,
-                  "quote": "Has application API experience with incomplete evidence on database transactions.",
-                  "start": 55,
-                  "end": 136
+                  "quote": "- Notification service project mapped message preferences to API responses and checked failure cases.",
+                  "start": 439,
+                  "end": 540
+                }
+              ]
+            },
+            {
+              "kind": "skill",
+              "value": "collected request logs",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Support handoff project collected request logs and open questions for the database team.",
+                  "start": 541,
+                  "end": 631
                 }
               ]
             }
           ],
+          "identity": {
+            "name": {
+              "value": "Mara Lewis",
+              "page_number": 1,
+              "start": 22,
+              "end": 32
+            },
+            "current_title": {
+              "value": "Application Developer",
+              "page_number": 1,
+              "start": 33,
+              "end": 54
+            }
+          },
           "unknown_categories": [
-            "qualification",
-            "project"
+            "qualification"
           ],
           "offset_unit": "unicode_code_point",
           "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
@@ -1809,25 +162,24 @@
             "requirement_id": "demo_backend_python",
             "status": "unknown",
             "fact_indices": [],
-            "reason": "No evidence of Python experience in resume."
+            "reason": "Resume contains no mention of Python backend implementation or testing."
           },
           {
             "requirement_id": "demo_backend_postgres",
             "status": "partial",
             "fact_indices": [
-              3,
-              4
+              2
             ],
-            "reason": "Resume shows basic PostgreSQL query review and reading queries, but lacks explicit index or transaction boundary design."
+            "reason": "Resume shows reading PostgreSQL queries; index design and transaction boundaries are not described, indicating limited relevant experience."
           },
           {
             "requirement_id": "demo_backend_api",
             "status": "met",
             "fact_indices": [
               1,
-              2
+              3
             ],
-            "reason": "Resume includes HTTP endpoint validation and testing and mentions HTTP APIs."
+            "reason": "Added HTTP endpoint validation and tests, and project mapped preferences to API responses with failure case checks, satisfying API design and testing requirements."
           },
           {
             "requirement_id": "demo_backend_experience",
@@ -1835,27 +187,31 @@
             "fact_indices": [
               0
             ],
-            "reason": "Resume states 3 years of application development, satisfying the experience requirement."
+            "reason": "Resume states 3 years of application development using TypeScript and Node.js, meeting the 3‑year backend engineering experience threshold."
           },
           {
             "requirement_id": "demo_backend_observability",
-            "status": "unknown",
-            "fact_indices": [],
-            "reason": "Resume does not mention service observability practices."
+            "status": "partial",
+            "fact_indices": [
+              4
+            ],
+            "reason": "Collected request logs, showing some observability activity, but no explicit use of observability to investigate operational failures."
           },
           {
             "requirement_id": "demo_backend_degree",
             "status": "unknown",
             "fact_indices": [],
-            "reason": "Resume provides no information about a computing qualification."
+            "reason": "Resume does not provide any computing qualification or documented engineering study information."
           }
         ],
         "scoring": {
           "score": null,
-          "lower": 50.0,
-          "upper": 91.7,
-          "resolved_count": 3,
-          "unknown_count": 3,
+          "lower": 57.5,
+          "upper": 84.2,
+          "estimate": 70.8,
+          "confidence": "medium",
+          "resolved_count": 4,
+          "unknown_count": 2,
           "mandatory_met": 1,
           "mandatory_total": 3,
           "categories": [
@@ -1875,6 +231,1268 @@
               "unknown_count": 0,
               "effective_weight": 25.0,
               "lower": 25.0,
+              "upper": 25.0
+            },
+            {
+              "category": "preferred",
+              "requirement_count": 1,
+              "resolved_count": 1,
+              "unknown_count": 0,
+              "effective_weight": 15.0,
+              "lower": 7.5,
+              "upper": 7.5
+            },
+            {
+              "category": "qualification",
+              "requirement_count": 1,
+              "resolved_count": 0,
+              "unknown_count": 1,
+              "effective_weight": 10.0,
+              "lower": 0.0,
+              "upper": 10.0
+            }
+          ]
+        },
+        "notice": "AI interpretation requires human review. Evidence citations prove text location, not competence. The unvalidated rubric is not a hiring decision or performance probability."
+      }
+    },
+    {
+      "job_id": "demo_backend",
+      "candidate_id": "demo_backend_priya",
+      "fingerprint": "3cc8e2623469f7523ae6486fbe080322fc9b68156e1d1613fcc9f8b72bad411f",
+      "assessment_digest": "6d79bca2c76aa0a41277a202f4233dbd0cfffa17341a17e18fd6ce986ec9a716",
+      "assessment": {
+        "structured": {
+          "job": {
+            "id": "demo_backend",
+            "title": "Backend Engineer",
+            "skills": [
+              "Python",
+              "PostgreSQL",
+              "HTTP APIs",
+              "transactions",
+              "observability"
+            ],
+            "requirements": [
+              {
+                "id": "demo_backend_python",
+                "category": "mandatory",
+                "description": "Implement and test Python backend services.",
+                "minimum_years": null,
+                "sort_order": 0
+              },
+              {
+                "id": "demo_backend_postgres",
+                "category": "mandatory",
+                "description": "Design PostgreSQL queries, indexes and transaction boundaries.",
+                "minimum_years": null,
+                "sort_order": 1
+              },
+              {
+                "id": "demo_backend_api",
+                "category": "mandatory",
+                "description": "Design and test HTTP APIs with validation and explicit failure handling.",
+                "minimum_years": null,
+                "sort_order": 2
+              },
+              {
+                "id": "demo_backend_experience",
+                "category": "experience",
+                "description": "At least 3 years of backend engineering experience.",
+                "minimum_years": 3.0,
+                "sort_order": 3
+              },
+              {
+                "id": "demo_backend_observability",
+                "category": "preferred",
+                "description": "Use service observability to investigate operational failures.",
+                "minimum_years": null,
+                "sort_order": 4
+              },
+              {
+                "id": "demo_backend_degree",
+                "category": "qualification",
+                "description": "Computing qualification or equivalent documented engineering study.",
+                "minimum_years": null,
+                "sort_order": 5
+              }
+            ]
+          },
+          "source": {
+            "kind": "synthetic_demo",
+            "candidate_id": "demo_backend_priya",
+            "pages": [
+              {
+                "page_number": 1,
+                "text": "SYNTHETIC DEMO RESUME\nPriya Nair\nBackend Platform Engineer\nOwns tested Python services, PostgreSQL data paths and production diagnosis.\nWORK EXPERIENCE\n- 5 years of backend engineering on synthetic billing and account services.\n- Built Python HTTP APIs with schema validation, explicit error responses and contract tests.\n- Designed PostgreSQL indexes and transaction boundaries for account updates and reviewed lock contention.\nSELECTED PROJECTS\n- Account preference API project added idempotent writes and documented retry behavior for callers.\n- Service diagnosis project used logs and metrics to trace failed requests through dependent services.\nSKILLS\n- Python, PostgreSQL, HTTP APIs, automated tests, transactions and observability.\nEDUCATION AND TRAINING\n- BEng Computer Science (synthetic demo qualification)."
+              }
+            ]
+          },
+          "mode": "bedrock",
+          "model_id": "openai.gpt-oss-120b-1:0",
+          "facts": [
+            {
+              "kind": "skill",
+              "value": "Python services",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "Owns tested Python services, PostgreSQL data paths and production diagnosis.",
+                  "start": 59,
+                  "end": 135
+                }
+              ]
+            },
+            {
+              "kind": "skill",
+              "value": "PostgreSQL data paths",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "Owns tested Python services, PostgreSQL data paths and production diagnosis.",
+                  "start": 59,
+                  "end": 135
+                }
+              ]
+            },
+            {
+              "kind": "skill",
+              "value": "Python HTTP APIs",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "Built Python HTTP APIs with schema validation, explicit error responses and contract tests.",
+                  "start": 230,
+                  "end": 321
+                }
+              ]
+            },
+            {
+              "kind": "skill",
+              "value": "transaction boundaries",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "Designed PostgreSQL indexes and transaction boundaries for account updates and reviewed lock contention.",
+                  "start": 324,
+                  "end": 428
+                }
+              ]
+            },
+            {
+              "kind": "skill",
+              "value": "logs and metrics",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "Service diagnosis project used logs and metrics to trace failed requests through dependent services.",
+                  "start": 549,
+                  "end": 649
+                }
+              ]
+            },
+            {
+              "kind": "experience",
+              "value": "5 years of backend engineering",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- 5 years of backend engineering on synthetic billing and account services.",
+                  "start": 152,
+                  "end": 227
+                }
+              ]
+            },
+            {
+              "kind": "qualification",
+              "value": "BEng Computer Science",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- BEng Computer Science (synthetic demo qualification).",
+                  "start": 762,
+                  "end": 817
+                }
+              ]
+            }
+          ],
+          "identity": {
+            "name": {
+              "value": "Priya Nair",
+              "page_number": 1,
+              "start": 22,
+              "end": 32
+            },
+            "current_title": {
+              "value": "Backend Platform Engineer",
+              "page_number": 1,
+              "start": 33,
+              "end": 58
+            }
+          },
+          "unknown_categories": [
+            "project"
+          ],
+          "offset_unit": "unicode_code_point",
+          "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
+        },
+        "judgments": [
+          {
+            "requirement_id": "demo_backend_python",
+            "status": "met",
+            "fact_indices": [
+              0,
+              2
+            ],
+            "reason": "Resume shows ownership of tested Python services and building Python HTTP APIs with contract tests, satisfying implementation and testing of Python backend services."
+          },
+          {
+            "requirement_id": "demo_backend_postgres",
+            "status": "met",
+            "fact_indices": [
+              1,
+              3
+            ],
+            "reason": "Candidate designed PostgreSQL indexes and transaction boundaries, demonstrating required query, index, and transaction design skills."
+          },
+          {
+            "requirement_id": "demo_backend_api",
+            "status": "met",
+            "fact_indices": [
+              2
+            ],
+            "reason": "Built Python HTTP APIs with schema validation, explicit error responses, and contract tests, meeting API design and testing requirements."
+          },
+          {
+            "requirement_id": "demo_backend_experience",
+            "status": "met",
+            "fact_indices": [
+              5
+            ],
+            "reason": "Resume states 5 years of backend engineering, exceeding the 3‑year minimum."
+          },
+          {
+            "requirement_id": "demo_backend_observability",
+            "status": "met",
+            "fact_indices": [
+              4
+            ],
+            "reason": "Used logs and metrics to trace failed requests, demonstrating service observability for operational failure investigation."
+          },
+          {
+            "requirement_id": "demo_backend_degree",
+            "status": "met",
+            "fact_indices": [
+              6
+            ],
+            "reason": "Holds a BEng in Computer Science, satisfying the computing qualification requirement."
+          }
+        ],
+        "scoring": {
+          "score": 100.0,
+          "lower": 100.0,
+          "upper": 100.0,
+          "estimate": 100.0,
+          "confidence": "very_high",
+          "resolved_count": 6,
+          "unknown_count": 0,
+          "mandatory_met": 3,
+          "mandatory_total": 3,
+          "categories": [
+            {
+              "category": "mandatory",
+              "requirement_count": 3,
+              "resolved_count": 3,
+              "unknown_count": 0,
+              "effective_weight": 50.0,
+              "lower": 50.0,
+              "upper": 50.0
+            },
+            {
+              "category": "experience",
+              "requirement_count": 1,
+              "resolved_count": 1,
+              "unknown_count": 0,
+              "effective_weight": 25.0,
+              "lower": 25.0,
+              "upper": 25.0
+            },
+            {
+              "category": "preferred",
+              "requirement_count": 1,
+              "resolved_count": 1,
+              "unknown_count": 0,
+              "effective_weight": 15.0,
+              "lower": 15.0,
+              "upper": 15.0
+            },
+            {
+              "category": "qualification",
+              "requirement_count": 1,
+              "resolved_count": 1,
+              "unknown_count": 0,
+              "effective_weight": 10.0,
+              "lower": 10.0,
+              "upper": 10.0
+            }
+          ]
+        },
+        "notice": "AI interpretation requires human review. Evidence citations prove text location, not competence. The unvalidated rubric is not a hiring decision or performance probability."
+      }
+    },
+    {
+      "job_id": "demo_backend",
+      "candidate_id": "demo_backend_theo",
+      "fingerprint": "ffc6f811e61b361d855fdaaecbb507bcda51d16751cd0c28ecbf2bde5e3bead4",
+      "assessment_digest": "c2f9d5727f4a5c43135349eaea40155cd038a4572d840f5ba25b5c1ba7ad073f",
+      "assessment": {
+        "structured": {
+          "job": {
+            "id": "demo_backend",
+            "title": "Backend Engineer",
+            "skills": [
+              "Python",
+              "PostgreSQL",
+              "HTTP APIs",
+              "transactions",
+              "observability"
+            ],
+            "requirements": [
+              {
+                "id": "demo_backend_python",
+                "category": "mandatory",
+                "description": "Implement and test Python backend services.",
+                "minimum_years": null,
+                "sort_order": 0
+              },
+              {
+                "id": "demo_backend_postgres",
+                "category": "mandatory",
+                "description": "Design PostgreSQL queries, indexes and transaction boundaries.",
+                "minimum_years": null,
+                "sort_order": 1
+              },
+              {
+                "id": "demo_backend_api",
+                "category": "mandatory",
+                "description": "Design and test HTTP APIs with validation and explicit failure handling.",
+                "minimum_years": null,
+                "sort_order": 2
+              },
+              {
+                "id": "demo_backend_experience",
+                "category": "experience",
+                "description": "At least 3 years of backend engineering experience.",
+                "minimum_years": 3.0,
+                "sort_order": 3
+              },
+              {
+                "id": "demo_backend_observability",
+                "category": "preferred",
+                "description": "Use service observability to investigate operational failures.",
+                "minimum_years": null,
+                "sort_order": 4
+              },
+              {
+                "id": "demo_backend_degree",
+                "category": "qualification",
+                "description": "Computing qualification or equivalent documented engineering study.",
+                "minimum_years": null,
+                "sort_order": 5
+              }
+            ]
+          },
+          "source": {
+            "kind": "synthetic_demo",
+            "candidate_id": "demo_backend_theo",
+            "pages": [
+              {
+                "page_number": 1,
+                "text": "SYNTHETIC DEMO RESUME\nTheo Grant\nGo Backend Engineer\nBuilds small backend services; no data science project or experiment ownership is documented.\nWORK EXPERIENCE\n- 2 years of backend engineering focused on Go services and local persistence prototypes.\n- Implemented HTTP API request validation and integration tests for device event ingestion.\n- Used SQLite for a prototype; production PostgreSQL transactions are not documented.\nSELECTED PROJECTS\n- Device event ingestion project accepted batched messages and recorded malformed-request examples.\n- Service review project documented retry behavior and basic request logs.\nSKILLS\n- Go, HTTP APIs, SQLite, integration testing and service logs.\nEDUCATION AND TRAINING\n- BSc Software Engineering (synthetic demo qualification)."
+              }
+            ]
+          },
+          "mode": "bedrock",
+          "model_id": "openai.gpt-oss-120b-1:0",
+          "facts": [
+            {
+              "kind": "experience",
+              "value": "2 years of backend engineering focused on Go services and local persistence prototypes.",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- 2 years of backend engineering focused on Go services and local persistence prototypes.",
+                  "start": 163,
+                  "end": 252
+                }
+              ]
+            },
+            {
+              "kind": "skill",
+              "value": "Implemented HTTP API request validation and integration tests",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Implemented HTTP API request validation and integration tests for device event ingestion.",
+                  "start": 253,
+                  "end": 344
+                }
+              ]
+            },
+            {
+              "kind": "skill",
+              "value": "HTTP APIs",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Go, HTTP APIs, SQLite, integration testing and service logs.",
+                  "start": 631,
+                  "end": 693
+                }
+              ]
+            },
+            {
+              "kind": "skill",
+              "value": "PostgreSQL transactions",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Used SQLite for a prototype; production PostgreSQL transactions are not documented.",
+                  "start": 345,
+                  "end": 430
+                }
+              ]
+            },
+            {
+              "kind": "qualification",
+              "value": "BSc Software Engineering",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- BSc Software Engineering (synthetic demo qualification).",
+                  "start": 717,
+                  "end": 775
+                }
+              ]
+            },
+            {
+              "kind": "project",
+              "value": "Service review project documented retry behavior and basic request logs.",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Service review project documented retry behavior and basic request logs.",
+                  "start": 549,
+                  "end": 623
+                }
+              ]
+            }
+          ],
+          "identity": {
+            "name": {
+              "value": "Theo Grant",
+              "page_number": 1,
+              "start": 22,
+              "end": 32
+            },
+            "current_title": {
+              "value": "Go Backend Engineer",
+              "page_number": 1,
+              "start": 33,
+              "end": 52
+            }
+          },
+          "unknown_categories": [],
+          "offset_unit": "unicode_code_point",
+          "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
+        },
+        "judgments": [
+          {
+            "requirement_id": "demo_backend_python",
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "Resume does not mention Python backend development or testing."
+          },
+          {
+            "requirement_id": "demo_backend_postgres",
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "No evidence of designing PostgreSQL queries, indexes, or transaction boundaries."
+          },
+          {
+            "requirement_id": "demo_backend_api",
+            "status": "met",
+            "fact_indices": [
+              1,
+              2
+            ],
+            "reason": "Implemented HTTP API request validation and integration tests, demonstrating design and testing of HTTP APIs."
+          },
+          {
+            "requirement_id": "demo_backend_experience",
+            "status": "partial",
+            "fact_indices": [
+              0
+            ],
+            "reason": "Resume lists 2 years of backend engineering, which is below the 3‑year minimum."
+          },
+          {
+            "requirement_id": "demo_backend_observability",
+            "status": "partial",
+            "fact_indices": [
+              5
+            ],
+            "reason": "Shows some observability via logs and retry documentation, but not full service observability practice."
+          },
+          {
+            "requirement_id": "demo_backend_degree",
+            "status": "met",
+            "fact_indices": [
+              4
+            ],
+            "reason": "BSc Software Engineering satisfies the computing qualification requirement."
+          }
+        ],
+        "scoring": {
+          "score": null,
+          "lower": 46.7,
+          "upper": 80.0,
+          "estimate": 63.3,
+          "confidence": "medium",
+          "resolved_count": 4,
+          "unknown_count": 2,
+          "mandatory_met": 1,
+          "mandatory_total": 3,
+          "categories": [
+            {
+              "category": "mandatory",
+              "requirement_count": 3,
+              "resolved_count": 1,
+              "unknown_count": 2,
+              "effective_weight": 50.0,
+              "lower": 16.7,
+              "upper": 50.0
+            },
+            {
+              "category": "experience",
+              "requirement_count": 1,
+              "resolved_count": 1,
+              "unknown_count": 0,
+              "effective_weight": 25.0,
+              "lower": 12.5,
+              "upper": 12.5
+            },
+            {
+              "category": "preferred",
+              "requirement_count": 1,
+              "resolved_count": 1,
+              "unknown_count": 0,
+              "effective_weight": 15.0,
+              "lower": 7.5,
+              "upper": 7.5
+            },
+            {
+              "category": "qualification",
+              "requirement_count": 1,
+              "resolved_count": 1,
+              "unknown_count": 0,
+              "effective_weight": 10.0,
+              "lower": 10.0,
+              "upper": 10.0
+            }
+          ]
+        },
+        "notice": "AI interpretation requires human review. Evidence citations prove text location, not competence. The unvalidated rubric is not a hiring decision or performance probability."
+      }
+    },
+    {
+      "job_id": "demo_ds",
+      "candidate_id": "demo_backend_theo",
+      "fingerprint": "6f21dd679ce2acbdeeeaab9cf433a6947775cca912dd47f60161176b9ea083c8",
+      "assessment_digest": "a5465f1a02b1d9e957f0b422a58299284a107d14f265e841a088c1c37c97fdf0",
+      "assessment": {
+        "structured": {
+          "job": {
+            "id": "demo_ds",
+            "title": "Senior Data Scientist",
+            "skills": [
+              "Python",
+              "SQL",
+              "statistics",
+              "experimentation",
+              "causal inference",
+              "dbt"
+            ],
+            "requirements": [
+              {
+                "id": "demo_ds_python",
+                "category": "mandatory",
+                "description": "Build reproducible data analysis in Python.",
+                "minimum_years": null,
+                "sort_order": 0
+              },
+              {
+                "id": "demo_ds_sql",
+                "category": "mandatory",
+                "description": "Write SQL joins, aggregations and analytical queries.",
+                "minimum_years": null,
+                "sort_order": 1
+              },
+              {
+                "id": "demo_ds_experiments",
+                "category": "mandatory",
+                "description": "Design and interpret controlled experiments or causal studies with statistical uncertainty.",
+                "minimum_years": null,
+                "sort_order": 2
+              },
+              {
+                "id": "demo_ds_experience",
+                "category": "experience",
+                "description": "At least 5 years of relevant applied data science or quantitative analysis experience.",
+                "minimum_years": 5.0,
+                "sort_order": 3
+              },
+              {
+                "id": "demo_ds_dbt",
+                "category": "preferred",
+                "description": "Experience with dbt or reproducible warehouse transformations.",
+                "minimum_years": null,
+                "sort_order": 4
+              },
+              {
+                "id": "demo_ds_degree",
+                "category": "qualification",
+                "description": "A quantitative degree or equivalent documented applied study.",
+                "minimum_years": null,
+                "sort_order": 5
+              }
+            ]
+          },
+          "source": {
+            "kind": "synthetic_demo",
+            "candidate_id": "demo_backend_theo",
+            "pages": [
+              {
+                "page_number": 1,
+                "text": "SYNTHETIC DEMO RESUME\nTheo Grant\nGo Backend Engineer\nBuilds small backend services; no data science project or experiment ownership is documented.\nWORK EXPERIENCE\n- 2 years of backend engineering focused on Go services and local persistence prototypes.\n- Implemented HTTP API request validation and integration tests for device event ingestion.\n- Used SQLite for a prototype; production PostgreSQL transactions are not documented.\nSELECTED PROJECTS\n- Device event ingestion project accepted batched messages and recorded malformed-request examples.\n- Service review project documented retry behavior and basic request logs.\nSKILLS\n- Go, HTTP APIs, SQLite, integration testing and service logs.\nEDUCATION AND TRAINING\n- BSc Software Engineering (synthetic demo qualification)."
+              }
+            ]
+          },
+          "mode": "bedrock",
+          "model_id": "openai.gpt-oss-120b-1:0",
+          "facts": [
+            {
+              "kind": "skill",
+              "value": "SQLite",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "Used SQLite for a prototype; production PostgreSQL transactions are not documented.",
+                  "start": 347,
+                  "end": 430
+                }
+              ]
+            },
+            {
+              "kind": "qualification",
+              "value": "BSc Software Engineering",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- BSc Software Engineering (synthetic demo qualification).",
+                  "start": 717,
+                  "end": 775
+                }
+              ]
+            }
+          ],
+          "identity": {
+            "name": {
+              "value": "Theo Grant",
+              "page_number": 1,
+              "start": 22,
+              "end": 32
+            },
+            "current_title": {
+              "value": "Go Backend Engineer",
+              "page_number": 1,
+              "start": 33,
+              "end": 52
+            }
+          },
+          "unknown_categories": [
+            "experience",
+            "project"
+          ],
+          "offset_unit": "unicode_code_point",
+          "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
+        },
+        "judgments": [
+          {
+            "requirement_id": "demo_ds_python",
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "Resume contains no mention of Python or reproducible data analysis work."
+          },
+          {
+            "requirement_id": "demo_ds_sql",
+            "status": "partial",
+            "fact_indices": [
+              0
+            ],
+            "reason": "Resume shows use of SQLite, indicating some SQL experience, but no evidence of joins, aggregations, or analytical queries."
+          },
+          {
+            "requirement_id": "demo_ds_experiments",
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "No evidence of designing or interpreting controlled experiments or causal studies."
+          },
+          {
+            "requirement_id": "demo_ds_experience",
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "Resume lists 2 years of backend engineering, not relevant data science experience; insufficient information to assess 5‑year requirement."
+          },
+          {
+            "requirement_id": "demo_ds_dbt",
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "No mention of dbt or warehouse transformation experience."
+          },
+          {
+            "requirement_id": "demo_ds_degree",
+            "status": "met",
+            "fact_indices": [
+              1
+            ],
+            "reason": "BSc Software Engineering satisfies the quantitative degree requirement."
+          }
+        ],
+        "scoring": {
+          "score": null,
+          "lower": 18.3,
+          "upper": 91.7,
+          "estimate": 55.0,
+          "confidence": "low",
+          "resolved_count": 2,
+          "unknown_count": 4,
+          "mandatory_met": 0,
+          "mandatory_total": 3,
+          "categories": [
+            {
+              "category": "mandatory",
+              "requirement_count": 3,
+              "resolved_count": 1,
+              "unknown_count": 2,
+              "effective_weight": 50.0,
+              "lower": 8.3,
+              "upper": 41.7
+            },
+            {
+              "category": "experience",
+              "requirement_count": 1,
+              "resolved_count": 0,
+              "unknown_count": 1,
+              "effective_weight": 25.0,
+              "lower": 0.0,
+              "upper": 25.0
+            },
+            {
+              "category": "preferred",
+              "requirement_count": 1,
+              "resolved_count": 0,
+              "unknown_count": 1,
+              "effective_weight": 15.0,
+              "lower": 0.0,
+              "upper": 15.0
+            },
+            {
+              "category": "qualification",
+              "requirement_count": 1,
+              "resolved_count": 1,
+              "unknown_count": 0,
+              "effective_weight": 10.0,
+              "lower": 10.0,
+              "upper": 10.0
+            }
+          ]
+        },
+        "notice": "AI interpretation requires human review. Evidence citations prove text location, not competence. The unvalidated rubric is not a hiring decision or performance probability."
+      }
+    },
+    {
+      "job_id": "demo_ds",
+      "candidate_id": "demo_ds_avery",
+      "fingerprint": "d85080dc371800c50d197b4ab608d296f05d4e654f552318b347d095dd56b922",
+      "assessment_digest": "edd22e35ec5c0874b051636c0dd890cd47403253dcc7cb02ce1f3923788af25d",
+      "assessment": {
+        "structured": {
+          "job": {
+            "id": "demo_ds",
+            "title": "Senior Data Scientist",
+            "skills": [
+              "Python",
+              "SQL",
+              "statistics",
+              "experimentation",
+              "causal inference",
+              "dbt"
+            ],
+            "requirements": [
+              {
+                "id": "demo_ds_python",
+                "category": "mandatory",
+                "description": "Build reproducible data analysis in Python.",
+                "minimum_years": null,
+                "sort_order": 0
+              },
+              {
+                "id": "demo_ds_sql",
+                "category": "mandatory",
+                "description": "Write SQL joins, aggregations and analytical queries.",
+                "minimum_years": null,
+                "sort_order": 1
+              },
+              {
+                "id": "demo_ds_experiments",
+                "category": "mandatory",
+                "description": "Design and interpret controlled experiments or causal studies with statistical uncertainty.",
+                "minimum_years": null,
+                "sort_order": 2
+              },
+              {
+                "id": "demo_ds_experience",
+                "category": "experience",
+                "description": "At least 5 years of relevant applied data science or quantitative analysis experience.",
+                "minimum_years": 5.0,
+                "sort_order": 3
+              },
+              {
+                "id": "demo_ds_dbt",
+                "category": "preferred",
+                "description": "Experience with dbt or reproducible warehouse transformations.",
+                "minimum_years": null,
+                "sort_order": 4
+              },
+              {
+                "id": "demo_ds_degree",
+                "category": "qualification",
+                "description": "A quantitative degree or equivalent documented applied study.",
+                "minimum_years": null,
+                "sort_order": 5
+              }
+            ]
+          },
+          "source": {
+            "kind": "synthetic_demo",
+            "candidate_id": "demo_ds_avery",
+            "pages": [
+              {
+                "page_number": 1,
+                "text": "SYNTHETIC DEMO RESUME\nAvery Chen\nSenior Product Data Scientist\nOwns product experiments and reproducible analyses with explicit uncertainty checks.\nWORK EXPERIENCE\n- 6 years of applied product data science in synthetic marketplace and subscription teams, with ownership of experiment readouts.\n- Used Python and SQL to build reproducible analyses and checked cohort definitions with analytics engineers.\n- Designed A/B tests, set guardrail metrics, and reported uncertainty intervals rather than treating directional changes as proof.\nSELECTED PROJECTS\n- Pricing change study combined randomized results with observational sensitivity checks for segments outside the rollout.\n- Warehouse measurement project used dbt models to document event definitions and missing-data checks.\nSKILLS\n- Python, SQL, statistics, experimentation, causal inference, dbt and stakeholder communication.\nEDUCATION AND TRAINING\n- BSc Statistics (synthetic demo qualification)."
+              }
+            ]
+          },
+          "mode": "bedrock",
+          "model_id": "openai.gpt-oss-120b-1:0",
+          "facts": [
+            {
+              "kind": "skill",
+              "value": "Python and SQL",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "Used Python and SQL to build reproducible analyses and checked cohort definitions with analytics engineers.",
+                  "start": 296,
+                  "end": 403
+                }
+              ]
+            },
+            {
+              "kind": "skill",
+              "value": "statistics",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "SKILLS\n- Python, SQL, statistics, experimentation, causal inference, dbt and stakeholder communication.",
+                  "start": 779,
+                  "end": 882
+                }
+              ]
+            },
+            {
+              "kind": "skill",
+              "value": "dbt",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "Warehouse measurement project used dbt models to document event definitions and missing-data checks.",
+                  "start": 678,
+                  "end": 778
+                }
+              ]
+            },
+            {
+              "kind": "qualification",
+              "value": "BSc Statistics",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "BSc Statistics (synthetic demo qualification).",
+                  "start": 908,
+                  "end": 954
+                }
+              ]
+            },
+            {
+              "kind": "experience",
+              "value": "Designed A/B tests, set guardrail metrics, and reported uncertainty intervals",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "Designed A/B tests, set guardrail metrics, and reported uncertainty intervals rather than treating directional changes as proof.",
+                  "start": 406,
+                  "end": 534
+                }
+              ]
+            },
+            {
+              "kind": "experience",
+              "value": "6 years of applied product data science",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- 6 years of applied product data science in synthetic marketplace and subscription teams, with ownership of experiment readouts.",
+                  "start": 164,
+                  "end": 293
+                }
+              ]
+            }
+          ],
+          "identity": {
+            "name": {
+              "value": "Avery Chen",
+              "page_number": 1,
+              "start": 22,
+              "end": 32
+            },
+            "current_title": {
+              "value": "Senior Product Data Scientist",
+              "page_number": 1,
+              "start": 33,
+              "end": 62
+            }
+          },
+          "unknown_categories": [
+            "project"
+          ],
+          "offset_unit": "unicode_code_point",
+          "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
+        },
+        "judgments": [
+          {
+            "requirement_id": "demo_ds_python",
+            "status": "met",
+            "fact_indices": [
+              0
+            ],
+            "reason": "Resume states using Python to build reproducible analyses, directly satisfying the requirement."
+          },
+          {
+            "requirement_id": "demo_ds_sql",
+            "status": "partial",
+            "fact_indices": [
+              0
+            ],
+            "reason": "Resume shows use of SQL in reproducible analyses, but does not explicitly mention joins or aggregations, so only partial coverage."
+          },
+          {
+            "requirement_id": "demo_ds_experiments",
+            "status": "met",
+            "fact_indices": [
+              4
+            ],
+            "reason": "Candidate designed A/B tests and reported uncertainty intervals, demonstrating ability to design and interpret controlled experiments with statistical uncertainty."
+          },
+          {
+            "requirement_id": "demo_ds_experience",
+            "status": "met",
+            "fact_indices": [
+              5
+            ],
+            "reason": "Resume lists 6 years of applied product data science, exceeding the 5‑year minimum."
+          },
+          {
+            "requirement_id": "demo_ds_dbt",
+            "status": "met",
+            "fact_indices": [
+              2
+            ],
+            "reason": "Verified mention of dbt usage in warehouse measurement project meets the dbt experience requirement."
+          },
+          {
+            "requirement_id": "demo_ds_degree",
+            "status": "met",
+            "fact_indices": [
+              3
+            ],
+            "reason": "Verified mention of a BSc in Statistics provides a quantitative degree."
+          }
+        ],
+        "scoring": {
+          "score": 91.7,
+          "lower": 91.7,
+          "upper": 91.7,
+          "estimate": 91.7,
+          "confidence": "very_high",
+          "resolved_count": 6,
+          "unknown_count": 0,
+          "mandatory_met": 2,
+          "mandatory_total": 3,
+          "categories": [
+            {
+              "category": "mandatory",
+              "requirement_count": 3,
+              "resolved_count": 3,
+              "unknown_count": 0,
+              "effective_weight": 50.0,
+              "lower": 41.7,
+              "upper": 41.7
+            },
+            {
+              "category": "experience",
+              "requirement_count": 1,
+              "resolved_count": 1,
+              "unknown_count": 0,
+              "effective_weight": 25.0,
+              "lower": 25.0,
+              "upper": 25.0
+            },
+            {
+              "category": "preferred",
+              "requirement_count": 1,
+              "resolved_count": 1,
+              "unknown_count": 0,
+              "effective_weight": 15.0,
+              "lower": 15.0,
+              "upper": 15.0
+            },
+            {
+              "category": "qualification",
+              "requirement_count": 1,
+              "resolved_count": 1,
+              "unknown_count": 0,
+              "effective_weight": 10.0,
+              "lower": 10.0,
+              "upper": 10.0
+            }
+          ]
+        },
+        "notice": "AI interpretation requires human review. Evidence citations prove text location, not competence. The unvalidated rubric is not a hiring decision or performance probability."
+      }
+    },
+    {
+      "job_id": "demo_ds",
+      "candidate_id": "demo_ds_jordan",
+      "fingerprint": "ccd5149016bb62d5df4a55e1d012a5dca4b4e12256e5241ff7ccfda13238339a",
+      "assessment_digest": "b3842c025ece9e84938da3b563d485aa2c99623fa3664f6ea7194cf8d46e5f22",
+      "assessment": {
+        "structured": {
+          "job": {
+            "id": "demo_ds",
+            "title": "Senior Data Scientist",
+            "skills": [
+              "Python",
+              "SQL",
+              "statistics",
+              "experimentation",
+              "causal inference",
+              "dbt"
+            ],
+            "requirements": [
+              {
+                "id": "demo_ds_python",
+                "category": "mandatory",
+                "description": "Build reproducible data analysis in Python.",
+                "minimum_years": null,
+                "sort_order": 0
+              },
+              {
+                "id": "demo_ds_sql",
+                "category": "mandatory",
+                "description": "Write SQL joins, aggregations and analytical queries.",
+                "minimum_years": null,
+                "sort_order": 1
+              },
+              {
+                "id": "demo_ds_experiments",
+                "category": "mandatory",
+                "description": "Design and interpret controlled experiments or causal studies with statistical uncertainty.",
+                "minimum_years": null,
+                "sort_order": 2
+              },
+              {
+                "id": "demo_ds_experience",
+                "category": "experience",
+                "description": "At least 5 years of relevant applied data science or quantitative analysis experience.",
+                "minimum_years": 5.0,
+                "sort_order": 3
+              },
+              {
+                "id": "demo_ds_dbt",
+                "category": "preferred",
+                "description": "Experience with dbt or reproducible warehouse transformations.",
+                "minimum_years": null,
+                "sort_order": 4
+              },
+              {
+                "id": "demo_ds_degree",
+                "category": "qualification",
+                "description": "A quantitative degree or equivalent documented applied study.",
+                "minimum_years": null,
+                "sort_order": 5
+              }
+            ]
+          },
+          "source": {
+            "kind": "synthetic_demo",
+            "candidate_id": "demo_ds_jordan",
+            "pages": [
+              {
+                "page_number": 1,
+                "text": "SYNTHETIC DEMO RESUME\nJordan Ellis\nAnalytics Team Contributor\nDescribes useful team analysis work without clear dates or individual ownership.\nWORK EXPERIENCE\n- Contributed SQL aggregations to a team dashboard for service trends; the specific query ownership is not stated.\n- Helped prepare descriptive charts, but the source does not identify an experiment design or causal study owned by Jordan.\nSELECTED PROJECTS\n- Support queue trend dashboard summarized weekly volumes and caveats about incomplete event tracking.\nSKILLS\n- SQL, descriptive reporting and chart review are mentioned without proficiency level.\nEDUCATION AND TRAINING\n- Education details and dates are not provided in this synthetic source."
+              }
+            ]
+          },
+          "mode": "bedrock",
+          "model_id": "openai.gpt-oss-120b-1:0",
+          "facts": [
+            {
+              "kind": "skill",
+              "value": "SQL",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- SQL, descriptive reporting and chart review are mentioned without proficiency level.",
+                  "start": 526,
+                  "end": 612
+                }
+              ]
+            },
+            {
+              "kind": "experience",
+              "value": "Contributed SQL aggregations to a team dashboard",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Contributed SQL aggregations to a team dashboard for service trends; the specific query ownership is not stated.",
+                  "start": 159,
+                  "end": 273
+                }
+              ]
+            },
+            {
+              "kind": "project",
+              "value": "Support queue trend dashboard",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Support queue trend dashboard summarized weekly volumes and caveats about incomplete event tracking.",
+                  "start": 416,
+                  "end": 518
+                }
+              ]
+            }
+          ],
+          "identity": {
+            "name": {
+              "value": "Jordan Ellis",
+              "page_number": 1,
+              "start": 22,
+              "end": 34
+            },
+            "current_title": {
+              "value": "Analytics Team Contributor",
+              "page_number": 1,
+              "start": 35,
+              "end": 61
+            }
+          },
+          "unknown_categories": [
+            "qualification"
+          ],
+          "offset_unit": "unicode_code_point",
+          "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
+        },
+        "judgments": [
+          {
+            "requirement_id": "demo_ds_python",
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "Resume contains no mention of Python or reproducible analysis."
+          },
+          {
+            "requirement_id": "demo_ds_sql",
+            "status": "met",
+            "fact_indices": [
+              0,
+              1
+            ],
+            "reason": "Candidate contributed SQL aggregations to a team dashboard, demonstrating applied SQL analytical work."
+          },
+          {
+            "requirement_id": "demo_ds_experiments",
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "No evidence of designing or interpreting controlled experiments or causal studies."
+          },
+          {
+            "requirement_id": "demo_ds_experience",
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "Resume lacks dates or years of experience; cannot confirm 5‑year threshold."
+          },
+          {
+            "requirement_id": "demo_ds_dbt",
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "No mention of dbt or warehouse transformation tools."
+          },
+          {
+            "requirement_id": "demo_ds_degree",
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "Education details are absent; degree not documented."
+          }
+        ],
+        "scoring": {
+          "score": null,
+          "lower": 16.7,
+          "upper": 100.0,
+          "estimate": 58.3,
+          "confidence": "low",
+          "resolved_count": 1,
+          "unknown_count": 5,
+          "mandatory_met": 1,
+          "mandatory_total": 3,
+          "categories": [
+            {
+              "category": "mandatory",
+              "requirement_count": 3,
+              "resolved_count": 1,
+              "unknown_count": 2,
+              "effective_weight": 50.0,
+              "lower": 16.7,
+              "upper": 50.0
+            },
+            {
+              "category": "experience",
+              "requirement_count": 1,
+              "resolved_count": 0,
+              "unknown_count": 1,
+              "effective_weight": 25.0,
+              "lower": 0.0,
               "upper": 25.0
             },
             {
@@ -1901,10 +1519,267 @@
       }
     },
     {
+      "job_id": "demo_ds",
+      "candidate_id": "demo_ds_mina",
+      "fingerprint": "94b4b2367697f9d97cd5c69e0aef5bf6241ef78a54a4d077842ed35562a4ee75",
+      "assessment_digest": "e10f3b2dd5dd3ea751b89a81811368df61ccd31145231308fa85114204e83751",
+      "assessment": {
+        "structured": {
+          "job": {
+            "id": "demo_ds",
+            "title": "Senior Data Scientist",
+            "skills": [
+              "Python",
+              "SQL",
+              "statistics",
+              "experimentation",
+              "causal inference",
+              "dbt"
+            ],
+            "requirements": [
+              {
+                "id": "demo_ds_python",
+                "category": "mandatory",
+                "description": "Build reproducible data analysis in Python.",
+                "minimum_years": null,
+                "sort_order": 0
+              },
+              {
+                "id": "demo_ds_sql",
+                "category": "mandatory",
+                "description": "Write SQL joins, aggregations and analytical queries.",
+                "minimum_years": null,
+                "sort_order": 1
+              },
+              {
+                "id": "demo_ds_experiments",
+                "category": "mandatory",
+                "description": "Design and interpret controlled experiments or causal studies with statistical uncertainty.",
+                "minimum_years": null,
+                "sort_order": 2
+              },
+              {
+                "id": "demo_ds_experience",
+                "category": "experience",
+                "description": "At least 5 years of relevant applied data science or quantitative analysis experience.",
+                "minimum_years": 5.0,
+                "sort_order": 3
+              },
+              {
+                "id": "demo_ds_dbt",
+                "category": "preferred",
+                "description": "Experience with dbt or reproducible warehouse transformations.",
+                "minimum_years": null,
+                "sort_order": 4
+              },
+              {
+                "id": "demo_ds_degree",
+                "category": "qualification",
+                "description": "A quantitative degree or equivalent documented applied study.",
+                "minimum_years": null,
+                "sort_order": 5
+              }
+            ]
+          },
+          "source": {
+            "kind": "synthetic_demo",
+            "candidate_id": "demo_ds_mina",
+            "pages": [
+              {
+                "page_number": 1,
+                "text": "SYNTHETIC DEMO RESUME\nMina Patel\nOperations Analyst\nBrings operational analysis and reporting experience with limited experiment ownership.\nWORK EXPERIENCE\n- 5 years of operations analysis, including SQL reporting and process dashboards for a synthetic supply team.\n- Wrote Python reconciliation scripts for inventory records and documented manual validation checks.\n- Reviewed before-and-after process changes; randomized experiment design or causal identification is not documented.\nSELECTED PROJECTS\n- Inventory quality project compared warehouse and order records and documented unresolved mismatches.\n- Operations dashboard project defined weekly service measures and explained data gaps to managers.\nSKILLS\n- SQL, Python, spreadsheet analysis, dashboard review and process documentation.\nEDUCATION AND TRAINING\n- BCom Operations (synthetic demo qualification)."
+              }
+            ]
+          },
+          "mode": "bedrock",
+          "model_id": "openai.gpt-oss-120b-1:0",
+          "facts": [
+            {
+              "kind": "skill",
+              "value": "Python reconciliation scripts",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Wrote Python reconciliation scripts for inventory records and documented manual validation checks.",
+                  "start": 266,
+                  "end": 366
+                }
+              ]
+            },
+            {
+              "kind": "skill",
+              "value": "SQL reporting",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- 5 years of operations analysis, including SQL reporting and process dashboards for a synthetic supply team.",
+                  "start": 156,
+                  "end": 265
+                }
+              ]
+            },
+            {
+              "kind": "experience",
+              "value": "randomized experiment design",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Reviewed before-and-after process changes; randomized experiment design or causal identification is not documented.",
+                  "start": 367,
+                  "end": 484
+                }
+              ]
+            },
+            {
+              "kind": "experience",
+              "value": "5 years of operations analysis",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- 5 years of operations analysis, including SQL reporting and process dashboards for a synthetic supply team.",
+                  "start": 156,
+                  "end": 265
+                }
+              ]
+            },
+            {
+              "kind": "qualification",
+              "value": "BCom Operations",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- BCom Operations (synthetic demo qualification).",
+                  "start": 817,
+                  "end": 866
+                }
+              ]
+            }
+          ],
+          "identity": {
+            "name": {
+              "value": "Mina Patel",
+              "page_number": 1,
+              "start": 22,
+              "end": 32
+            },
+            "current_title": {
+              "value": "Operations Analyst",
+              "page_number": 1,
+              "start": 33,
+              "end": 51
+            }
+          },
+          "unknown_categories": [
+            "project"
+          ],
+          "offset_unit": "unicode_code_point",
+          "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
+        },
+        "judgments": [
+          {
+            "requirement_id": "demo_ds_python",
+            "status": "met",
+            "fact_indices": [
+              0
+            ],
+            "reason": "Resume shows writing Python scripts for inventory reconciliation, demonstrating applied Python data analysis."
+          },
+          {
+            "requirement_id": "demo_ds_sql",
+            "status": "met",
+            "fact_indices": [
+              1
+            ],
+            "reason": "Resume includes SQL reporting and process dashboards, indicating ability to write analytical SQL queries."
+          },
+          {
+            "requirement_id": "demo_ds_experiments",
+            "status": "partial",
+            "fact_indices": [
+              2
+            ],
+            "reason": "Resume mentions reviewing process changes and randomized experiment design, but does not document full design and interpretation."
+          },
+          {
+            "requirement_id": "demo_ds_experience",
+            "status": "met",
+            "fact_indices": [
+              3
+            ],
+            "reason": "Resume states 5 years of operations analysis, satisfying the 5‑year quantitative experience requirement."
+          },
+          {
+            "requirement_id": "demo_ds_dbt",
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "No evidence of dbt or similar warehouse transformation experience in resume."
+          },
+          {
+            "requirement_id": "demo_ds_degree",
+            "status": "met",
+            "fact_indices": [
+              4
+            ],
+            "reason": "Resume lists a BCom Operations degree, a quantitative qualification meeting the degree requirement."
+          }
+        ],
+        "scoring": {
+          "score": null,
+          "lower": 76.7,
+          "upper": 91.7,
+          "estimate": 84.2,
+          "confidence": "high",
+          "resolved_count": 5,
+          "unknown_count": 1,
+          "mandatory_met": 2,
+          "mandatory_total": 3,
+          "categories": [
+            {
+              "category": "mandatory",
+              "requirement_count": 3,
+              "resolved_count": 3,
+              "unknown_count": 0,
+              "effective_weight": 50.0,
+              "lower": 41.7,
+              "upper": 41.7
+            },
+            {
+              "category": "experience",
+              "requirement_count": 1,
+              "resolved_count": 1,
+              "unknown_count": 0,
+              "effective_weight": 25.0,
+              "lower": 25.0,
+              "upper": 25.0
+            },
+            {
+              "category": "preferred",
+              "requirement_count": 1,
+              "resolved_count": 0,
+              "unknown_count": 1,
+              "effective_weight": 15.0,
+              "lower": 0.0,
+              "upper": 15.0
+            },
+            {
+              "category": "qualification",
+              "requirement_count": 1,
+              "resolved_count": 1,
+              "unknown_count": 0,
+              "effective_weight": 10.0,
+              "lower": 10.0,
+              "upper": 10.0
+            }
+          ]
+        },
+        "notice": "AI interpretation requires human review. Evidence citations prove text location, not competence. The unvalidated rubric is not a hiring decision or performance probability."
+      }
+    },
+    {
       "job_id": "demo_hr_ops",
       "candidate_id": "demo_hr_ops_amira",
-      "fingerprint": "fa5b32292d2392f01177ea0710adaafa4737ca74f946a273b159d8c646d0a35a",
-      "assessment_digest": "46f78d0ba0b052e4ff985030f805a21b9395b4dca8b1b9be8c1ddcc11a793686",
+      "fingerprint": "6b091ad4f6c08176315ef8a87bede06da66e38e4ff774dd4d53186df44e8cf25",
+      "assessment_digest": "2830f669c4fa430c4076812f17ada74d1cbc4e5336b2ae09d8d4b2c45e02f767",
       "assessment": {
         "structured": {
           "job": {
@@ -1977,18 +1852,6 @@
           "facts": [
             {
               "kind": "experience",
-              "value": "4 years of HR operations work",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- 4 years of HR operations work for a synthetic distributed services team.",
-                  "start": 162,
-                  "end": 236
-                }
-              ]
-            },
-            {
-              "kind": "skill",
               "value": "Coordinated onboarding and offboarding checklists",
               "evidence": [
                 {
@@ -2001,18 +1864,18 @@
             },
             {
               "kind": "skill",
-              "value": "Maintained HRIS employee records",
+              "value": "HRIS",
               "evidence": [
                 {
                   "page_number": 1,
-                  "quote": "- Maintained HRIS employee records and verified status changes against approved source forms.",
-                  "start": 330,
-                  "end": 423
+                  "quote": "- HRIS, onboarding, offboarding, payroll coordination and process documentation.",
+                  "start": 753,
+                  "end": 833
                 }
               ]
             },
             {
-              "kind": "skill",
+              "kind": "experience",
               "value": "Prepared payroll change summaries",
               "evidence": [
                 {
@@ -2020,6 +1883,18 @@
                   "quote": "- Prepared payroll change summaries for the payroll team to review; final pay decisions stayed with that team.",
                   "start": 424,
                   "end": 534
+                }
+              ]
+            },
+            {
+              "kind": "experience",
+              "value": "4 years of HR operations work",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- 4 years of HR operations work for a synthetic distributed services team.",
+                  "start": 162,
+                  "end": 236
                 }
               ]
             },
@@ -2058,8 +1933,34 @@
                   "end": 833
                 }
               ]
+            },
+            {
+              "kind": "skill",
+              "value": "employee records",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Maintained HRIS employee records and verified status changes against approved source forms.",
+                  "start": 330,
+                  "end": 423
+                }
+              ]
             }
           ],
+          "identity": {
+            "name": {
+              "value": "Amira Shah",
+              "page_number": 1,
+              "start": 22,
+              "end": 32
+            },
+            "current_title": {
+              "value": "People Operations Specialist",
+              "page_number": 1,
+              "start": 33,
+              "end": 61
+            }
+          },
           "unknown_categories": [
             "qualification"
           ],
@@ -2071,56 +1972,57 @@
             "requirement_id": "demo_hr_ops_lifecycle",
             "status": "met",
             "fact_indices": [
-              1
+              0
             ],
-            "reason": "Resume shows coordination of onboarding and offboarding checklists with managers, IT and benefits partners."
+            "reason": "Coordinated onboarding and offboarding checklists with managers, IT and benefits partners."
           },
           {
             "requirement_id": "demo_hr_ops_hris",
             "status": "met",
             "fact_indices": [
-              2
+              7
             ],
-            "reason": "Resume states maintaining HRIS employee records and verifying status changes."
+            "reason": "Maintained HRIS employee records and verified status changes."
           },
           {
             "requirement_id": "demo_hr_ops_payroll",
             "status": "met",
             "fact_indices": [
-              3
+              2
             ],
-            "reason": "Resume indicates preparation of payroll change summaries for the payroll team."
+            "reason": "Prepared payroll change summaries for the payroll team to review."
           },
           {
             "requirement_id": "demo_hr_ops_experience",
             "status": "met",
             "fact_indices": [
-              0
+              3
             ],
-            "reason": "Resume lists 4 years of HR operations work, exceeding the 2‑year minimum."
+            "reason": "4 years of HR operations work exceeds the 2‑year minimum."
           },
           {
             "requirement_id": "demo_hr_ops_process",
             "status": "met",
             "fact_indices": [
-              4,
               6
             ],
-            "reason": "Projects document onboarding workflows and add a review step, and skills include process documentation."
+            "reason": "Listed process documentation skill and projects that documented and improved HR workflows."
           },
           {
             "requirement_id": "demo_hr_ops_training",
             "status": "met",
             "fact_indices": [
-              0
+              3
             ],
-            "reason": "Resume provides documented practical HR operations experience, satisfying the equivalency clause."
+            "reason": "4 years of HR operations provides equivalent practical experience to formal training."
           }
         ],
         "scoring": {
           "score": 100.0,
           "lower": 100.0,
           "upper": 100.0,
+          "estimate": 100.0,
+          "confidence": "very_high",
           "resolved_count": 6,
           "unknown_count": 0,
           "mandatory_met": 3,
@@ -2170,8 +2072,8 @@
     {
       "job_id": "demo_hr_ops",
       "candidate_id": "demo_hr_ops_neel",
-      "fingerprint": "558a7857789682186eadd78c177f901eba977e1334078a60fee9b82e30e96ad2",
-      "assessment_digest": "23634e6f46e564f558e1d5ed47555290494ebb1cf5a874d9d7b86919c56258fd",
+      "fingerprint": "bb05bb4bff258e0d26c229a5697643b8159aedf793eb5577105c0e61bb5f1e67",
+      "assessment_digest": "0c733da55974fa312e4b761d9b8b8e60c0fde88f9dcc3d255a58e5df983ac77e",
       "assessment": {
         "structured": {
           "job": {
@@ -2243,26 +2145,26 @@
           "model_id": "openai.gpt-oss-120b-1:0",
           "facts": [
             {
-              "kind": "skill",
-              "value": "Onboarding logistics",
+              "kind": "experience",
+              "value": "Collected onboarding documents and routed missing items",
               "evidence": [
                 {
                   "page_number": 1,
-                  "quote": "- Onboarding logistics, spreadsheet tracking, process checklists and stakeholder follow-up.",
-                  "start": 674,
-                  "end": 765
+                  "quote": "- Collected onboarding documents and routed missing items to the HR team for review.",
+                  "start": 248,
+                  "end": 332
                 }
               ]
             },
             {
               "kind": "skill",
-              "value": "process checklists",
+              "value": "direct HRIS updates and payroll coordination",
               "evidence": [
                 {
                   "page_number": 1,
-                  "quote": "- Onboarding logistics, spreadsheet tracking, process checklists and stakeholder follow-up.",
-                  "start": 674,
-                  "end": 765
+                  "quote": "- Kept a spreadsheet tracker of employee handoffs; direct HRIS updates and payroll coordination are not documented.",
+                  "start": 333,
+                  "end": 448
                 }
               ]
             },
@@ -2279,44 +2181,8 @@
               ]
             },
             {
-              "kind": "experience",
-              "value": "Collected onboarding documents and routed missing items to the HR team for review",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Collected onboarding documents and routed missing items to the HR team for review.",
-                  "start": 248,
-                  "end": 332
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "direct HRIS updates",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "Kept a spreadsheet tracker of employee handoffs; direct HRIS updates and payroll coordination are not documented.",
-                  "start": 335,
-                  "end": 448
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "payroll coordination",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "Kept a spreadsheet tracker of employee handoffs; direct HRIS updates and payroll coordination are not documented.",
-                  "start": 335,
-                  "end": 448
-                }
-              ]
-            },
-            {
               "kind": "project",
-              "value": "New-starter checklist project clarified equipment and account request owners before start dates",
+              "value": "New-starter checklist project",
               "evidence": [
                 {
                   "page_number": 1,
@@ -2328,7 +2194,7 @@
             },
             {
               "kind": "project",
-              "value": "Facilities request project documented recurring handoff delays without claiming payroll ownership",
+              "value": "Facilities request project",
               "evidence": [
                 {
                   "page_number": 1,
@@ -2337,8 +2203,34 @@
                   "end": 666
                 }
               ]
+            },
+            {
+              "kind": "skill",
+              "value": "process checklists",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Onboarding logistics, spreadsheet tracking, process checklists and stakeholder follow-up.",
+                  "start": 674,
+                  "end": 765
+                }
+              ]
             }
           ],
+          "identity": {
+            "name": {
+              "value": "Neel Kapoor",
+              "page_number": 1,
+              "start": 22,
+              "end": 33
+            },
+            "current_title": {
+              "value": "Office Operations Coordinator",
+              "page_number": 1,
+              "start": 34,
+              "end": 63
+            }
+          },
           "unknown_categories": [
             "qualification"
           ],
@@ -2350,69 +2242,70 @@
             "requirement_id": "demo_hr_ops_lifecycle",
             "status": "partial",
             "fact_indices": [
-              3
+              0,
+              2
             ],
-            "reason": "Resume shows collecting onboarding documents and routing them, but no mention of offboarding steps."
+            "reason": "Resume shows onboarding document collection and new‑starter logistics coordination, but no mention of offboarding steps."
           },
           {
             "requirement_id": "demo_hr_ops_hris",
-            "status": "not_met",
-            "fact_indices": [
-              4
-            ],
-            "reason": "Resume explicitly states direct HRIS updates are not documented."
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "The cited text only says this information is missing; verify it with the candidate."
           },
           {
             "requirement_id": "demo_hr_ops_payroll",
-            "status": "not_met",
-            "fact_indices": [
-              5
-            ],
-            "reason": "Resume indicates payroll coordination is not documented."
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "The cited text only says this information is missing; verify it with the candidate."
           },
           {
             "requirement_id": "demo_hr_ops_experience",
-            "status": "met",
+            "status": "partial",
             "fact_indices": [
+              0,
               2
             ],
-            "reason": "Resume lists 3 years of office operations including new‑starter logistics, satisfying the 2‑year HR/people‑ops experience requirement."
+            "reason": "3 years of office operations and some onboarding tasks are shown, but HR‑specific experience duration is not clearly 2 years."
           },
           {
             "requirement_id": "demo_hr_ops_process",
             "status": "met",
             "fact_indices": [
-              0,
-              6
+              3,
+              4,
+              5
             ],
-            "reason": "Resume mentions process checklists and projects documenting and improving HR‑related workflows."
+            "reason": "Created onboarding checklist project, documented facilities handoff delays, and lists process‑checklist skill, showing workflow documentation and improvement."
           },
           {
             "requirement_id": "demo_hr_ops_training",
             "status": "met",
             "fact_indices": [
-              2
+              0
             ],
-            "reason": "While formal HR training is not listed, the candidate has relevant practical experience in HR operations."
+            "reason": "Practical HR operations experience demonstrated by collecting onboarding documents and routing them, satisfying equivalent experience clause."
           }
         ],
         "scoring": {
-          "score": 58.3,
-          "lower": 58.3,
-          "upper": 58.3,
-          "resolved_count": 6,
-          "unknown_count": 0,
+          "score": null,
+          "lower": 45.8,
+          "upper": 79.2,
+          "estimate": 62.5,
+          "confidence": "medium",
+          "resolved_count": 4,
+          "unknown_count": 2,
           "mandatory_met": 0,
           "mandatory_total": 3,
           "categories": [
             {
               "category": "mandatory",
               "requirement_count": 3,
-              "resolved_count": 3,
-              "unknown_count": 0,
+              "resolved_count": 1,
+              "unknown_count": 2,
               "effective_weight": 50.0,
               "lower": 8.3,
-              "upper": 8.3
+              "upper": 41.7
             },
             {
               "category": "experience",
@@ -2420,8 +2313,8 @@
               "resolved_count": 1,
               "unknown_count": 0,
               "effective_weight": 25.0,
-              "lower": 25.0,
-              "upper": 25.0
+              "lower": 12.5,
+              "upper": 12.5
             },
             {
               "category": "preferred",
@@ -2449,8 +2342,8 @@
     {
       "job_id": "demo_hr_ops",
       "candidate_id": "demo_hr_ops_tessa",
-      "fingerprint": "6327a47fccddf8260f8b58381774b62998e304a01264e58456a155f4fd8e8a6a",
-      "assessment_digest": "b9708bc263f6ba9fa1262f3a789708e239acbacdf8f8cbb2fe79256b574ba5de",
+      "fingerprint": "99c259bef8c6003a2cb4d3a9dc39e4aa0352bcc2ca7c90533e9da602b490931b",
+      "assessment_digest": "e2035a3d9af16f2ba7068f9313a457097d7f57fa20933e0723720b09c1becf80",
       "assessment": {
         "structured": {
           "job": {
@@ -2522,74 +2415,14 @@
           "model_id": "openai.gpt-oss-120b-1:0",
           "facts": [
             {
-              "kind": "skill",
-              "value": "Interview scheduling",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Interview scheduling, document tracking and written handoffs.",
-                  "start": 485,
-                  "end": 548
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "document tracking",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Interview scheduling, document tracking and written handoffs.",
-                  "start": 485,
-                  "end": 548
-                }
-              ]
-            },
-            {
               "kind": "experience",
               "value": "Collected signed onboarding forms",
               "evidence": [
                 {
                   "page_number": 1,
-                  "quote": "- Collected signed onboarding forms but did not describe HRIS maintenance or payroll handoffs.",
-                  "start": 269,
+                  "quote": "Collected signed onboarding forms but did not describe HRIS maintenance or payroll handoffs.",
+                  "start": 271,
                   "end": 363
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "HRIS maintenance",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Collected signed onboarding forms but did not describe HRIS maintenance or payroll handoffs.",
-                  "start": 269,
-                  "end": 363
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "payroll handoffs",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Collected signed onboarding forms but did not describe HRIS maintenance or payroll handoffs.",
-                  "start": 269,
-                  "end": 363
-                }
-              ]
-            },
-            {
-              "kind": "experience",
-              "value": "Scheduled interviews and prepared offer packets",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Scheduled interviews and prepared offer packets for recruiter review; dates and hours are not specified.",
-                  "start": 162,
-                  "end": 268
                 }
               ]
             },
@@ -2606,19 +2439,47 @@
               ]
             },
             {
-              "kind": "qualification",
-              "value": "HR operations training are not stated",
+              "kind": "skill",
+              "value": "document tracking",
               "evidence": [
                 {
                   "page_number": 1,
-                  "quote": "- Education and HR operations training are not stated in this synthetic source.",
-                  "start": 572,
-                  "end": 651
+                  "quote": "- Interview scheduling, document tracking and written handoffs.",
+                  "start": 485,
+                  "end": 548
+                }
+              ]
+            },
+            {
+              "kind": "skill",
+              "value": "written handoffs",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Interview scheduling, document tracking and written handoffs.",
+                  "start": 485,
+                  "end": 548
                 }
               ]
             }
           ],
-          "unknown_categories": [],
+          "identity": {
+            "name": {
+              "value": "Tessa Roy",
+              "page_number": 1,
+              "start": 22,
+              "end": 31
+            },
+            "current_title": {
+              "value": "Recruiting Coordinator",
+              "page_number": 1,
+              "start": 32,
+              "end": 54
+            }
+          },
+          "unknown_categories": [
+            "qualification"
+          ],
           "offset_unit": "unicode_code_point",
           "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
         },
@@ -2627,48 +2488,51 @@
             "requirement_id": "demo_hr_ops_lifecycle",
             "status": "partial",
             "fact_indices": [
-              2,
-              6
+              0
             ],
-            "reason": "Resume shows collection of signed onboarding forms and a candidate handoff notes project, indicating some involvement in onboarding documentation but no evidence of full coordination or offboarding."
+            "reason": "Collected signed onboarding forms shows participation in onboarding, but no evidence of coordinating full documented onboarding/offboarding steps."
           },
           {
             "requirement_id": "demo_hr_ops_hris",
             "status": "unknown",
             "fact_indices": [],
-            "reason": "No mention of maintaining employee records or HRIS activities."
+            "reason": "Resume provides no evidence of maintaining employee records or using an HRIS."
           },
           {
             "requirement_id": "demo_hr_ops_payroll",
             "status": "unknown",
             "fact_indices": [],
-            "reason": "Resume does not describe coordinating payroll or benefits changes."
+            "reason": "No information about coordinating payroll or benefits changes is present."
           },
           {
             "requirement_id": "demo_hr_ops_experience",
             "status": "unknown",
             "fact_indices": [],
-            "reason": "No years of HR or people‑operations experience are provided."
+            "reason": "Resume does not specify duration of HR or people‑operations experience."
           },
           {
             "requirement_id": "demo_hr_ops_process",
             "status": "partial",
             "fact_indices": [
-              6
+              1,
+              2,
+              3
             ],
-            "reason": "Candidate handoff notes project indicates documentation of a workflow, but no evidence of systematic improvement of repeatable HR processes."
+            "reason": "Project on candidate handoff notes and skills in document tracking and written handoffs indicate documenting HR processes, though no explicit workflow improvement."
           },
           {
             "requirement_id": "demo_hr_ops_training",
             "status": "unknown",
             "fact_indices": [],
-            "reason": "Resume does not state any HR operations training."
+            "reason": "Resume states HR operations training is not mentioned."
           }
         ],
         "scoring": {
           "score": null,
           "lower": 15.8,
           "upper": 84.2,
+          "estimate": 50.0,
+          "confidence": "low",
           "resolved_count": 2,
           "unknown_count": 4,
           "mandatory_met": 0,
@@ -2717,9 +2581,273 @@
     },
     {
       "job_id": "demo_marketing_ops",
+      "candidate_id": "demo_marketing_ops_eva",
+      "fingerprint": "3cdec9ef0a4083c361d2e2a571f6f66bde3c447096e4e8ee487bd1482cb7405c",
+      "assessment_digest": "9188932f2e4c1880121cad69c0374bbafc1259ea8c1106f990945a2d502615fa",
+      "assessment": {
+        "structured": {
+          "job": {
+            "id": "demo_marketing_ops",
+            "title": "Marketing Operations Specialist",
+            "skills": [
+              "campaign operations",
+              "CRM",
+              "marketing automation",
+              "campaign analytics",
+              "lead handoff"
+            ],
+            "requirements": [
+              {
+                "id": "demo_marketing_ops_campaigns",
+                "category": "mandatory",
+                "description": "Plan and execute multi-channel digital campaigns with documented handoffs.",
+                "minimum_years": null,
+                "sort_order": 0
+              },
+              {
+                "id": "demo_marketing_ops_crm",
+                "category": "mandatory",
+                "description": "Maintain CRM prospect data and lead-routing rules.",
+                "minimum_years": null,
+                "sort_order": 1
+              },
+              {
+                "id": "demo_marketing_ops_measurement",
+                "category": "mandatory",
+                "description": "Measure campaign engagement and downstream outcomes with appropriate caveats.",
+                "minimum_years": null,
+                "sort_order": 2
+              },
+              {
+                "id": "demo_marketing_ops_experience",
+                "category": "experience",
+                "description": "At least 2 years of relevant marketing operations or digital campaign experience.",
+                "minimum_years": 2.0,
+                "sort_order": 3
+              },
+              {
+                "id": "demo_marketing_ops_automation",
+                "category": "preferred",
+                "description": "Use marketing automation or campaign production tools to reduce manual work.",
+                "minimum_years": null,
+                "sort_order": 4
+              },
+              {
+                "id": "demo_marketing_ops_training",
+                "category": "qualification",
+                "description": "Documented marketing or analytics training or equivalent relevant practical experience.",
+                "minimum_years": null,
+                "sort_order": 5
+              }
+            ]
+          },
+          "source": {
+            "kind": "synthetic_demo",
+            "candidate_id": "demo_marketing_ops_eva",
+            "pages": [
+              {
+                "page_number": 1,
+                "text": "SYNTHETIC DEMO RESUME\nEva Brooks\nContent Coordinator\nHas content-calendar and newsletter contributions with uncertain campaign ownership.\nWORK EXPERIENCE\n- Prepared social posts and email copy for a team calendar; work dates and campaign ownership are not specified.\n- Reviewed basic engagement charts but did not identify CRM updates, lead handoffs or downstream outcome analysis.\nSELECTED PROJECTS\n- Newsletter content project organized draft versions and a checklist for human approval.\nSKILLS\n- Content calendar, email copy, social posts and basic engagement review.\nEDUCATION AND TRAINING\n- Education and marketing training are not stated in this synthetic source."
+              }
+            ]
+          },
+          "mode": "bedrock",
+          "model_id": "openai.gpt-oss-120b-1:0",
+          "facts": [
+            {
+              "kind": "skill",
+              "value": "content-calendar",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "Has content-calendar and newsletter contributions with uncertain campaign ownership.",
+                  "start": 53,
+                  "end": 137
+                }
+              ]
+            },
+            {
+              "kind": "skill",
+              "value": "email copy",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Prepared social posts and email copy for a team calendar; work dates and campaign ownership are not specified.",
+                  "start": 154,
+                  "end": 266
+                }
+              ]
+            },
+            {
+              "kind": "skill",
+              "value": "CRM updates",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Reviewed basic engagement charts but did not identify CRM updates, lead handoffs or downstream outcome analysis.",
+                  "start": 267,
+                  "end": 381
+                }
+              ]
+            },
+            {
+              "kind": "skill",
+              "value": "lead handoffs",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Reviewed basic engagement charts but did not identify CRM updates, lead handoffs or downstream outcome analysis.",
+                  "start": 267,
+                  "end": 381
+                }
+              ]
+            },
+            {
+              "kind": "project",
+              "value": "Newsletter content project",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Newsletter content project organized draft versions and a checklist for human approval.",
+                  "start": 400,
+                  "end": 489
+                }
+              ]
+            },
+            {
+              "kind": "experience",
+              "value": "Prepared social posts",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Prepared social posts and email copy for a team calendar; work dates and campaign ownership are not specified.",
+                  "start": 154,
+                  "end": 266
+                }
+              ]
+            }
+          ],
+          "identity": {
+            "name": {
+              "value": "Eva Brooks",
+              "page_number": 1,
+              "start": 22,
+              "end": 32
+            },
+            "current_title": {
+              "value": "Content Coordinator",
+              "page_number": 1,
+              "start": 33,
+              "end": 52
+            }
+          },
+          "unknown_categories": [
+            "qualification"
+          ],
+          "offset_unit": "unicode_code_point",
+          "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
+        },
+        "judgments": [
+          {
+            "requirement_id": "demo_marketing_ops_campaigns",
+            "status": "partial",
+            "fact_indices": [
+              0,
+              1,
+              5
+            ],
+            "reason": "Involved in content-calendar and prepared email copy for a team calendar, showing some campaign execution, but no multi-channel scope or documented handoffs."
+          },
+          {
+            "requirement_id": "demo_marketing_ops_crm",
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "Resume does not provide evidence of maintaining CRM prospect data or lead-routing rules."
+          },
+          {
+            "requirement_id": "demo_marketing_ops_measurement",
+            "status": "partial",
+            "fact_indices": [
+              2
+            ],
+            "reason": "Reviewed basic engagement charts, indicating some measurement, but did not perform downstream outcome analysis."
+          },
+          {
+            "requirement_id": "demo_marketing_ops_experience",
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "No dates or duration are provided to confirm at least 2 years of marketing operations experience."
+          },
+          {
+            "requirement_id": "demo_marketing_ops_automation",
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "No mention of marketing automation or campaign production tools in the resume."
+          },
+          {
+            "requirement_id": "demo_marketing_ops_training",
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "Resume states that education and marketing training are not stated."
+          }
+        ],
+        "scoring": {
+          "score": null,
+          "lower": 16.7,
+          "upper": 83.3,
+          "estimate": 50.0,
+          "confidence": "low",
+          "resolved_count": 2,
+          "unknown_count": 4,
+          "mandatory_met": 0,
+          "mandatory_total": 3,
+          "categories": [
+            {
+              "category": "mandatory",
+              "requirement_count": 3,
+              "resolved_count": 2,
+              "unknown_count": 1,
+              "effective_weight": 50.0,
+              "lower": 16.7,
+              "upper": 33.3
+            },
+            {
+              "category": "experience",
+              "requirement_count": 1,
+              "resolved_count": 0,
+              "unknown_count": 1,
+              "effective_weight": 25.0,
+              "lower": 0.0,
+              "upper": 25.0
+            },
+            {
+              "category": "preferred",
+              "requirement_count": 1,
+              "resolved_count": 0,
+              "unknown_count": 1,
+              "effective_weight": 15.0,
+              "lower": 0.0,
+              "upper": 15.0
+            },
+            {
+              "category": "qualification",
+              "requirement_count": 1,
+              "resolved_count": 0,
+              "unknown_count": 1,
+              "effective_weight": 10.0,
+              "lower": 0.0,
+              "upper": 10.0
+            }
+          ]
+        },
+        "notice": "AI interpretation requires human review. Evidence citations prove text location, not competence. The unvalidated rubric is not a hiring decision or performance probability."
+      }
+    },
+    {
+      "job_id": "demo_marketing_ops",
       "candidate_id": "demo_marketing_ops_leena",
-      "fingerprint": "cd6048f88db5459aa54cb786ab84ca46240892acfe48fd58ce729fe42c815f10",
-      "assessment_digest": "dea6fbafc8331327f650b706d3e4b9340487069c45acb1acaa5839f1f5cf8f72",
+      "fingerprint": "02690a6ae9d98ce9ce290fc64eb7e683ca88828583cbff3f8773d0c6fc754e9c",
+      "assessment_digest": "fccaacce387347dbeb6f7770f588588c0b7faf8df640e1d339b14451a25f37f7",
       "assessment": {
         "structured": {
           "job": {
@@ -2803,8 +2931,8 @@
               ]
             },
             {
-              "kind": "experience",
-              "value": "Maintained CRM prospect records and lead-routing rules",
+              "kind": "skill",
+              "value": "CRM prospect records",
               "evidence": [
                 {
                   "page_number": 1,
@@ -2815,14 +2943,14 @@
               ]
             },
             {
-              "kind": "experience",
-              "value": "Reported campaign engagement and downstream lead outcomes while noting attribution limits",
+              "kind": "skill",
+              "value": "marketing automation",
               "evidence": [
                 {
                   "page_number": 1,
-                  "quote": "- Reported campaign engagement and downstream lead outcomes while noting attribution limits.",
-                  "start": 366,
-                  "end": 458
+                  "quote": "- Lifecycle email project used marketing automation to document audience rules, approval steps and send checks.",
+                  "start": 477,
+                  "end": 588
                 }
               ]
             },
@@ -2851,8 +2979,20 @@
               ]
             },
             {
+              "kind": "experience",
+              "value": "Reported campaign engagement and downstream lead outcomes while noting attribution limits",
+              "evidence": [
+                {
+                  "page_number": 1,
+                  "quote": "- Reported campaign engagement and downstream lead outcomes while noting attribution limits.",
+                  "start": 366,
+                  "end": 458
+                }
+              ]
+            },
+            {
               "kind": "skill",
-              "value": "CRM, marketing automation, email campaigns, campaign analytics and lead handoff",
+              "value": "campaign analytics",
               "evidence": [
                 {
                   "page_number": 1,
@@ -2863,19 +3003,35 @@
               ]
             },
             {
-              "kind": "qualification",
-              "value": "Formal marketing qualification is not stated",
+              "kind": "skill",
+              "value": "lead handoff",
               "evidence": [
                 {
                   "page_number": 1,
-                  "quote": "- Formal marketing qualification is not stated in this synthetic source.",
-                  "start": 814,
-                  "end": 886
+                  "quote": "- CRM, marketing automation, email campaigns, campaign analytics and lead handoff.",
+                  "start": 708,
+                  "end": 790
                 }
               ]
             }
           ],
-          "unknown_categories": [],
+          "identity": {
+            "name": {
+              "value": "Leena Desai",
+              "page_number": 1,
+              "start": 22,
+              "end": 33
+            },
+            "current_title": {
+              "value": "Marketing Operations Specialist",
+              "page_number": 1,
+              "start": 34,
+              "end": 65
+            }
+          },
+          "unknown_categories": [
+            "qualification"
+          ],
           "offset_unit": "unicode_code_point",
           "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
         },
@@ -2887,7 +3043,7 @@
               0,
               1
             ],
-            "reason": "Resume shows 4 years of multi‑channel campaign work and maintains lead‑handoffs, confirming planning and execution with documented handoffs."
+            "reason": "Resume shows 4 years executing email, paid media, event campaigns and maintaining lead-routing rules, indicating planning and execution of multi-channel campaigns with documented handoffs."
           },
           {
             "requirement_id": "demo_marketing_ops_crm",
@@ -2895,16 +3051,15 @@
             "fact_indices": [
               1
             ],
-            "reason": "Explicit mention of maintaining CRM prospect records and lead‑routing rules."
+            "reason": "Maintained CRM prospect records and lead-routing rules as described."
           },
           {
             "requirement_id": "demo_marketing_ops_measurement",
             "status": "met",
             "fact_indices": [
-              2,
-              4
+              5
             ],
-            "reason": "Reports campaign engagement and downstream outcomes with attribution limits; measurement project links engagement data to outcomes."
+            "reason": "Reported campaign engagement and downstream lead outcomes while noting attribution limits."
           },
           {
             "requirement_id": "demo_marketing_ops_experience",
@@ -2912,16 +3067,16 @@
             "fact_indices": [
               0
             ],
-            "reason": "States 4 years of marketing operations experience, exceeding the 2‑year minimum."
+            "reason": "Resume states 4 years of marketing operations work, exceeding the 2‑year minimum."
           },
           {
             "requirement_id": "demo_marketing_ops_automation",
             "status": "met",
             "fact_indices": [
-              3,
-              5
+              2,
+              3
             ],
-            "reason": "Lifecycle email project used marketing automation; skills list includes marketing automation."
+            "reason": "Uses marketing automation in a lifecycle email project to document audience rules and approvals."
           },
           {
             "requirement_id": "demo_marketing_ops_training",
@@ -2929,13 +3084,15 @@
             "fact_indices": [
               0
             ],
-            "reason": "Although formal training isn’t listed, the candidate’s 4‑year practical marketing operations experience satisfies the ‘equivalent relevant practical experience’ clause."
+            "reason": "Practical marketing operations experience documented (4 years) satisfies the equivalent practical experience clause."
           }
         ],
         "scoring": {
           "score": 100.0,
           "lower": 100.0,
           "upper": 100.0,
+          "estimate": 100.0,
+          "confidence": "very_high",
           "resolved_count": 6,
           "unknown_count": 0,
           "mandatory_met": 3,
@@ -2985,8 +3142,8 @@
     {
       "job_id": "demo_marketing_ops",
       "candidate_id": "demo_marketing_ops_omar",
-      "fingerprint": "3b802782f8f8b87ee6585ed56bd43b811caa22baeb6222d5f041b6d1c8ff5133",
-      "assessment_digest": "0f029b02b2dadb9028692ce43b891611282d9152e05d5a4213386bc45908654a",
+      "fingerprint": "2c4b5d6dc7c85e9bfd61a5ea0740f4375eaa8edbdafcc954b6b07a7ec4dd22ba",
+      "assessment_digest": "ab3bd4e4b3fb5f3443078ce0a72a9802f9c0e5fb83657304b5581aaea55ce40e",
       "assessment": {
         "structured": {
           "job": {
@@ -3058,62 +3215,14 @@
           "model_id": "openai.gpt-oss-120b-1:0",
           "facts": [
             {
-              "kind": "skill",
-              "value": "Meta Ads",
+              "kind": "experience",
+              "value": "3 years of digital marketing work",
               "evidence": [
                 {
                   "page_number": 1,
-                  "quote": "- Meta Ads, Google Ads, SEO, Shopify, WordPress and Google Analytics.",
-                  "start": 663,
-                  "end": 732
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "Google Ads",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Meta Ads, Google Ads, SEO, Shopify, WordPress and Google Analytics.",
-                  "start": 663,
-                  "end": 732
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "SEO",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Meta Ads, Google Ads, SEO, Shopify, WordPress and Google Analytics.",
-                  "start": 663,
-                  "end": 732
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "Shopify",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Meta Ads, Google Ads, SEO, Shopify, WordPress and Google Analytics.",
-                  "start": 663,
-                  "end": 732
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "WordPress",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Meta Ads, Google Ads, SEO, Shopify, WordPress and Google Analytics.",
-                  "start": 663,
-                  "end": 732
+                  "quote": "- 3 years of digital marketing work on paid search, social campaigns and website content.",
+                  "start": 154,
+                  "end": 243
                 }
               ]
             },
@@ -3131,19 +3240,7 @@
             },
             {
               "kind": "experience",
-              "value": "3 years of digital marketing work",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- 3 years of digital marketing work on paid search, social campaigns and website content.",
-                  "start": 154,
-                  "end": 243
-                }
-              ]
-            },
-            {
-              "kind": "experience",
-              "value": "campaign engagement reports",
+              "value": "Ran Meta Ads and Google Ads",
               "evidence": [
                 {
                   "page_number": 1,
@@ -3155,19 +3252,7 @@
             },
             {
               "kind": "project",
-              "value": "Landing-page review project",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Landing-page review project compared page content, ad messages and traffic sources without claiming causal lift.",
-                  "start": 455,
-                  "end": 569
-                }
-              ]
-            },
-            {
-              "kind": "project",
-              "value": "Email draft project",
+              "value": "Email draft project documented subject-line alternatives and manual approval steps",
               "evidence": [
                 {
                   "page_number": 1,
@@ -3178,30 +3263,44 @@
               ]
             },
             {
-              "kind": "skill",
-              "value": "CRM lead routing",
+              "kind": "experience",
+              "value": "reviewed campaign engagement reports",
               "evidence": [
                 {
                   "page_number": 1,
-                  "quote": "- Built Shopify and WordPress landing pages with SEO checks; CRM lead routing is not described.",
-                  "start": 341,
-                  "end": 436
+                  "quote": "- Ran Meta Ads and Google Ads, revised audience groups and reviewed campaign engagement reports.",
+                  "start": 244,
+                  "end": 340
                 }
               ]
             },
             {
-              "kind": "skill",
-              "value": "lead-routing",
+              "kind": "experience",
+              "value": "CRM lead routing is not described",
               "evidence": [
                 {
                   "page_number": 1,
-                  "quote": "Runs digital ads and web content with limited CRM and lead-routing evidence.",
-                  "start": 61,
-                  "end": 137
+                  "quote": "CRM lead routing is not described.",
+                  "start": 402,
+                  "end": 436
                 }
               ]
             }
           ],
+          "identity": {
+            "name": {
+              "value": "Omar Singh",
+              "page_number": 1,
+              "start": 22,
+              "end": 32
+            },
+            "current_title": {
+              "value": "Digital Marketing Executive",
+              "page_number": 1,
+              "start": 33,
+              "end": 60
+            }
+          },
           "unknown_categories": [
             "qualification"
           ],
@@ -3211,71 +3310,68 @@
         "judgments": [
           {
             "requirement_id": "demo_marketing_ops_campaigns",
-            "status": "met",
+            "status": "partial",
             "fact_indices": [
-              6,
-              7,
-              9
+              0,
+              3
             ],
-            "reason": "Resume shows multi‑channel digital campaign work and documents handoff steps via the email draft project."
+            "reason": "Executes multi‑channel paid search and social campaigns, but only limited evidence of documented handoffs (email draft documentation)."
           },
           {
             "requirement_id": "demo_marketing_ops_crm",
-            "status": "not_met",
-            "fact_indices": [
-              10,
-              11
-            ],
-            "reason": "Resume explicitly notes that CRM lead routing is not described, indicating lack of CRM maintenance experience."
+            "status": "unknown",
+            "fact_indices": [],
+            "reason": "The cited text only says this information is missing; verify it with the candidate."
           },
           {
             "requirement_id": "demo_marketing_ops_measurement",
-            "status": "met",
+            "status": "partial",
             "fact_indices": [
-              7,
-              8
+              4
             ],
-            "reason": "Engagement reports are reviewed and the landing‑page review project includes caveats about causal lift, satisfying measurement requirements."
+            "reason": "Shows measurement of campaign engagement via reports, but no evidence of downstream outcome measurement."
           },
           {
             "requirement_id": "demo_marketing_ops_experience",
             "status": "met",
             "fact_indices": [
-              6
+              0
             ],
-            "reason": "Three years of digital marketing work exceeds the two‑year minimum."
+            "reason": "3 years of digital marketing work exceeds the 2‑year minimum."
           },
           {
             "requirement_id": "demo_marketing_ops_automation",
             "status": "unknown",
             "fact_indices": [],
-            "reason": "No evidence of marketing automation or campaign production tools is provided."
+            "reason": "Resume does not mention any marketing automation or campaign production tools."
           },
           {
             "requirement_id": "demo_marketing_ops_training",
             "status": "met",
             "fact_indices": [
-              6
+              0
             ],
-            "reason": "Relevant practical experience (3 years digital marketing) serves as equivalent to documented training."
+            "reason": "Documented 3‑year digital marketing experience satisfies the equivalent practical experience clause."
           }
         ],
         "scoring": {
           "score": null,
-          "lower": 68.3,
+          "lower": 51.7,
           "upper": 83.3,
-          "resolved_count": 5,
-          "unknown_count": 1,
-          "mandatory_met": 2,
+          "estimate": 67.5,
+          "confidence": "medium",
+          "resolved_count": 4,
+          "unknown_count": 2,
+          "mandatory_met": 0,
           "mandatory_total": 3,
           "categories": [
             {
               "category": "mandatory",
               "requirement_count": 3,
-              "resolved_count": 3,
-              "unknown_count": 0,
+              "resolved_count": 2,
+              "unknown_count": 1,
               "effective_weight": 50.0,
-              "lower": 33.3,
+              "lower": 16.7,
               "upper": 33.3
             },
             {
@@ -3303,254 +3399,6 @@
               "unknown_count": 0,
               "effective_weight": 10.0,
               "lower": 10.0,
-              "upper": 10.0
-            }
-          ]
-        },
-        "notice": "AI interpretation requires human review. Evidence citations prove text location, not competence. The unvalidated rubric is not a hiring decision or performance probability."
-      }
-    },
-    {
-      "job_id": "demo_marketing_ops",
-      "candidate_id": "demo_marketing_ops_eva",
-      "fingerprint": "f95771c2b4c428951bf04c1aab1abe2dfd9cf4996bbb92a9025186268ff4bb48",
-      "assessment_digest": "f97386300acd73a55a81269acfd827fa82b034e4d7e2fcdbc086098147cd2880",
-      "assessment": {
-        "structured": {
-          "job": {
-            "id": "demo_marketing_ops",
-            "title": "Marketing Operations Specialist",
-            "skills": [
-              "campaign operations",
-              "CRM",
-              "marketing automation",
-              "campaign analytics",
-              "lead handoff"
-            ],
-            "requirements": [
-              {
-                "id": "demo_marketing_ops_campaigns",
-                "category": "mandatory",
-                "description": "Plan and execute multi-channel digital campaigns with documented handoffs.",
-                "minimum_years": null,
-                "sort_order": 0
-              },
-              {
-                "id": "demo_marketing_ops_crm",
-                "category": "mandatory",
-                "description": "Maintain CRM prospect data and lead-routing rules.",
-                "minimum_years": null,
-                "sort_order": 1
-              },
-              {
-                "id": "demo_marketing_ops_measurement",
-                "category": "mandatory",
-                "description": "Measure campaign engagement and downstream outcomes with appropriate caveats.",
-                "minimum_years": null,
-                "sort_order": 2
-              },
-              {
-                "id": "demo_marketing_ops_experience",
-                "category": "experience",
-                "description": "At least 2 years of relevant marketing operations or digital campaign experience.",
-                "minimum_years": 2.0,
-                "sort_order": 3
-              },
-              {
-                "id": "demo_marketing_ops_automation",
-                "category": "preferred",
-                "description": "Use marketing automation or campaign production tools to reduce manual work.",
-                "minimum_years": null,
-                "sort_order": 4
-              },
-              {
-                "id": "demo_marketing_ops_training",
-                "category": "qualification",
-                "description": "Documented marketing or analytics training or equivalent relevant practical experience.",
-                "minimum_years": null,
-                "sort_order": 5
-              }
-            ]
-          },
-          "source": {
-            "kind": "synthetic_demo",
-            "candidate_id": "demo_marketing_ops_eva",
-            "pages": [
-              {
-                "page_number": 1,
-                "text": "SYNTHETIC DEMO RESUME\nEva Brooks\nContent Coordinator\nHas content-calendar and newsletter contributions with uncertain campaign ownership.\nWORK EXPERIENCE\n- Prepared social posts and email copy for a team calendar; work dates and campaign ownership are not specified.\n- Reviewed basic engagement charts but did not identify CRM updates, lead handoffs or downstream outcome analysis.\nSELECTED PROJECTS\n- Newsletter content project organized draft versions and a checklist for human approval.\nSKILLS\n- Content calendar, email copy, social posts and basic engagement review.\nEDUCATION AND TRAINING\n- Education and marketing training are not stated in this synthetic source."
-              }
-            ]
-          },
-          "mode": "bedrock",
-          "model_id": "openai.gpt-oss-120b-1:0",
-          "facts": [
-            {
-              "kind": "experience",
-              "value": "Content Coordinator",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "Content Coordinator",
-                  "start": 33,
-                  "end": 52
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "content-calendar",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "Has content-calendar and newsletter contributions with uncertain campaign ownership.",
-                  "start": 53,
-                  "end": 137
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "email copy",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Prepared social posts and email copy for a team calendar; work dates and campaign ownership are not specified.",
-                  "start": 154,
-                  "end": 266
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "social posts",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Prepared social posts and email copy for a team calendar; work dates and campaign ownership are not specified.",
-                  "start": 154,
-                  "end": 266
-                }
-              ]
-            },
-            {
-              "kind": "skill",
-              "value": "basic engagement review",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Content calendar, email copy, social posts and basic engagement review.",
-                  "start": 497,
-                  "end": 570
-                }
-              ]
-            },
-            {
-              "kind": "project",
-              "value": "Newsletter content project",
-              "evidence": [
-                {
-                  "page_number": 1,
-                  "quote": "- Newsletter content project organized draft versions and a checklist for human approval.",
-                  "start": 400,
-                  "end": 489
-                }
-              ]
-            }
-          ],
-          "unknown_categories": [
-            "qualification"
-          ],
-          "offset_unit": "unicode_code_point",
-          "notice": "AI-extracted text mentions with verified source quotes. Review their meaning and completeness; missing evidence is unknown. No score or hiring decision."
-        },
-        "judgments": [
-          {
-            "requirement_id": "demo_marketing_ops_campaigns",
-            "status": "partial",
-            "fact_indices": [
-              1,
-              2,
-              3
-            ],
-            "reason": "Resume shows content‑calendar work and preparation of social posts and email copy, indicating some campaign execution, but does not demonstrate multi‑channel planning or documented handoffs."
-          },
-          {
-            "requirement_id": "demo_marketing_ops_crm",
-            "status": "unknown",
-            "fact_indices": [],
-            "reason": "No information provided about CRM data maintenance or lead‑routing rules."
-          },
-          {
-            "requirement_id": "demo_marketing_ops_measurement",
-            "status": "partial",
-            "fact_indices": [
-              4
-            ],
-            "reason": "Resume mentions basic engagement review, indicating some measurement capability, but lacks downstream outcome analysis."
-          },
-          {
-            "requirement_id": "demo_marketing_ops_experience",
-            "status": "unknown",
-            "fact_indices": [],
-            "reason": "Resume does not specify duration of marketing operations experience."
-          },
-          {
-            "requirement_id": "demo_marketing_ops_automation",
-            "status": "unknown",
-            "fact_indices": [],
-            "reason": "No mention of marketing automation or campaign production tools."
-          },
-          {
-            "requirement_id": "demo_marketing_ops_training",
-            "status": "unknown",
-            "fact_indices": [],
-            "reason": "Resume does not provide any documented marketing or analytics training."
-          }
-        ],
-        "scoring": {
-          "score": null,
-          "lower": 16.7,
-          "upper": 83.3,
-          "resolved_count": 2,
-          "unknown_count": 4,
-          "mandatory_met": 0,
-          "mandatory_total": 3,
-          "categories": [
-            {
-              "category": "mandatory",
-              "requirement_count": 3,
-              "resolved_count": 2,
-              "unknown_count": 1,
-              "effective_weight": 50.0,
-              "lower": 16.7,
-              "upper": 33.3
-            },
-            {
-              "category": "experience",
-              "requirement_count": 1,
-              "resolved_count": 0,
-              "unknown_count": 1,
-              "effective_weight": 25.0,
-              "lower": 0.0,
-              "upper": 25.0
-            },
-            {
-              "category": "preferred",
-              "requirement_count": 1,
-              "resolved_count": 0,
-              "unknown_count": 1,
-              "effective_weight": 15.0,
-              "lower": 0.0,
-              "upper": 15.0
-            },
-            {
-              "category": "qualification",
-              "requirement_count": 1,
-              "resolved_count": 0,
-              "unknown_count": 1,
-              "effective_weight": 10.0,
-              "lower": 0.0,
               "upper": 10.0
             }
           ]

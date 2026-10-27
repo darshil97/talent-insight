@@ -10,6 +10,10 @@
       ],
       "display_name": "Avery Chen",
       "headline": "Senior Product Data Scientist",
+      "availability": {
+        "status": "not_serving",
+        "notice_days": 90
+      },
       "summary": "Owns product experiments and reproducible analyses with explicit uncertainty checks.",
       "resume_text": "SYNTHETIC DEMO RESUME\nAvery Chen\nSenior Product Data Scientist\nOwns product experiments and reproducible analyses with explicit uncertainty checks.\nWORK EXPERIENCE\n- 6 years of applied product data science in synthetic marketplace and subscription teams, with ownership of experiment readouts.\n- Used Python and SQL to build reproducible analyses and checked cohort definitions with analytics engineers.\n- Designed A/B tests, set guardrail metrics, and reported uncertainty intervals rather than treating directional changes as proof.\nSELECTED PROJECTS\n- Pricing change study combined randomized results with observational sensitivity checks for segments outside the rollout.\n- Warehouse measurement project used dbt models to document event definitions and missing-data checks.\nSKILLS\n- Python, SQL, statistics, experimentation, causal inference, dbt and stakeholder communication.\nEDUCATION AND TRAINING\n- BSc Statistics (synthetic demo qualification).",
       "claims": [
@@ -56,6 +60,9 @@
       ],
       "display_name": "Mina Patel",
       "headline": "Operations Analyst",
+      "availability": {
+        "status": "immediate"
+      },
       "summary": "Brings operational analysis and reporting experience with limited experiment ownership.",
       "resume_text": "SYNTHETIC DEMO RESUME\nMina Patel\nOperations Analyst\nBrings operational analysis and reporting experience with limited experiment ownership.\nWORK EXPERIENCE\n- 5 years of operations analysis, including SQL reporting and process dashboards for a synthetic supply team.\n- Wrote Python reconciliation scripts for inventory records and documented manual validation checks.\n- Reviewed before-and-after process changes; randomized experiment design or causal identification is not documented.\nSELECTED PROJECTS\n- Inventory quality project compared warehouse and order records and documented unresolved mismatches.\n- Operations dashboard project defined weekly service measures and explained data gaps to managers.\nSKILLS\n- SQL, Python, spreadsheet analysis, dashboard review and process documentation.\nEDUCATION AND TRAINING\n- BCom Operations (synthetic demo qualification).",
       "claims": [
@@ -92,6 +99,10 @@
       ],
       "display_name": "Jordan Ellis",
       "headline": "Analytics Team Contributor",
+      "availability": {
+        "status": "serving_notice",
+        "last_working_day": "2026-12-15"
+      },
       "summary": "Describes useful team analysis work without clear dates or individual ownership.",
       "resume_text": "SYNTHETIC DEMO RESUME\nJordan Ellis\nAnalytics Team Contributor\nDescribes useful team analysis work without clear dates or individual ownership.\nWORK EXPERIENCE\n- Contributed SQL aggregations to a team dashboard for service trends; the specific query ownership is not stated.\n- Helped prepare descriptive charts, but the source does not identify an experiment design or causal study owned by Jordan.\nSELECTED PROJECTS\n- Support queue trend dashboard summarized weekly volumes and caveats about incomplete event tracking.\nSKILLS\n- SQL, descriptive reporting and chart review are mentioned without proficiency level.\nEDUCATION AND TRAINING\n- Education details and dates are not provided in this synthetic source.",
       "claims": [
@@ -118,6 +129,10 @@
       ],
       "display_name": "Priya Nair",
       "headline": "Backend Platform Engineer",
+      "availability": {
+        "status": "serving_notice",
+        "last_working_day": "2026-11-20"
+      },
       "summary": "Owns tested Python services, PostgreSQL data paths and production diagnosis.",
       "resume_text": "SYNTHETIC DEMO RESUME\nPriya Nair\nBackend Platform Engineer\nOwns tested Python services, PostgreSQL data paths and production diagnosis.\nWORK EXPERIENCE\n- 5 years of backend engineering on synthetic billing and account services.\n- Built Python HTTP APIs with schema validation, explicit error responses and contract tests.\n- Designed PostgreSQL indexes and transaction boundaries for account updates and reviewed lock contention.\nSELECTED PROJECTS\n- Account preference API project added idempotent writes and documented retry behavior for callers.\n- Service diagnosis project used logs and metrics to trace failed requests through dependent services.\nSKILLS\n- Python, PostgreSQL, HTTP APIs, automated tests, transactions and observability.\nEDUCATION AND TRAINING\n- BEng Computer Science (synthetic demo qualification).",
       "claims": [
@@ -168,6 +183,7 @@
       ],
       "display_name": "Theo Grant",
       "headline": "Go Backend Engineer",
+      "availability": null,
       "summary": "Builds small backend services; no data science project or experiment ownership is documented.",
       "resume_text": "SYNTHETIC DEMO RESUME\nTheo Grant\nGo Backend Engineer\nBuilds small backend services; no data science project or experiment ownership is documented.\nWORK EXPERIENCE\n- 2 years of backend engineering focused on Go services and local persistence prototypes.\n- Implemented HTTP API request validation and integration tests for device event ingestion.\n- Used SQLite for a prototype; production PostgreSQL transactions are not documented.\nSELECTED PROJECTS\n- Device event ingestion project accepted batched messages and recorded malformed-request examples.\n- Service review project documented retry behavior and basic request logs.\nSKILLS\n- Go, HTTP APIs, SQLite, integration testing and service logs.\nEDUCATION AND TRAINING\n- BSc Software Engineering (synthetic demo qualification).",
       "claims": [
@@ -209,6 +225,10 @@
       ],
       "display_name": "Mara Lewis",
       "headline": "Application Developer",
+      "availability": {
+        "status": "not_serving",
+        "notice_days": 60
+      },
       "summary": "Has application API experience with incomplete evidence on database transactions.",
       "resume_text": "SYNTHETIC DEMO RESUME\nMara Lewis\nApplication Developer\nHas application API experience with incomplete evidence on database transactions.\nWORK EXPERIENCE\n- 3 years of application development using TypeScript and Node.js services.\n- Added HTTP endpoint validation and tests for a notification preference service.\n- Read PostgreSQL queries during support rotations; index design and transaction ownership are not specified.\nSELECTED PROJECTS\n- Notification service project mapped message preferences to API responses and checked failure cases.\n- Support handoff project collected request logs and open questions for the database team.\nSKILLS\n- TypeScript, Node.js, HTTP APIs, tests and basic PostgreSQL query review.\nEDUCATION AND TRAINING\n- Formal qualification details are not stated in this synthetic source.",
       "claims": [
@@ -245,6 +265,10 @@
       ],
       "display_name": "Amira Shah",
       "headline": "People Operations Specialist",
+      "availability": {
+        "status": "not_serving",
+        "notice_days": 30
+      },
       "summary": "Coordinates employee lifecycle work and checks HRIS records before payroll handoff.",
       "resume_text": "SYNTHETIC DEMO RESUME\nAmira Shah\nPeople Operations Specialist\nCoordinates employee lifecycle work and checks HRIS records before payroll handoff.\nWORK EXPERIENCE\n- 4 years of HR operations work for a synthetic distributed services team.\n- Coordinated onboarding and offboarding checklists with managers, IT and benefits partners.\n- Maintained HRIS employee records and verified status changes against approved source forms.\n- Prepared payroll change summaries for the payroll team to review; final pay decisions stayed with that team.\nSELECTED PROJECTS\n- New-starter handoff project documented who approves access, benefits enrollment and first-week tasks.\n- Record quality project added a second review step for incomplete HRIS change requests.\nSKILLS\n- HRIS, onboarding, offboarding, payroll coordination and process documentation.\nEDUCATION AND TRAINING\n- Formal education and external certification are not stated in this synthetic source.",
       "claims": [
@@ -281,6 +305,7 @@
       ],
       "display_name": "Neel Kapoor",
       "headline": "Office Operations Coordinator",
+      "availability": null,
       "summary": "Brings administrative handoff experience with limited HR system ownership.",
       "resume_text": "SYNTHETIC DEMO RESUME\nNeel Kapoor\nOffice Operations Coordinator\nBrings administrative handoff experience with limited HR system ownership.\nWORK EXPERIENCE\n- 3 years of office operations coordinating equipment, facilities and new-starter logistics.\n- Collected onboarding documents and routed missing items to the HR team for review.\n- Kept a spreadsheet tracker of employee handoffs; direct HRIS updates and payroll coordination are not documented.\nSELECTED PROJECTS\n- New-starter checklist project clarified equipment and account request owners before start dates.\n- Facilities request project documented recurring handoff delays without claiming payroll ownership.\nSKILLS\n- Onboarding logistics, spreadsheet tracking, process checklists and stakeholder follow-up.\nEDUCATION AND TRAINING\n- Formal HR training is not stated in this synthetic source.",
       "claims": [
@@ -312,6 +337,10 @@
       ],
       "display_name": "Tessa Roy",
       "headline": "Recruiting Coordinator",
+      "availability": {
+        "status": "serving_notice",
+        "last_working_day": "2026-11-10"
+      },
       "summary": "Documents scheduling and offer-packet support; broader people-operations scope is unclear.",
       "resume_text": "SYNTHETIC DEMO RESUME\nTessa Roy\nRecruiting Coordinator\nDocuments scheduling and offer-packet support; broader people-operations scope is unclear.\nWORK EXPERIENCE\n- Scheduled interviews and prepared offer packets for recruiter review; dates and hours are not specified.\n- Collected signed onboarding forms but did not describe HRIS maintenance or payroll handoffs.\nSELECTED PROJECTS\n- Candidate handoff notes project listed documents awaiting a human approval before onboarding.\nSKILLS\n- Interview scheduling, document tracking and written handoffs.\nEDUCATION AND TRAINING\n- Education and HR operations training are not stated in this synthetic source.",
       "claims": [
@@ -338,6 +367,10 @@
       ],
       "display_name": "Leena Desai",
       "headline": "Marketing Operations Specialist",
+      "availability": {
+        "status": "not_serving",
+        "notice_days": 45
+      },
       "summary": "Owns campaign production, CRM lead handoffs and cautious performance reporting.",
       "resume_text": "SYNTHETIC DEMO RESUME\nLeena Desai\nMarketing Operations Specialist\nOwns campaign production, CRM lead handoffs and cautious performance reporting.\nWORK EXPERIENCE\n- 4 years of marketing operations work across email, paid media and event campaigns for a synthetic software team.\n- Maintained CRM prospect records and lead-routing rules with sales operations partners.\n- Reported campaign engagement and downstream lead outcomes while noting attribution limits.\nSELECTED PROJECTS\n- Lifecycle email project used marketing automation to document audience rules, approval steps and send checks.\n- Campaign measurement project linked launch dates, spend, engagement and sales handoffs in a review dashboard.\nSKILLS\n- CRM, marketing automation, email campaigns, campaign analytics and lead handoff.\nEDUCATION AND TRAINING\n- Formal marketing qualification is not stated in this synthetic source.",
       "claims": [
@@ -374,6 +407,7 @@
       ],
       "display_name": "Omar Singh",
       "headline": "Digital Marketing Executive",
+      "availability": null,
       "summary": "Runs digital ads and web content with limited CRM and lead-routing evidence.",
       "resume_text": "SYNTHETIC DEMO RESUME\nOmar Singh\nDigital Marketing Executive\nRuns digital ads and web content with limited CRM and lead-routing evidence.\nWORK EXPERIENCE\n- 3 years of digital marketing work on paid search, social campaigns and website content.\n- Ran Meta Ads and Google Ads, revised audience groups and reviewed campaign engagement reports.\n- Built Shopify and WordPress landing pages with SEO checks; CRM lead routing is not described.\nSELECTED PROJECTS\n- Landing-page review project compared page content, ad messages and traffic sources without claiming causal lift.\n- Email draft project documented subject-line alternatives and manual approval steps.\nSKILLS\n- Meta Ads, Google Ads, SEO, Shopify, WordPress and Google Analytics.\nEDUCATION AND TRAINING\n- Formal education or marketing certification is not stated in this synthetic source.",
       "claims": [
@@ -415,6 +449,9 @@
       ],
       "display_name": "Eva Brooks",
       "headline": "Content Coordinator",
+      "availability": {
+        "status": "immediate"
+      },
       "summary": "Has content-calendar and newsletter contributions with uncertain campaign ownership.",
       "resume_text": "SYNTHETIC DEMO RESUME\nEva Brooks\nContent Coordinator\nHas content-calendar and newsletter contributions with uncertain campaign ownership.\nWORK EXPERIENCE\n- Prepared social posts and email copy for a team calendar; work dates and campaign ownership are not specified.\n- Reviewed basic engagement charts but did not identify CRM updates, lead handoffs or downstream outcome analysis.\nSELECTED PROJECTS\n- Newsletter content project organized draft versions and a checklist for human approval.\nSKILLS\n- Content calendar, email copy, social posts and basic engagement review.\nEDUCATION AND TRAINING\n- Education and marketing training are not stated in this synthetic source.",
       "claims": [

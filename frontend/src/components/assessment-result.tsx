@@ -4,16 +4,18 @@ import { useState } from "react";
 import { splitResume } from "@/lib/candidates";
 import type { JobDetail } from "@/lib/catalog";
 import type { Assessment, Citation, JudgmentStatus } from "@/lib/assessments";
+import { confidenceLabels } from "@/lib/estimate";
 
-const labels: Record<JudgmentStatus, string> = { met: "Supported", partial: "Partly supported", not_met: "Evidence does not meet this requirement", unknown: "Needs verification" };
+const labels: Record<JudgmentStatus, string> = { met: "Supported", transferable: "Comparable experience", partial: "Partly supported", not_met: "Evidence does not meet this requirement", unknown: "Needs verification" };
 
 export function AssessmentResult({ assessment, job }: { assessment: Assessment; job: JobDetail }) {
   const [selected, setSelected] = useState<Citation | null>(null);
   const { structured, judgments, scoring } = assessment;
   const questions = job.questions.filter((question) => question.requirement_ids.some((id) =>
     judgments.some((row) => row.requirement_id === id && row.status !== "met")));
-  const strengths = judgments.filter((row) => row.status === "met" || row.status === "partial");
-  const gaps = judgments.filter((row) => row.status === "unknown" || row.status === "not_met" || row.status === "partial");
+  const strengths = judgments.filter((row) => row.status === "met" || row.status === "transferable" || row.status === "partial");
+  // Comparable experience still needs a check on ramp-up to the named tool or platform.
+  const gaps = judgments.filter((row) => row.status !== "met");
   return (
     <article aria-labelledby="assessment-heading" className="mt-6 min-w-0 border-t border-[#e5e8df] pt-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -25,15 +27,15 @@ export function AssessmentResult({ assessment, job }: { assessment: Assessment; 
       </div>
       <p className="mt-4 text-sm leading-7 text-[#475a49]">{assessment.notice}</p>
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-lg bg-[#f6f7f2] p-4"><p className="text-xs font-semibold text-[#59665d]">Assessment score</p><p className="mt-2 text-xl font-semibold">{scoring.score === null ? "Unavailable" : `${scoring.score.toFixed(1)} / 100`}</p></div>
-        <div className="rounded-lg bg-[#f6f7f2] p-4"><p className="text-xs font-semibold text-[#59665d]">Possible range</p><p className="mt-2 text-xl font-semibold">{scoring.lower === null ? "Unavailable" : `${scoring.lower.toFixed(1)}–${scoring.upper?.toFixed(1)} / 100`}</p></div>
+        <div className="rounded-lg bg-[#f6f7f2] p-4"><p className="text-xs font-semibold text-[#59665d]">Match estimate</p><p className="mt-2 text-xl font-semibold">{scoring.estimate === null ? "Unavailable" : `${scoring.estimate.toFixed(1)} / 100`}</p>{scoring.confidence && <p className="mt-1 text-xs font-semibold text-[#315943]">{confidenceLabels[scoring.confidence]} confidence</p>}</div>
+        <div className="rounded-lg bg-[#f6f7f2] p-4"><p className="text-xs font-semibold text-[#59665d]">If unverified items resolve</p><p className="mt-2 text-xl font-semibold">{scoring.lower === null ? "Unavailable" : `${scoring.lower.toFixed(1)}–${scoring.upper?.toFixed(1)} / 100`}</p></div>
         <div className="rounded-lg bg-[#f6f7f2] p-4"><p className="text-xs font-semibold text-[#59665d]">Mandatory coverage</p><p className="mt-2 text-xl font-semibold">{scoring.mandatory_met} / {scoring.mandatory_total}</p></div>
       </div>
-      <p className="mt-3 text-xs leading-6 text-[#59665d]">{scoring.resolved_count} of {judgments.length} requirements interpreted; {scoring.unknown_count} unknown. The range treats unknowns as unresolved, not as missing skills. The rubric is unvalidated and is not a hiring decision or performance probability.</p>
+      <p className="mt-3 text-xs leading-6 text-[#59665d]">{scoring.resolved_count} of {judgments.length} requirements interpreted; {scoring.unknown_count} unknown. The estimate counts unknowns at half credit, and the range shows the lowest and highest outcomes once they are verified; unknowns are not treated as missing skills. The rubric is unvalidated and is not a hiring decision or performance probability.</p>
 
       <div className="mt-7 grid gap-5 lg:grid-cols-2">
         <section aria-labelledby="strengths-heading" className="min-w-0 rounded-lg border border-[#dce1d7] p-5">
-          <h4 id="strengths-heading" className="font-semibold">Supported and partial evidence</h4>
+          <h4 id="strengths-heading" className="font-semibold">Supported, comparable and partial evidence</h4>
           {strengths.length ? <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-[#475a49]">{strengths.map((row) => <li key={row.requirement_id}>{job.requirements.find((req) => req.id === row.requirement_id)?.description} · {labels[row.status]}</li>)}</ul> : <p className="mt-3 text-sm leading-6 text-[#59665d]">No supported requirements established by this assessment.</p>}
         </section>
         <section aria-labelledby="gaps-heading" className="min-w-0 rounded-lg border border-[#dce1d7] p-5">

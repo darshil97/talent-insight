@@ -1,6 +1,7 @@
 """Anonymous, stateless PDF extraction; never invokes a database or AI provider."""
 
 import asyncio
+import logging
 
 from fastapi import APIRouter, Request, Response
 from starlette.responses import JSONResponse
@@ -9,6 +10,7 @@ from app.errors import ErrorResponse, error_response
 from app.resumes import FAILURES, ExtractedResume, ResumeFailure, ResumeLimits, extract_pdf
 
 router = APIRouter(prefix="/resumes", tags=["resumes"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("/limits", response_model=ResumeLimits)
@@ -60,6 +62,7 @@ async def extract_upload(request: Request, response: Response) -> ExtractedResum
             )
     # Reserve capacity before reading so slow uploads cannot form an unbounded queue.
     if request.app.state.resume_active >= settings.resume_max_concurrent:
+        logger.warning("PDF upload rejected: %d parsers active", request.app.state.resume_active)
         result = error_response(503, "resume_busy", "PDF processing is busy. Try again shortly.")
         result.headers["Retry-After"] = "5"
         return result

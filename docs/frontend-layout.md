@@ -6,7 +6,7 @@ Module 5 introduced presentation and navigation using the installed Next.js App 
 
 | Route | Behavior |
 | --- | --- |
-| `/` | Overview, planned workflow and explicit feature availability |
+| `/` | Overview, workflow, a "What it checks" section styled as ruled rows (source-linked evidence, comparable experience, work over keywords, unknown is not zero, availability bonus) beside the default requirement-credit scale (unknown counts 0.5 in the estimate and lowers confidence), so it reads differently from the workflow cards |
 | `/guide` | Static explanation of the planned workflow and evidence/privacy principles |
 | `/jobs` | Synthetic job catalog from FastAPI, with loading/empty/error states |
 | `/jobs/<id>` | Requirements and screening focus, with safe missing/unavailable states |

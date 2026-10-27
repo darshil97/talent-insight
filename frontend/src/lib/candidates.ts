@@ -1,3 +1,5 @@
+import { isAvailability, isRankingScore, type Availability } from "./availability.ts";
+import { isEstimate, type Confidence } from "./estimate.ts";
 import { CatalogError, isJobId, isJobSummary, type JobSummary } from "./catalog.ts";
 
 export const isCandidateId = isJobId;
@@ -16,6 +18,10 @@ export interface CandidateTableSummary extends CandidateSummary {
   match_score: number | null;
   score_lower: number | null;
   score_upper: number | null;
+  match_estimate: number | null;
+  confidence: Confidence | null;
+  availability: Availability;
+  ranking_score: number | null;
 }
 
 export interface EvidenceClaim {
@@ -40,6 +46,7 @@ export interface CandidatePool {
 export interface CandidateProfile {
   job: JobSummary;
   candidate: CandidateDetail;
+  availability: Availability;
   assessment: unknown;
 }
 
@@ -65,7 +72,10 @@ function isCandidateTableSummary(value: unknown): value is CandidateTableSummary
     (lower === null ? upper === null && score === null :
       typeof lower === "number" && typeof upper === "number" && lower <= upper &&
       (score === null || score === lower)) &&
-    (value.snapshot_available || (score === null && lower === null && upper === null));
+    (value.snapshot_available || (score === null && lower === null && upper === null)) &&
+    isEstimate(value.match_estimate, value.confidence, lower, upper) &&
+    isAvailability(value.availability) &&
+    isRankingScore(value.ranking_score, typeof value.match_estimate === "number" ? value.match_estimate : null, value.availability);
 }
 
 function isClaim(value: unknown): value is EvidenceClaim {
@@ -110,6 +120,6 @@ export function decodeCandidateProfile(value: unknown, jobId: string, candidateI
         splitResume(source, claim.start, claim.end).excerpt !== claim.quote)) {
     throw new CatalogError("unavailable");
   }
-  if (!("assessment" in value)) throw new CatalogError("unavailable");
-  return { job: value.job, candidate: { ...candidate, resume_text: source, claims, offset_unit: "unicode_code_point" }, assessment: value.assessment };
+  if (!("assessment" in value) || !isAvailability(value.availability)) throw new CatalogError("unavailable");
+  return { job: value.job, candidate: { ...candidate, resume_text: source, claims, offset_unit: "unicode_code_point" }, availability: value.availability, assessment: value.assessment };
 }

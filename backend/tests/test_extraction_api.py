@@ -6,11 +6,11 @@ import httpx
 import pytest
 from test_resumes import pdf
 
-from app.api import extraction
+from app.api import admission, extraction
 from app.application import create_app
 from app.config import Settings
-from app.extraction_contracts import ExtractionFailure
 from app.models import DemoCandidate, Job, JobRequirement
+from app.pipeline.contracts import ExtractionFailure
 from app.seed import load_seed
 
 
@@ -26,10 +26,7 @@ def extraction_app(monkeypatch):
             for i, requirement in enumerate(row.requirements)
         ]
         jobs[row.id] = job
-    candidates = {
-        row.id: DemoCandidate(**row.model_dump(exclude={"claims"}), profile=row.profile())
-        for row in data.candidates
-    }
+    candidates = {row.id: DemoCandidate(**row.columns()) for row in data.candidates}
     pairs = {(row.job_id, row.candidate_id) for row in data.memberships}
     app.state.test_session_closed = False
 
@@ -182,7 +179,7 @@ def test_disabled_and_bad_bedrock_configuration_fail_without_mock_fallback(
 def test_rolling_rate_limit_has_no_resume_data(extraction_app, api_request, monkeypatch):
     extraction_app.state.settings = Settings(ai_mode="mock", ai_requests_per_minute=1)
     path = "/jobs/demo_ds/resumes/structure"
-    monkeypatch.setattr(extraction.time, "monotonic", lambda: 1000)
+    monkeypatch.setattr(admission.time, "monotonic", lambda: 1000)
     payload = pdf(("SYNTHETIC RESUME\nUsed Python.",))
     headers = {"Content-Type": "application/pdf"}
     assert (
@@ -192,7 +189,7 @@ def test_rolling_rate_limit_has_no_resume_data(extraction_app, api_request, monk
     blocked = api_request(extraction_app, "POST", path, content=payload, headers=headers)
     assert blocked.status_code == 429 and blocked.headers["retry-after"] == "60"
     assert list(extraction_app.state.ai_requests) == [1000]
-    monkeypatch.setattr(extraction.time, "monotonic", lambda: 1061)
+    monkeypatch.setattr(admission.time, "monotonic", lambda: 1061)
     assert (
         api_request(extraction_app, "POST", path, content=payload, headers=headers).status_code
         == 200

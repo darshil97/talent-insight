@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from app.config import load_settings
 from app.database import create_database_engine
 from app.models import DemoCandidate, Job, JobCandidate, JobRequirement
+from app.ranking import AvailabilityInput
 
 DemoId = Annotated[str, StringConstraints(pattern=r"^demo_[a-z0-9_]+$", max_length=64)]
 Nonempty = Annotated[str, StringConstraints(min_length=1)]
@@ -75,6 +76,7 @@ class CandidateSeed(SeedModel):
     summary: Nonempty
     resume_text: Nonempty
     claims: list[EvidenceSeed]
+    availability: AvailabilityInput | None = None
     is_demo: Literal[True] = True
 
     @model_validator(mode="after")
@@ -89,6 +91,17 @@ class CandidateSeed(SeedModel):
             ):
                 raise ValueError("Structured claims need a supporting original resume excerpt")
         return self
+
+    def columns(self) -> dict:
+        """Database row values for the demo candidate table."""
+        availability = self.availability or AvailabilityInput()
+        return {
+            **self.model_dump(exclude={"claims", "availability"}),
+            "profile": self.profile(),
+            "notice_status": availability.status,
+            "last_working_day": availability.last_working_day,
+            "notice_days": availability.notice_days,
+        }
 
     def profile(self) -> dict:
         return {
@@ -191,9 +204,7 @@ def seed_catalog(engine: Engine, data: CatalogSeed | None = None) -> dict[str, i
             {**row.model_dump(), "job_id": job.id, "sort_order": i}
             for i, row in enumerate(job.requirements)
         )
-    candidate_rows = [
-        {**row.model_dump(exclude={"claims"}), "profile": row.profile()} for row in data.candidates
-    ]
+    candidate_rows = [row.columns() for row in data.candidates]
     membership_rows = [row.model_dump() for row in data.memberships]
     batches = [
         (Job, job_rows, ["id"]),

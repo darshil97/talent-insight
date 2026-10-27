@@ -1,6 +1,7 @@
 """Candidate membership and evidence checks never connect to a database."""
 
 import asyncio
+import json
 from copy import deepcopy
 from unittest.mock import MagicMock
 
@@ -8,7 +9,7 @@ import pytest
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import OperationalError
 
-from app.api.jobs import catalog_session
+from app.api.deps import catalog_session
 from app.application import create_app
 from app.catalog import get_candidate_for_job, list_candidates_for_job
 from app.config import Settings
@@ -31,10 +32,7 @@ def candidates_app(monkeypatch):
             for i, requirement in enumerate(row.requirements)
         ]
         jobs[row.id] = job
-    candidates = {
-        row.id: DemoCandidate(**row.model_dump(exclude={"claims"}), profile=row.profile())
-        for row in data.candidates
-    }
+    candidates = {row.id: DemoCandidate(**row.columns()) for row in data.candidates}
     pairs = {(row.job_id, row.candidate_id) for row in data.memberships}
     monkeypatch.setattr(
         "app.api.candidates.catalog.get_job", lambda session, job_id: jobs.get(job_id)
@@ -84,7 +82,7 @@ def test_pool_and_profile_read_current_snapshot_without_provider(
     async def no_provider(*args, **kwargs):
         raise AssertionError("Browsing a demo candidate must not call a provider")
 
-    monkeypatch.setattr("app.extraction.structure_resume", no_provider)
+    monkeypatch.setattr("app.pipeline.extraction.structure_resume", no_provider)
     pool = api_request(candidates_app, "GET", "/jobs/demo_ds/candidates")
     assert pool.status_code == 200
     summary = next(item for item in pool.json()["candidates"] if item["id"] == row.candidate_id)
@@ -146,6 +144,10 @@ def test_list_contains_only_job_members_and_public_summary_fields(
             "match_score",
             "score_lower",
             "score_upper",
+            "match_estimate",
+            "confidence",
+            "availability",
+            "ranking_score",
         }
         assert row["is_demo"] is True
         source = next(item for item in load_seed().candidates if item.id == row["id"])
@@ -155,6 +157,10 @@ def test_list_contains_only_job_members_and_public_summary_fields(
         assert row["stated_experience"] == expected_years
         assert row["match_score"] is None
         assert row["snapshot_available"] is False
+        # Availability is reported but never turns a missing match score into a rank.
+        stored = source.availability.status if source.availability else None
+        assert row["availability"]["status"] == stored and row["ranking_score"] is None
+        assert row["availability"]["bonus"] >= 0
 
 
 def test_all_profiles_preserve_original_text_and_validated_evidence(candidates_app, api_request):
@@ -223,9 +229,7 @@ def test_corrupt_profile_fails_closed_without_leaking_resume(
     candidates_app, api_request, monkeypatch, caplog, mutation
 ):
     source = load_seed().candidates[0]
-    candidate = DemoCandidate(
-        **source.model_dump(exclude={"claims"}), profile=deepcopy(source.profile())
-    )
+    candidate = DemoCandidate(**{**source.columns(), "profile": deepcopy(source.profile())})
     if mutation == "quote":
         candidate.profile["claims"][0]["quote"] = "Unverified secret excerpt"
     elif mutation == "offset":
@@ -254,7 +258,7 @@ def test_database_failures_keep_safe_error_and_cors(api_request, monkeypatch):
     factory.return_value.__enter__.return_value.execute.side_effect = OperationalError(
         "secret SQL", {}, Exception("private")
     )
-    monkeypatch.setattr("app.api.jobs.Session", factory)
+    monkeypatch.setattr("app.api.deps.Session", factory)
     response = api_request(
         app, "GET", "/jobs/demo_ds/candidates", headers={"Origin": "http://127.0.0.1:3000"}
     )
@@ -300,3 +304,20 @@ def test_source_with_unicode_and_no_claims_is_supported():
     )
     assert candidate.claims[0].start == start
     assert CandidateDetail(**{**candidate.model_dump(), "claims": []}).claims == []
+
+
+def test_profile_reports_availability_without_changing_the_assessment(candidates_app, api_request):
+    data = load_seed()
+    with_notice = next(row for row in data.candidates if row.availability is not None)
+    without = next(row for row in data.candidates if row.availability is None)
+    for source in (with_notice, without):
+        job_id = next(m.job_id for m in data.memberships if m.candidate_id == source.id)
+        body = api_request(candidates_app, "GET", f"/jobs/{job_id}/candidates/{source.id}").json()
+        availability = body["availability"]
+        if source.availability is None:
+            assert availability["status"] is None and availability["bonus"] == 0
+            assert availability["days_to_join"] is None
+        else:
+            assert availability["status"] == source.availability.status
+            assert 0 <= availability["bonus"] <= 5
+        assert "availability" not in json.dumps(body["assessment"] or {})

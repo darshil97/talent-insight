@@ -322,6 +322,27 @@ def test_timeout_and_cancellation_kill_and_reap_real_child(monkeypatch):
     asyncio.run(run())
 
 
+def test_parser_child_receives_no_inherited_credentials(monkeypatch):
+    monkeypatch.setenv("AWS_BEARER_TOKEN_BEDROCK", "private-token")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "private-secret")
+    original = asyncio.create_subprocess_exec
+    environments = []
+
+    async def recording(*args, **kwargs):
+        environments.append(kwargs["env"])
+        return await original(*args, **kwargs)
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", recording)
+    result = asyncio.run(extract_pdf(pdf(), Settings()))
+    assert result.page_count == 1
+    assert set(environments[0]) == {
+        "PATH",
+        "PYTHONDONTWRITEBYTECODE",
+        "PYTHONUTF8",
+        "PYTHONIOENCODING",
+    }
+
+
 @pytest.mark.parametrize(
     "name,bad",
     [

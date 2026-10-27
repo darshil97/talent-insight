@@ -10,6 +10,7 @@ import pytest
 from starlette.types import ASGIApp
 
 from app.config import Settings
+from app.llm.factory import clear_model_cache
 
 
 @pytest.fixture(autouse=True)
@@ -42,6 +43,8 @@ def isolate_configuration(
         monkeypatch.setenv(name, "false")
     # Tests must never read a developer's backend/.env.
     monkeypatch.setitem(Settings.model_config, "env_file", tmp_path / "absent.env")
+    # Each test builds its own chat model doubles.
+    clear_model_cache()
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:

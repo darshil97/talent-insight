@@ -6,12 +6,12 @@ from fastapi import APIRouter, HTTPException, Path, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 from app import catalog
-from app.api.jobs import CatalogSession, JobDetail, JobId, JobSummary
+from app.api.deps import CatalogSession, JobId
+from app.api.jobs import JobDetail, JobSummary
 from app.demo_cache import load_cache, valid_assessment
 from app.errors import ErrorResponse
-from app.extraction_contracts import ExtractionJob, ExtractionSource
-from app.matching import Assessment
-from app.resumes import ResumePage
+from app.pipeline.contracts import Assessment, Confidence, ExtractionJob, ExtractionSource
+from app.ranking import Availability, AvailabilityInput, describe, ranking_score
 
 router = APIRouter(prefix="/jobs/{job_id}/candidates", tags=["candidates"])
 CandidateId = Annotated[str, Path(pattern=r"^demo_[a-z0-9_]+$", max_length=64)]
@@ -34,6 +34,10 @@ class CandidateTableSummary(CandidateSummary):
     match_score: float | None
     score_lower: float | None
     score_upper: float | None
+    match_estimate: float | None
+    confidence: Confidence | None
+    availability: Availability
+    ranking_score: float | None
 
 
 class EvidenceClaim(BaseModel):
@@ -82,19 +86,25 @@ class CandidateListResponse(BaseModel):
 class CandidateProfileResponse(BaseModel):
     job: JobSummary
     candidate: CandidateDetail
+    availability: Availability
     assessment: Assessment | None
 
 
+def candidate_availability(candidate, settings) -> Availability:
+    """Stored self-reported notice details; a ranking aid, never part of the match score."""
+    return describe(
+        AvailabilityInput(
+            status=candidate.notice_status,
+            last_working_day=candidate.last_working_day,
+            notice_days=candidate.notice_days,
+        ),
+        settings,
+    )
+
+
 def cached_for_candidate(entries, job, candidate, settings):
-    detail = JobDetail.model_validate(job)
-    context = ExtractionJob(
-        id=detail.id, title=detail.title, skills=detail.skills, requirements=detail.requirements
-    )
-    source = ExtractionSource(
-        kind="synthetic_demo",
-        candidate_id=candidate.id,
-        pages=[ResumePage(page_number=1, text=candidate.resume_text)],
-    )
+    context = ExtractionJob.from_detail(JobDetail.model_validate(job))
+    source = ExtractionSource.synthetic(candidate.id, candidate.resume_text)
     return valid_assessment(entries, context, source, settings)
 
 
@@ -118,8 +128,10 @@ def candidates(
         # Validate the quoted source before displaying a stated duration in the table.
         CandidateDetail(**summary.model_dump(), resume_text=row.resume_text, claims=claims)
         experience = next((claim.label for claim in claims if claim.kind == "experience"), None)
-        assessment = cached_for_candidate(entries, job, row, request.app.state.settings)
+        settings = request.app.state.settings
+        assessment = cached_for_candidate(entries, job, row, settings)
         scoring = assessment.scoring if assessment else None
+        availability = candidate_availability(row, settings)
         summaries.append(
             CandidateTableSummary(
                 **summary.model_dump(),
@@ -128,6 +140,10 @@ def candidates(
                 match_score=scoring.score if scoring else None,
                 score_lower=scoring.lower if scoring else None,
                 score_upper=scoring.upper if scoring else None,
+                match_estimate=scoring.estimate if scoring else None,
+                confidence=scoring.confidence if scoring else None,
+                availability=availability,
+                ranking_score=ranking_score(scoring.estimate if scoring else None, availability),
             )
         )
     return CandidateListResponse(job=JobSummary.model_validate(job), candidates=summaries)
@@ -153,7 +169,10 @@ def candidate_profile(
         **summary.model_dump(), resume_text=candidate.resume_text, claims=profile.claims
     )
     response.headers["Cache-Control"] = "no-store"
-    assessment = cached_for_candidate(load_cache(), job, candidate, request.app.state.settings)
+    settings = request.app.state.settings
     return CandidateProfileResponse(
-        job=JobSummary.model_validate(job), candidate=detail, assessment=assessment
+        job=JobSummary.model_validate(job),
+        candidate=detail,
+        availability=candidate_availability(candidate, settings),
+        assessment=cached_for_candidate(load_cache(), job, candidate, settings),
     )

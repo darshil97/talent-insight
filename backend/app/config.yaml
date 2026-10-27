@@ -7,6 +7,7 @@
 api:
   docs_enabled: true
   cors_allowed_origins: []
+  log_level: INFO
 
 database:
   url: ${DATABASE_URL}
@@ -22,6 +23,7 @@ resumes:
 
 ai:
   mode: ${AI_MODE}
+  temperature: 0
   max_input_characters: 20000
   max_output_tokens: 8192
   timeout_seconds: 130
@@ -37,6 +39,7 @@ ai:
     secret_access_key: ${AWS_SECRET_ACCESS_KEY}
     session_token: ${AWS_SESSION_TOKEN}
     structured_method: json_schema
+    reasoning_effort: ${BEDROCK_REASONING_EFFORT}
 
 matching:
   weights:
@@ -44,3 +47,10 @@ matching:
     experience: 25
     preferred: 15
     qualification: 10
+  credits:
+    transferable: 0.75
+    partial: 0.5
+
+ranking:
+  # [maximum days to join, bonus]; longer or unknown availability earns 0.
+  availability_tiers: [[15, 5], [30, 4], [45, 3], [60, 2], [90, 1]]

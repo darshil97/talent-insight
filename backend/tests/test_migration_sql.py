@@ -16,3 +16,8 @@ def test_offline_migration_preview_needs_no_credentials() -> None:
     assert "CREATE SCHEMA talent_insight" in output
     assert "CREATE TABLE talent_insight.demo_candidates" in output
     assert "DROP TABLE" not in output
+    assert "ALTER TABLE talent_insight.demo_candidates ADD COLUMN notice_status" in output
+    assert "ADD COLUMN last_working_day DATE" in output
+    assert "ADD COLUMN notice_days INTEGER" in output
+    assert "ck_demo_candidates_notice_fields" in output
+    assert "DROP COLUMN" not in output

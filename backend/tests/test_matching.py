@@ -1,24 +1,26 @@
 """Offline scoring, interpretation boundaries and synthetic scenario coverage."""
 
 import asyncio
+import json
 
 import pytest
 from pydantic import ValidationError
+from test_extraction import bedrock_settings, scripted
 
 from app.config import Settings
-from app.extraction_contracts import (
+from app.pipeline import interpretation
+from app.pipeline.assessment import assess_resume
+from app.pipeline.contracts import (
     ExtractionFailure,
     ExtractionJob,
     ExtractionSource,
+    Interpretation,
     StructuredResume,
-    verify_facts,
+    provider_json_schema,
 )
-from app.matching import (
-    assess_resume,
-    interpretation_schema,
-    mock_interpretation,
-    score_interpretation,
-)
+from app.pipeline.evidence import verify_facts
+from app.pipeline.interpretation import UNVERIFIED_REASON, mock_interpretation, salvage_judgments
+from app.pipeline.scoring import score_interpretation
 from app.resumes import ResumePage
 from app.seed import load_seed
 
@@ -219,48 +221,107 @@ def test_mock_never_converts_mentions_to_assured_matches():
     assert "Mock" in result.notice
 
 
-def test_bedrock_interpretation_retries_invalid_mapping_and_keeps_score_server_owned(monkeypatch):
-    from app import extraction
-
+def test_bedrock_interpretation_retries_unusable_mapping_and_keeps_score_server_owned(
+    monkeypatch,
+):
     structured = sample().model_copy(update={"mode": "bedrock", "model_id": "synthetic-model"})
-    settings = Settings(
-        ai_mode="bedrock", aws_region="ap-southeast-2", bedrock_model_id="synthetic-model"
-    )
-    calls = []
-
-    async def provider(job, source, supplied, repair, *, facts):
-        calls.append((job, source, supplied, repair, facts))
-        if not repair:
-            return {
-                "judgments": [
-                    {
-                        "requirement_id": "foreign",
-                        "status": "met",
-                        "fact_indices": [0],
-                        "reason": "Unsupported",
-                    }
-                ],
-                "score": 100,
-            }
-        return judgments(
+    settings = bedrock_settings(bedrock_model_id="synthetic-model")
+    calls = scripted(
+        monkeypatch,
+        interpretation,
+        {
+            "judgments": [
+                {
+                    "requirement_id": "foreign",
+                    "status": "met",
+                    "fact_indices": [0],
+                    "reason": "Unsupported private reason",
+                }
+            ],
+            "score": 100,
+        },
+        judgments(
             structured,
             {"m1": "met", "m2": "partial", "e1": "unknown", "p1": "unknown", "q1": "unknown"},
-        )
-
-    monkeypatch.setattr(extraction, "bedrock_provider", provider)
+        ),
+    )
     result = asyncio.run(assess_resume(structured, settings))
-    assert [call[3] for call in calls] == [False, True]
-    assert calls[0][0] == structured.job and calls[0][4] == structured.facts
+    assert [call["attempt"] for call in calls] == [1, 2]
+    payload = json.loads(calls[0]["payload"])
+    assert payload["job_context"] == structured.job.model_dump()
+    assert payload["verified_text_mentions"] == [fact.model_dump() for fact in structured.facts]
+    retry = calls[1]["system"]
+    assert "requirement m1: has no judgment" in retry
+    assert "judgments[0]: uses a requirement_id that is not in the job" in retry
+    assert "Unsupported private reason" not in retry
     assert result.scoring.score is None
     assert (result.scoring.lower, result.scoring.upper) == (37.5, 87.5)
     assert "AI interpretation" in result.notice
 
 
+@pytest.mark.parametrize(
+    "mutation,status,indices",
+    [
+        ("missing", "unknown", []),
+        ("conflicting", "unknown", []),
+        ("identical_duplicate", "met", [0]),
+        ("bad_index", "unknown", []),
+        ("partly_bad_index", "met", [0]),
+        ("unknown_ref", "unknown", []),
+        ("uncited", "unknown", []),
+        ("duplicate_ref", "met", [0]),
+        ("extra", "met", [0]),
+        ("long_reason", "met", [0]),
+        ("invalid_status", "unknown", []),
+    ],
+)
+def test_judgment_salvage_only_widens_uncertainty(mutation, status, indices):
+    structured = sample()
+    value = judgments(structured, {row.id: "met" for row in structured.job.requirements})
+    row = value["judgments"][0]
+    if mutation == "missing":
+        value["judgments"].pop(0)
+    elif mutation == "conflicting":
+        value["judgments"].append({**row, "status": "not_met"})
+    elif mutation == "identical_duplicate":
+        value["judgments"].append(dict(row))
+    elif mutation == "bad_index":
+        row["fact_indices"] = [7]
+    elif mutation == "partly_bad_index":
+        row["fact_indices"] = [0, 7, True]
+    elif mutation == "unknown_ref":
+        row["status"] = "unknown"
+    elif mutation == "uncited":
+        row["fact_indices"] = []
+    elif mutation == "duplicate_ref":
+        row["fact_indices"] = [0, 0]
+    elif mutation == "extra":
+        row["score"] = 100
+    elif mutation == "long_reason":
+        row["reason"] = "x" * 500
+    else:
+        row["status"] = "excellent"
+    result = salvage_judgments(value, structured)
+    first = result.interpretation.judgments[0]
+    assert [row.requirement_id for row in result.interpretation.judgments] == [
+        row.id for row in structured.job.requirements
+    ]
+    assert (first.requirement_id, first.status, first.fact_indices) == ("m1", status, indices)
+    assert len(first.reason) <= 300
+    if status == "unknown" and mutation != "unknown_ref":
+        assert first.reason == UNVERIFIED_REASON
+    # Salvaged output always passes strict scoring validation.
+    score_interpretation(structured, result.interpretation, Settings())
+
+
+def test_unusable_interpretation_shape_fails_without_a_score():
+    with pytest.raises(ExtractionFailure, match="invalid_model_output"):
+        salvage_judgments({"score": 100}, sample())
+
+
 def test_assessment_rejects_mismatched_provider_identity():
     structured = sample().model_copy(update={"mode": "bedrock", "model_id": "other-model"})
-    settings = Settings(
-        ai_mode="bedrock", aws_region="ap-southeast-2", bedrock_model_id="synthetic-model"
-    )
+    settings = bedrock_settings(bedrock_model_id="synthetic-model")
     with pytest.raises(ExtractionFailure, match="invalid_interpretation"):
         asyncio.run(assess_resume(structured, settings))
 
@@ -365,6 +426,136 @@ def test_curated_synthetic_experience_scenarios_show_partial_and_unknown():
 
 
 def test_provider_schema_keeps_fields_and_strips_unsupported_limits():
-    schema = interpretation_schema()
+    schema = provider_json_schema(Interpretation)
     assert "judgments" in schema["properties"]
     assert "maxItems" not in str(schema) and "maxLength" not in str(schema)
+
+
+def test_transferable_sits_between_met_and_partial_and_credits_are_configurable():
+    structured = sample()
+    statuses = {"m1": "met", "m2": "transferable", "e1": "partial", "p1": "met", "q1": "met"}
+    value = judgments(structured, statuses)
+    score = score_interpretation(structured, value, Settings())[1]
+    # Mandatory (1 + 0.75) / 2 * 50 + experience 0.5 * 25 + 15 + 10.
+    assert score.score == 81.3
+    assert score.mandatory_met == 1
+    custom = Settings(match_credit_transferable=0.9, match_credit_partial=0.4)
+    assert score_interpretation(structured, value, custom)[1].score == 82.5
+    for status, expected in [("met", 100), ("transferable", 75), ("partial", 50)]:
+        uniform = judgments(structured, {row.id: status for row in structured.job.requirements})
+        assert score_interpretation(structured, uniform, Settings())[1].score == expected
+
+
+def test_salvage_keeps_transferable_judgments_with_citations():
+    structured = sample()
+    value = judgments(structured, {row.id: "transferable" for row in structured.job.requirements})
+    result = salvage_judgments(value, structured)
+    assert {row.status for row in result.interpretation.judgments} == {"transferable"}
+    assert result.issues == []
+    uncited = judgments(structured, {row.id: "unknown" for row in structured.job.requirements})
+    uncited["judgments"][0].update(status="transferable")
+    assert salvage_judgments(uncited, structured).interpretation.judgments[0].status == "unknown"
+
+
+@pytest.mark.parametrize(
+    "unknown,estimate,confidence",
+    [
+        (set(), 100.0, "very_high"),
+        ({"p1"}, 92.5, "high"),
+        ({"e1"}, 87.5, "medium"),
+        ({"m1", "e1"}, 75.0, "low"),
+        ({"m1", "m2", "e1", "p1", "q1"}, 50.0, "low"),
+    ],
+)
+def test_estimate_is_the_range_midpoint_and_confidence_follows_unknown_weight(
+    unknown, estimate, confidence
+):
+    structured = sample()
+    statuses = {
+        row.id: ("unknown" if row.id in unknown else "met") for row in structured.job.requirements
+    }
+    score = score_interpretation(structured, judgments(structured, statuses), Settings())[1]
+    assert score.estimate == estimate and score.confidence == confidence
+    assert score.estimate == round((score.lower + score.upper) / 2, 1)
+    assert (score.score is None) == bool(unknown)
+
+
+def new_evidence_row(structured, quote, value="Python", status="met"):
+    return {
+        "requirement_id": "m1",
+        "status": status,
+        "fact_indices": [],
+        "new_evidence": [
+            {"kind": "experience", "value": value, "evidence": [{"page_number": 1, "quote": quote}]}
+        ],
+        "reason": "Quoted directly from the resume.",
+    }
+
+
+def test_judging_can_add_verified_resume_quotes_as_new_cited_facts():
+    structured = sample(text="Python service experience.\nRan pytest suites for every release.")
+    value = judgments(structured, {row.id: "unknown" for row in structured.job.requirements})
+    value["judgments"][1] = {
+        **new_evidence_row(structured, "Ran pytest suites for every release.", value="pytest"),
+        "requirement_id": "m2",
+    }
+    result = salvage_judgments(value, structured)
+    assert result.added == 1 and result.facts[-1].value == "pytest"
+    m2 = result.interpretation.judgments[1]
+    assert (m2.status, m2.fact_indices) == ("met", [len(structured.facts)])
+    evidence = result.facts[-1].evidence[0]
+    assert structured.source.pages[0].text[evidence.start : evidence.end] == evidence.quote
+
+
+def test_unverifiable_or_duplicate_new_evidence_never_creates_a_match():
+    structured = sample(text="Python service experience.")
+    value = judgments(structured, {row.id: "unknown" for row in structured.job.requirements})
+    value["judgments"][0] = new_evidence_row(structured, "Ten years of Rust in production.")
+    result = salvage_judgments(value, structured)
+    assert result.added == 0 and result.interpretation.judgments[0].status == "unknown"
+    assert any("new_evidence[0]" in issue for issue in result.issues)
+    duplicate = judgments(structured, {row.id: "unknown" for row in structured.job.requirements})
+    duplicate["judgments"][0] = new_evidence_row(
+        structured, "Python service experience.", value="Python"
+    )
+    duplicate["judgments"][0]["new_evidence"][0]["kind"] = "skill"
+    reused = salvage_judgments(duplicate, structured)
+    assert reused.added == 0 and reused.interpretation.judgments[0].fact_indices == [0]
+
+
+def test_assessment_publishes_added_quotes_with_the_structured_facts(monkeypatch):
+    structured = sample(text="Python service experience.\nRan pytest suites for every release.")
+    structured = structured.model_copy(update={"mode": "bedrock", "model_id": "synthetic-model"})
+    value = judgments(structured, {row.id: "unknown" for row in structured.job.requirements})
+    value["judgments"][1] = {
+        **new_evidence_row(structured, "Ran pytest suites for every release.", value="pytest"),
+        "requirement_id": "m2",
+    }
+    scripted(monkeypatch, interpretation, value)
+    result = asyncio.run(
+        assess_resume(structured, bedrock_settings(bedrock_model_id="synthetic-model"))
+    )
+    assert [fact.value for fact in result.structured.facts] == ["Python", "pytest"]
+    assert "experience" not in result.structured.unknown_categories
+    assert result.judgments[1].fact_indices == [1]
+    assert result.scoring.confidence == "low" and result.scoring.estimate is not None
+
+
+@pytest.mark.parametrize(
+    "quote,status",
+    [
+        ("Payroll coordination is not documented.", "unknown"),
+        ("CRM lead routing is not described.", "unknown"),
+        ("Holds a BCom; no quantitative degree.", "not_met"),
+    ],
+)
+def test_not_met_cannot_rest_only_on_missing_information(quote, status):
+    structured = sample(text=f"Python service experience.\n{quote}")
+    value = judgments(structured, {row.id: "unknown" for row in structured.job.requirements})
+    value["judgments"][0] = new_evidence_row(
+        structured, quote, value=quote.split()[0], status="not_met"
+    )
+    result = salvage_judgments(value, structured)
+    assert result.interpretation.judgments[0].status == status
+    if status == "unknown":
+        assert "judgments[0]: missing_information_not_contrary" in result.issues
