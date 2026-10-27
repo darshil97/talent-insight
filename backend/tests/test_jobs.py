@@ -32,7 +32,9 @@ def jobs_app(monkeypatch: pytest.MonkeyPatch):
     app = create_app(Settings(cors_allowed_origins=("http://127.0.0.1:3000",)))
     app.dependency_overrides[catalog_session] = lambda: object()
     rows = sample_jobs()
-    monkeypatch.setattr("app.api.jobs.catalog.list_jobs", lambda session: rows)
+    monkeypatch.setattr(
+        "app.api.jobs.catalog.list_jobs_with_counts", lambda session: [(job, 0) for job in rows]
+    )
     monkeypatch.setattr(
         "app.api.jobs.catalog.get_job",
         lambda session, job_id: next((job for job in rows if job.id == job_id), None),
@@ -50,8 +52,17 @@ def test_list_is_typed_demo_only_and_excludes_detail_and_candidates(
     assert len(rows) == 4
     assert [row["title"] for row in rows] == sorted(row["title"] for row in rows)
     for row in rows:
-        assert set(row) == {"id", "title", "client", "description", "skills", "is_demo"}
+        assert set(row) == {
+            "id",
+            "title",
+            "client",
+            "description",
+            "skills",
+            "is_demo",
+            "candidate_count",
+        }
         assert row["is_demo"] is True
+        assert row["candidate_count"] == 0
 
 
 def test_job_detail_contains_ordered_requirements_and_question_references(
@@ -72,7 +83,7 @@ def test_job_detail_contains_ordered_requirements_and_question_references(
 def test_empty_catalog_is_not_an_error(
     jobs_app, api_request: Callable[..., httpx.Response], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr("app.api.jobs.catalog.list_jobs", lambda session: [])
+    monkeypatch.setattr("app.api.jobs.catalog.list_jobs_with_counts", lambda session: [])
     response = api_request(jobs_app, "GET", "/jobs")
     assert response.status_code == 200
     assert response.json() == {"jobs": []}
@@ -99,16 +110,18 @@ def test_transaction_is_read_only_bounded_closed_and_database_errors_are_safe(
     app = create_app(Settings(cors_allowed_origins=("http://127.0.0.1:3000",)))
     app.state.database_engine = object()
     session = MagicMock()
-    session.scalars.side_effect = OperationalError("SQL secret", {}, Exception("credential"))
+    session.execute.side_effect = [
+        None,
+        OperationalError("SQL secret", {}, Exception("credential")),
+    ]
     factory = MagicMock()
     factory.return_value.__enter__.return_value = session
     monkeypatch.setattr("app.api.deps.Session", factory)
     response = api_request(app, "GET", "/jobs", headers={"Origin": "http://127.0.0.1:3000"})
     assert response.status_code == 503
     assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:3000"
-    assert [str(call.args[0]) for call in session.execute.call_args_list] == [
-        "SET TRANSACTION READ ONLY",
-        "SET LOCAL statement_timeout = '5000ms'",
+    assert [str(call.args[0]) for call in session.execute.call_args_list[:1]] == [
+        "SET TRANSACTION READ ONLY; SET LOCAL statement_timeout = '5000ms'",
     ]
     factory.return_value.__exit__.assert_called_once()
     assert "credential" not in response.text + caplog.text
@@ -134,7 +147,40 @@ def test_engine_is_lazy_per_app_and_disposed_at_shutdown(monkeypatch: pytest.Mon
 def test_invalid_catalog_data_fails_closed(jobs_app, api_request, monkeypatch) -> None:
     rows = sample_jobs()
     rows[0].is_demo = False
-    monkeypatch.setattr("app.api.jobs.catalog.list_jobs", lambda session: rows)
+    monkeypatch.setattr(
+        "app.api.jobs.catalog.list_jobs_with_counts", lambda session: [(job, 0) for job in rows]
+    )
     response = api_request(jobs_app, "GET", "/jobs")
     assert response.status_code == 500
     assert response.json()["error"]["code"] == "internal_error"
+
+
+def test_counts_use_one_query_without_fetching_candidate_profiles():
+    from app.catalog import list_jobs_with_counts
+
+    rows = sample_jobs()
+    session = MagicMock()
+    session.execute.return_value = [(rows[0], 0), (rows[1], 4)]
+    assert list_jobs_with_counts(session) == [(rows[0], 0), (rows[1], 4)]
+    sql = str(session.execute.call_args.args[0])
+    assert "count(*)" in sql and "job_candidates.job_id = talent_insight.jobs.id" in sql
+    assert "resume_text" not in sql
+
+
+def test_counts_include_empty_jobs(jobs_app, api_request, monkeypatch):
+    rows = sample_jobs()
+    monkeypatch.setattr(
+        "app.api.jobs.catalog.list_jobs_with_counts", lambda session: [(rows[0], 0), (rows[1], 4)]
+    )
+    response = api_request(jobs_app, "GET", "/jobs")
+    assert [row["candidate_count"] for row in response.json()["jobs"]] == [0, 4]
+
+
+def test_job_requirements_load_in_the_same_query():
+    from app.catalog import get_job
+
+    session = MagicMock()
+    get_job(session, "demo_ds")
+    sql = str(session.scalar.call_args.args[0])
+    assert "LEFT OUTER JOIN talent_insight.job_requirements" in sql
+    session.scalar.assert_called_once()

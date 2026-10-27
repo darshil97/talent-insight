@@ -170,3 +170,39 @@ def test_refresh_reuses_only_completed_valid_progress_after_failure(monkeypatch,
     assert len(load_cache(snapshot)) == 13
     assert not progress.exists()
     assert not extraction_progress.exists()
+
+
+def test_unchanged_snapshot_is_parsed_once_and_replacements_or_deletion_invalidate(
+    tmp_path, monkeypatch
+):
+    from pathlib import Path
+
+    path = tmp_path / "snapshot.json"
+    document = asyncio.run(build_cache(load_seed(), Settings(ai_mode="mock")))
+    write_cache(document, path)
+    original = Path.read_text
+    reads = []
+
+    def counted_read(self, *args, **kwargs):
+        if self == path:
+            reads.append(self)
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", counted_read)
+    first = load_cache(path)
+    assert len(first) == 13
+    # Each caller receives its own index, so removing a key does not poison later reads.
+    first.clear()
+    assert len(load_cache(path)) == 13
+    assert len(reads) == 1
+    replacement = tmp_path / "replacement.json"
+    replacement.write_text('{"version":1,"entries":[]}', encoding="utf-8")
+    replacement.replace(path)
+    assert load_cache(path) == {}
+    assert len(reads) == 2
+    path.write_text("broken", encoding="utf-8")
+    assert load_cache(path) == {}
+    path.unlink()
+    assert load_cache(path) == {}
+    write_cache(document, path)
+    assert len(load_cache(path)) == 13

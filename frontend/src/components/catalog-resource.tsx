@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CatalogError, fetchCatalog } from "@/lib/catalog";
+import { CatalogError } from "@/lib/catalog";
+import { catalogCache } from "@/lib/catalog-cache";
 
 type Resource<T> =
   | { status: "loading" }
@@ -10,27 +11,26 @@ type Resource<T> =
   | { status: "error"; notFound: boolean };
 
 export function useCatalog<T>(path: string, decode: (value: unknown) => T) {
-  const [resource, setResource] = useState<Resource<T>>({ status: "loading" });
+  const [resource, setResource] = useState<{ path: string; attempt: number; value: Resource<T> }>({ path, attempt: 0, value: { status: "loading" } });
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchCatalog(path, decode, controller.signal)
+    catalogCache.read(path, decode, controller.signal, attempt > 0)
       .then((data) => {
-        if (!controller.signal.aborted) setResource({ status: "ready", data });
+        if (!controller.signal.aborted) setResource({ path, attempt, value: { status: "ready", data } });
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted) {
-          setResource({ status: "error", notFound: error instanceof CatalogError && error.kind === "not_found" });
+          setResource({ path, attempt, value: { status: "error", notFound: error instanceof CatalogError && error.kind === "not_found" } });
         }
       });
     return () => controller.abort();
   }, [path, decode, attempt]);
 
   return {
-    resource,
+    resource: resource.path === path && resource.attempt === attempt ? resource.value : { status: "loading" } as Resource<T>,
     retry: () => {
-      setResource({ status: "loading" });
       setAttempt((value) => value + 1);
     },
   };

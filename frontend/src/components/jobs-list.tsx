@@ -1,16 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback } from "react";
 import { CatalogLoading, CatalogUnavailable, useCatalog } from "@/components/catalog-resource";
-import { decodeCandidatePool } from "@/lib/candidates";
-import { decodeJobs, type JobSummary } from "@/lib/catalog";
+import { decodeJob, decodeJobs, type JobListItem } from "@/lib/catalog";
+import { prefetchCatalog } from "@/lib/catalog-cache";
 
-function JobCard({ job, index }: { job: JobSummary; index: number }) {
-  const decode = useCallback((value: unknown) => decodeCandidatePool(value, job.id), [job.id]);
-  const { resource } = useCatalog(`/jobs/${encodeURIComponent(job.id)}/candidates`, decode);
-  const count = resource.status === "ready" ? resource.data.candidates.length : null;
-  return <li><Link href={`/jobs/${job.id}`} className="mission-job-card">
+function JobCard({ job, index }: { job: JobListItem; index: number }) {
+  const count = job.candidate_count;
+  const warm = () => prefetchCatalog(`/jobs/${job.id}`, decodeJob);
+  return <li><Link href={`/jobs/${job.id}`} onMouseEnter={warm} onFocus={warm} className="mission-job-card">
     <span className="mission-job-card-top"><small>{String(index + 1).padStart(2, "0")} / ROLE</small><span aria-hidden="true">↗</span></span>
     <span className="mission-job-content"><small>{job.client}</small><strong>{job.title}</strong><span>{job.description}</span></span>
     <span className="mission-job-card-bottom"><small>{count === null ? "Candidate pool" : `${count} synthetic ${count === 1 ? "candidate" : "candidates"}`}</small><b>View role ↗</b></span>

@@ -6,7 +6,8 @@ import { decodeCandidatePool, decodeCandidateProfile, splitResume } from "../src
 
 const fixtures = JSON.parse(readFileSync(new URL("../../backend/app/fixtures/candidates.json", import.meta.url), "utf8"));
 const source = fixtures.candidates[0];
-const job = JSON.parse(readFileSync(new URL("../../backend/app/fixtures/jobs/demo_ds.json", import.meta.url), "utf8"));
+const jobSource = JSON.parse(readFileSync(new URL("../../backend/app/fixtures/jobs/demo_ds.json", import.meta.url), "utf8"));
+const job = { ...jobSource, requirements: jobSource.requirements.map((row: object, sort_order: number) => ({ ...row, sort_order })) };
 const none = { status: null, last_working_day: null, notice_days: null, days_to_join: null, bonus: 0 };
 const summary = { id: source.id, display_name: source.display_name, headline: source.headline, summary: source.summary, is_demo: true, stated_experience: "4 years", snapshot_available: false, match_score: null, score_lower: null, score_upper: null, match_estimate: null, confidence: null, availability: none, ranking_score: null };
 const candidate = { ...summary, resume_text: source.resume_text, offset_unit: "unicode_code_point", claims: source.claims.map((claim: { quote: string }) => {

@@ -8,6 +8,10 @@ export interface JobSummary {
   is_demo: true;
 }
 
+export interface JobListItem extends JobSummary {
+  candidate_count: number;
+}
+
 export type RequirementCategory = "mandatory" | "experience" | "preferred" | "qualification";
 
 export interface JobRequirement {
@@ -49,8 +53,9 @@ export function isJobSummary(value: unknown): value is JobSummary {
     text(value.description) && texts(value.skills) && value.is_demo === true;
 }
 
-export function decodeJobs(value: unknown): JobSummary[] {
-  if (!object(value) || !Array.isArray(value.jobs) || !value.jobs.every(isJobSummary) || !uniqueIds(value.jobs)) {
+export function decodeJobs(value: unknown): JobListItem[] {
+  if (!object(value) || !Array.isArray(value.jobs) || !value.jobs.every((row): row is JobListItem => isJobSummary(row) && object(row) &&
+      Number.isSafeInteger(row.candidate_count) && Number(row.candidate_count) >= 0) || !uniqueIds(value.jobs)) {
     throw new CatalogError("unavailable");
   }
   return value.jobs;

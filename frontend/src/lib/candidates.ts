@@ -1,6 +1,6 @@
 import { isAvailability, isRankingScore, type Availability } from "./availability.ts";
 import { isEstimate, type Confidence } from "./estimate.ts";
-import { CatalogError, isJobId, isJobSummary, type JobSummary } from "./catalog.ts";
+import { CatalogError, decodeJob, isJobId, isJobSummary, type JobDetail } from "./catalog.ts";
 
 export const isCandidateId = isJobId;
 
@@ -39,12 +39,12 @@ export interface CandidateDetail extends CandidateSummary {
 }
 
 export interface CandidatePool {
-  job: JobSummary;
+  job: JobDetail;
   candidates: CandidateTableSummary[];
 }
 
 export interface CandidateProfile {
-  job: JobSummary;
+  job: JobDetail;
   candidate: CandidateDetail;
   availability: Availability;
   assessment: unknown;
@@ -100,7 +100,7 @@ export function decodeCandidatePool(value: unknown, jobId: string): CandidatePoo
       new Set(value.candidates.map((row) => row.id)).size !== value.candidates.length) {
     throw new CatalogError("unavailable");
   }
-  return { job: value.job, candidates: value.candidates };
+  return { job: decodeJob(value.job), candidates: value.candidates };
 }
 
 export function decodeCandidateProfile(value: unknown, jobId: string, candidateId: string): CandidateProfile {
@@ -121,5 +121,5 @@ export function decodeCandidateProfile(value: unknown, jobId: string, candidateI
     throw new CatalogError("unavailable");
   }
   if (!("assessment" in value) || !isAvailability(value.availability)) throw new CatalogError("unavailable");
-  return { job: value.job, candidate: { ...candidate, resume_text: source, claims, offset_unit: "unicode_code_point" }, availability: value.availability, assessment: value.assessment };
+  return { job: decodeJob(value.job), candidate: { ...candidate, resume_text: source, claims, offset_unit: "unicode_code_point" }, availability: value.availability, assessment: value.assessment };
 }

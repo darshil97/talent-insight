@@ -83,7 +83,7 @@ export function CandidateProfileView({ jobId, candidateId }: { jobId: string; ca
         {selected && <p role="status" className="mt-4 text-sm font-medium text-[#466344]">Highlighted excerpt: {selected.label}</p>}
         <pre className="mt-5 rounded-lg bg-[#f7f8f2] p-5 font-sans text-sm leading-8 whitespace-pre-wrap text-[#475a49] [overflow-wrap:anywhere]">{highlighted ? <>{highlighted.before}<mark className="rounded-sm bg-[#f2e8b2] text-[#243c2e]">{highlighted.excerpt}</mark>{highlighted.after}</> : candidate.resume_text}</pre>
       </section>
-      <DemoAssessment key={`${jobId}/${candidateId}`} jobId={jobId} candidateId={candidateId} cached={resource.data.assessment} />
+      <DemoAssessment key={`${jobId}/${candidateId}`} jobId={jobId} candidateId={candidateId} cached={resource.data.assessment} job={job} />
       <p className="mt-7 rounded-xl border border-dashed border-[#cbd3c3] p-5 text-sm leading-7 text-[#59665d]">This is synthetic demo data. The precomputed assessment requires human review. People make the final hiring decisions.</p>
     </>
   );

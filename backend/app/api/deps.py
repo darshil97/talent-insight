@@ -18,8 +18,10 @@ def catalog_session(request: Request) -> Iterator[Session]:
         raise HTTPException(503)
     try:
         with Session(engine, autoflush=False) as session:
-            session.execute(text("SET TRANSACTION READ ONLY"))
-            session.execute(text("SET LOCAL statement_timeout = '5000ms'"))
+            # One protocol round trip; both protections still apply only to this transaction.
+            session.execute(
+                text("SET TRANSACTION READ ONLY; SET LOCAL statement_timeout = '5000ms'")
+            )
             yield session
     except SQLAlchemyError:
         raise HTTPException(503) from None

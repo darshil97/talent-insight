@@ -2,7 +2,7 @@
 
 import hashlib
 import json
-from functools import cache
+from functools import cache, lru_cache
 from importlib.resources import files
 from pathlib import Path
 
@@ -77,13 +77,24 @@ def assessment_digest(assessment: Assessment) -> str:
     return hashlib.sha256(assessment.model_dump_json().encode()).hexdigest()
 
 
+@lru_cache(maxsize=4)
+def _load_unchanged_cache(
+    path: Path,
+    signature: tuple[int, int, int, int],
+) -> dict[tuple[str, str], CacheEntry]:
+    """Parse an unchanged synthetic snapshot once; never cache uploaded data."""
+    document = CacheDocument.model_validate_json(path.read_text(encoding="utf-8"))
+    if document.version != 1:
+        return {}
+    rows = {(row.job_id, row.candidate_id): row for row in document.entries}
+    return rows if len(rows) == len(document.entries) else {}
+
+
 def load_cache(path: Path = CACHE_PATH) -> dict[tuple[str, str], CacheEntry]:
     try:
-        document = CacheDocument.model_validate_json(path.read_text(encoding="utf-8"))
-        if document.version != 1:
-            return {}
-        rows = {(row.job_id, row.candidate_id): row for row in document.entries}
-        return rows if len(rows) == len(document.entries) else {}
+        stat = path.stat()
+        signature = (stat.st_ino, stat.st_mtime_ns, stat.st_ctime_ns, stat.st_size)
+        return dict(_load_unchanged_cache(path, signature))
     except (OSError, ValueError, ValidationError):
         return {}
 

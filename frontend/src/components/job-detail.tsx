@@ -1,11 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback } from "react";
 import { CatalogLoading, CatalogNotFound, CatalogUnavailable, useCatalog } from "@/components/catalog-resource";
 import { JobTabs } from "@/components/job-tabs";
-import { decodeCandidatePool } from "@/lib/candidates";
-import { decodeJob, type RequirementCategory } from "@/lib/catalog";
+import { decodeJob, decodeJobs, type RequirementCategory } from "@/lib/catalog";
 
 const otherCategories: { key: RequirementCategory; label: string }[] = [
   { key: "experience", label: "Experience" },
@@ -15,12 +13,11 @@ const otherCategories: { key: RequirementCategory; label: string }[] = [
 
 export function JobDetailView({ jobId }: { jobId: string }) {
   const { resource, retry } = useCatalog(`/jobs/${encodeURIComponent(jobId)}`, decodeJob);
-  const decodePool = useCallback((value: unknown) => decodeCandidatePool(value, jobId), [jobId]);
-  const pool = useCatalog(`/jobs/${encodeURIComponent(jobId)}/candidates`, decodePool);
+  const jobs = useCatalog("/jobs", decodeJobs);
   if (resource.status === "loading") return <CatalogLoading />;
   if (resource.status === "error") return resource.notFound ? <CatalogNotFound /> : <CatalogUnavailable retry={retry} />;
   const job = resource.data;
-  const candidateCount = pool.resource.status === "ready" ? pool.resource.data.candidates.length : undefined;
+  const candidateCount = jobs.resource.status === "ready" ? jobs.resource.data.find((row) => row.id === jobId)?.candidate_count : undefined;
   const mandatory = job.requirements.filter((row) => row.category === "mandatory");
   return <>
     <p role="status" className="sr-only">{job.title} loaded.</p>

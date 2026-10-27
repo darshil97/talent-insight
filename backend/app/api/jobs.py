@@ -3,7 +3,7 @@
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Response
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app import catalog
 from app.api.deps import CatalogSession, JobId
@@ -36,15 +36,22 @@ class JobDetail(JobSummary):
     questions: list[QuestionResponse]
 
 
+class JobListItem(JobSummary):
+    candidate_count: int = Field(ge=0)
+
+
 class JobListResponse(BaseModel):
-    jobs: list[JobSummary]
+    jobs: list[JobListItem]
 
 
 @router.get("", response_model=JobListResponse, responses={503: {"model": ErrorResponse}})
 def jobs(response: Response, session: CatalogSession) -> JobListResponse:
     response.headers["Cache-Control"] = "no-store"
     return JobListResponse(
-        jobs=[JobSummary.model_validate(job) for job in catalog.list_jobs(session)]
+        jobs=[
+            JobListItem(**JobSummary.model_validate(job).model_dump(), candidate_count=count)
+            for job, count in catalog.list_jobs_with_counts(session)
+        ]
     )
 
 

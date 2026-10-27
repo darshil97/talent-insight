@@ -9,8 +9,9 @@ import { JobTabs } from "@/components/job-tabs";
 import { assessUpload, AssessmentError, type Assessment } from "@/lib/assessments";
 import { AvailabilityError, availabilityLabel, notProvided, requestAvailability, type Availability, type AvailabilityInput } from "@/lib/availability";
 import { sortForReview } from "@/lib/candidate-order";
-import { decodeCandidatePool, type CandidateTableSummary } from "@/lib/candidates";
-import { decodeJob, fetchCatalog, type JobDetail } from "@/lib/catalog";
+import { decodeCandidatePool, decodeCandidateProfile, type CandidateTableSummary } from "@/lib/candidates";
+import { fetchCatalog, type JobDetail } from "@/lib/catalog";
+import { prefetchCatalog } from "@/lib/catalog-cache";
 import { confidenceLabels, type Confidence } from "@/lib/estimate";
 import { decodeResumeLimits, ResumeError, type ResumeLimits } from "@/lib/resumes";
 
@@ -122,6 +123,9 @@ function CandidateWorkspace({ job, candidates }: { job: JobDetail; candidates: C
     // An unnamed upload sorts under its display label, not as an empty name.
     ...(upload ? [{ ...upload, name: upload.name.trim() || "Uploaded candidate" }] : []),
   ]);
+  function warmProfile(candidateId: string) {
+    prefetchCatalog(`/jobs/${job.id}/candidates/${candidateId}`, (value) => decodeCandidateProfile(value, job.id, candidateId));
+  }
   const identity = upload?.assessment.structured.identity;
 
   return <>
@@ -144,13 +148,13 @@ function CandidateWorkspace({ job, candidates }: { job: JobDetail; candidates: C
     {error && <p role="alert" className="mission-error">{error}</p>}
     <div className="mission-table-panel"><div className="mission-table-bar"><div><span>▦</span><strong>Candidate overview</strong><small>{rows.length}</small></div><small>JOB-SPECIFIC VIEW</small></div><div className="mission-table-scroll"><table className="mission-table"><thead><tr><th scope="col">Candidate name</th><th scope="col">Title</th><th scope="col">Experience years</th><th scope="col">Match estimate</th><th scope="col">Availability</th><th scope="col">Source</th><th scope="col">Action</th></tr></thead><tbody>
       {rows.map((row) => <tr key={row.kind === "demo" ? row.candidate.id : "uploaded"} className={row.kind === "upload" ? "mission-new-row" : ""}>
-        <td><div className="mission-person"><span className="mission-avatar">{row.kind === "demo" ? row.name.split(" ").map((part) => part[0]).join("") : "↑"}</span><div>{row.kind === "demo" ? <Link href={`/jobs/${job.id}/candidates/${row.candidate.id}`}>{row.name}</Link> : <button type="button" onClick={() => setShowDetails(true)}>{row.name.trim() || "Uploaded candidate"} <b>JUST ADDED</b></button>}<small>{row.kind === "demo" ? "Synthetic demo candidate" : row.filename}</small></div></div></td>
+        <td><div className="mission-person"><span className="mission-avatar">{row.kind === "demo" ? row.name.split(" ").map((part) => part[0]).join("") : "↑"}</span><div>{row.kind === "demo" ? <Link onMouseEnter={() => warmProfile(row.candidate.id)} onFocus={() => warmProfile(row.candidate.id)} href={`/jobs/${job.id}/candidates/${row.candidate.id}`}>{row.name}</Link> : <button type="button" onClick={() => setShowDetails(true)}>{row.name.trim() || "Uploaded candidate"} <b>JUST ADDED</b></button>}<small>{row.kind === "demo" ? "Synthetic demo candidate" : row.filename}</small></div></div></td>
         <td>{row.kind === "demo" ? row.candidate.headline : row.title.trim() || <span className="mission-muted">Not provided</span>}</td>
         <td>{row.kind === "demo" && row.candidate.stated_experience ? <>{row.candidate.stated_experience}<small className="mission-stated">stated</small></> : <span className="mission-muted">Unknown</span>}</td>
         <td><Score estimate={row.kind === "upload" ? row.assessment.scoring.estimate : row.candidate.match_estimate} confidence={row.kind === "upload" ? row.assessment.scoring.confidence : row.candidate.confidence} available={row.kind === "upload" || row.candidate.snapshot_available} /></td>
         <td><span className={(row.kind === "demo" ? row.candidate.availability.status : row.availability?.status) ? "" : "mission-muted"}>{availabilityLabel(row.kind === "demo" ? row.candidate.availability : row.availability)}</span></td>
         <td><span className="mission-tag">{row.kind === "demo" ? "Demo" : "Temporary"}</span></td>
-        <td>{row.kind === "demo" ? <Link className="mission-outline-button" href={`/jobs/${job.id}/candidates/${row.candidate.id}`}>View details ↗</Link> : <button type="button" className="mission-outline-button" onClick={() => setShowDetails(true)}>View details ↗</button>}</td>
+        <td>{row.kind === "demo" ? <Link className="mission-outline-button" onMouseEnter={() => warmProfile(row.candidate.id)} onFocus={() => warmProfile(row.candidate.id)} href={`/jobs/${job.id}/candidates/${row.candidate.id}`}>View details ↗</Link> : <button type="button" className="mission-outline-button" onClick={() => setShowDetails(true)}>View details ↗</button>}</td>
       </tr>)}
     </tbody></table></div><div className="mission-table-foot"><span>Demo scores come from the last validated snapshot; availability is self-reported.</span><span>Uploaded results clear on refresh or navigation.</span></div></div>
     {upload && showDetails && <section ref={details} tabIndex={-1} aria-labelledby="uploaded-candidate-heading" className="mission-detail-panel"><div className="mission-detail-top"><div><p className="mission-kicker">TEMPORARY CANDIDATE / SOURCE REVIEW</p><h2 id="uploaded-candidate-heading">{upload.name.trim() || "Uploaded candidate"}</h2><p>{upload.title.trim() || "Position not provided"} · {availabilityLabel(upload.availability)}. Review the source evidence before using this assessment.</p></div><button type="button" className="mission-outline-button" onClick={() => setShowDetails(false)}>Close details</button></div><AssessmentResult assessment={upload.assessment} job={job} /></section>}
@@ -161,9 +165,7 @@ function CandidateWorkspace({ job, candidates }: { job: JobDetail; candidates: C
 export function CandidatePoolView({ jobId }: { jobId: string }) {
   const decode = useCallback((value: unknown) => decodeCandidatePool(value, jobId), [jobId]);
   const pool = useCatalog(`/jobs/${encodeURIComponent(jobId)}/candidates`, decode);
-  const job = useCatalog(`/jobs/${encodeURIComponent(jobId)}`, decodeJob);
-  if (pool.resource.status === "loading" || job.resource.status === "loading") return <CatalogLoading label="Loading the candidate pool…" />;
+  if (pool.resource.status === "loading") return <CatalogLoading label="Loading the candidate pool…" />;
   if (pool.resource.status === "error") return pool.resource.notFound ? <CatalogNotFound /> : <CatalogUnavailable retry={pool.retry} subject="candidate pool" />;
-  if (job.resource.status === "error") return job.resource.notFound ? <CatalogNotFound /> : <CatalogUnavailable retry={job.retry} subject="job details" />;
-  return <CandidateWorkspace key={jobId} job={job.resource.data} candidates={pool.resource.data.candidates} />;
+  return <CandidateWorkspace key={jobId} job={pool.resource.data.job} candidates={pool.resource.data.candidates} />;
 }

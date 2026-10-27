@@ -64,3 +64,9 @@ Loading, empty pool, missing job/profile and service failure are distinct. Error
 No AI/voice integration, uploaded-candidate persistence, deployment or commit was introduced. Hosted behavior, other browsers and other operating systems remain unverified.
 
 Module 7 is approved. The later [assessment UI](assessment-ui.md) and demo snapshot workflow supersede its original pending-score behavior. The snapshot workflow awaits review.
+
+## Catalog loading optimization (2026-10-27)
+
+Pool and profile responses include the full validated job detail (`requirements`, `screening_criteria`, `questions`) with their candidate data. The pool no longer requests job details separately, and profile assessments render with that same response instead of starting a second job request. Jobs list counts come directly from memberships, without reading candidate resumes or assessment snapshots. Job requirements use a joined query rather than a second select. The two transaction setup statements share one protocol request; transaction read-only mode and the five-second statement timeout were verified on Neon with explicit user opt-in.
+
+Only synthetic catalog GETs use the bounded 60-second browser-memory cache described in [jobs](jobs.md). A candidate's displayed availability can consequently be up to 60 seconds old on reuse. The backend caches parsing of up to four unchanged synthetic snapshot file versions, keyed by path, inode, modification/change timestamps and size. File replacement, edits or deletion invalidate reuse; fingerprint, digest and job/source checks still run on each candidate read. Uploaded results are excluded.

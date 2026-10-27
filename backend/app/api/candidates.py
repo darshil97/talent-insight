@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_vali
 
 from app import catalog
 from app.api.deps import CatalogSession, JobId
-from app.api.jobs import JobDetail, JobSummary
+from app.api.jobs import JobDetail
 from app.demo_cache import load_cache, valid_assessment
 from app.errors import ErrorResponse
 from app.pipeline.contracts import Assessment, Confidence, ExtractionJob, ExtractionSource
@@ -79,12 +79,12 @@ class CandidateDetail(CandidateSummary):
 
 
 class CandidateListResponse(BaseModel):
-    job: JobSummary
+    job: JobDetail
     candidates: list[CandidateTableSummary]
 
 
 class CandidateProfileResponse(BaseModel):
-    job: JobSummary
+    job: JobDetail
     candidate: CandidateDetail
     availability: Availability
     assessment: Assessment | None
@@ -146,7 +146,7 @@ def candidates(
                 ranking_score=ranking_score(scoring.estimate if scoring else None, availability),
             )
         )
-    return CandidateListResponse(job=JobSummary.model_validate(job), candidates=summaries)
+    return CandidateListResponse(job=JobDetail.model_validate(job), candidates=summaries)
 
 
 @router.get("/{candidate_id}", response_model=CandidateProfileResponse, responses=responses)
@@ -171,7 +171,7 @@ def candidate_profile(
     response.headers["Cache-Control"] = "no-store"
     settings = request.app.state.settings
     return CandidateProfileResponse(
-        job=JobSummary.model_validate(job),
+        job=JobDetail.model_validate(job),
         candidate=detail,
         availability=candidate_availability(candidate, settings),
         assessment=cached_for_candidate(load_cache(), job, candidate, settings),

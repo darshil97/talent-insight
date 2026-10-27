@@ -5,7 +5,7 @@ import { apiBaseUrl, CatalogError, decodeJob, decodeJobs, fetchCatalog } from ".
 
 const source = JSON.parse(readFileSync(new URL("../../backend/app/fixtures/jobs/demo_ds.json", import.meta.url), "utf8"));
 const detail = { ...source, requirements: source.requirements.map((row: object, sort_order: number) => ({ ...row, sort_order })) };
-const summary = { id: source.id, title: source.title, client: source.client, description: source.description, skills: source.skills, is_demo: true };
+const summary = { id: source.id, title: source.title, client: source.client, description: source.description, skills: source.skills, is_demo: true, candidate_count: 4 };
 afterEach(() => mock.restoreAll());
 
 test("decodes API contracts from the editable source and keeps requirement order", () => {
@@ -15,7 +15,7 @@ test("decodes API contracts from the editable source and keeps requirement order
 });
 
 test("rejects malformed, non-demo and inconsistent API data", () => {
-  for (const input of [null, [], { jobs: "wrong" }, { jobs: [{ ...summary, is_demo: false }] }, { jobs: [summary, summary] }]) {
+  for (const input of [null, [], { jobs: "wrong" }, { jobs: [{ ...summary, is_demo: false }] }, { jobs: [summary, summary] }, { jobs: [{ ...summary, candidate_count: -1 }] }, { jobs: [{ ...summary, candidate_count: undefined }] }]) {
     assert.throws(() => decodeJobs(input), CatalogError);
   }
   for (const input of [
