@@ -60,7 +60,32 @@ _yaml_fields = {
     "matching.credits.transferable": "match_credit_transferable",
     "matching.credits.partial": "match_credit_partial",
     "ranking.availability_tiers": "ranking_availability_tiers",
+    "voice.mode": "voice_mode",
+    "voice.deepgram_api_key": "deepgram_api_key",
+    "voice.signing_secret": "session_signing_secret",
+    "voice.public_api_url": "voice_public_api_url",
+    "voice.agent_url": "voice_agent_url",
+    "voice.api_url": "voice_api_url",
+    "voice.listen_model": "voice_listen_model",
+    "voice.speak_model": "voice_speak_model",
+    "voice.token_ttl_seconds": "voice_token_ttl_seconds",
+    "voice.screening_seconds": "voice_screening_seconds",
+    "voice.wrap_up_seconds": "voice_wrap_up_seconds",
+    "voice.session_expiry_seconds": "voice_session_expiry_seconds",
+    "voice.context_ttl_seconds": "voice_context_ttl_seconds",
+    "voice.max_turns": "voice_max_turns",
+    "voice.max_reconnects": "voice_max_reconnects",
+    "voice.max_concurrent": "voice_max_concurrent",
+    "voice.sessions_per_hour": "voice_sessions_per_hour",
+    "voice.max_messages": "voice_max_messages",
+    "voice.max_history_characters": "voice_max_history_characters",
+    "voice.max_output_tokens": "voice_max_output_tokens",
+    "voice.bedrock_model_id": "voice_bedrock_model_id",
+    "voice.aws_region": "voice_aws_region",
+    "voice.reasoning_effort": "voice_reasoning_effort",
+    "voice.turn_timeout_seconds": "voice_turn_timeout_seconds",
 }
+_model_name = r"^[a-z0-9][a-z0-9.-]{0,79}$"
 
 
 class _UniqueKeysLoader(yaml.SafeLoader):
@@ -225,6 +250,113 @@ class Settings(BaseSettings):
         max_length=10,
         validation_alias="RANKING_AVAILABILITY_TIERS",
     )
+    # Voice screening; credentials are checked when a screening starts, like AI_MODE.
+    voice_mode: Literal["mock", "deepgram"] | None = Field(
+        default=None, validation_alias="VOICE_MODE"
+    )
+    deepgram_api_key: SecretStr | None = Field(default=None, validation_alias="DEEPGRAM_API_KEY")
+    session_signing_secret: SecretStr | None = Field(
+        default=None, validation_alias="SESSION_SIGNING_SECRET"
+    )
+    voice_public_api_url: str | None = Field(default=None, validation_alias="VOICE_PUBLIC_API_URL")
+    voice_agent_url: str = Field(
+        default="wss://agent.deepgram.com/v1/agent/converse", validation_alias="VOICE_AGENT_URL"
+    )
+    voice_api_url: str = Field(default="https://api.deepgram.com", validation_alias="VOICE_API_URL")
+    voice_listen_model: str = Field(
+        default="flux-general-en", pattern=_model_name, validation_alias="VOICE_LISTEN_MODEL"
+    )
+    voice_speak_model: str = Field(
+        default="aura-2-thalia-en", pattern=_model_name, validation_alias="VOICE_SPEAK_MODEL"
+    )
+    voice_token_ttl_seconds: int = Field(
+        default=30, ge=10, le=300, validation_alias="VOICE_TOKEN_TTL_SECONDS"
+    )
+    voice_screening_seconds: int = Field(
+        default=600, ge=60, le=1800, validation_alias="VOICE_SCREENING_SECONDS"
+    )
+    voice_wrap_up_seconds: int = Field(
+        default=540, ge=30, le=1800, validation_alias="VOICE_WRAP_UP_SECONDS"
+    )
+    voice_session_expiry_seconds: int = Field(
+        default=900, ge=120, le=3600, validation_alias="VOICE_SESSION_EXPIRY_SECONDS"
+    )
+    voice_context_ttl_seconds: int = Field(
+        default=1800, ge=60, le=7200, validation_alias="VOICE_CONTEXT_TTL_SECONDS"
+    )
+    voice_max_turns: int = Field(default=40, ge=4, le=100, validation_alias="VOICE_MAX_TURNS")
+    voice_max_reconnects: int = Field(
+        default=2, ge=0, le=5, validation_alias="VOICE_MAX_RECONNECTS"
+    )
+    voice_max_concurrent: int = Field(
+        default=1, ge=1, le=4, validation_alias="VOICE_MAX_CONCURRENT"
+    )
+    voice_sessions_per_hour: int = Field(
+        default=6, ge=1, le=60, validation_alias="VOICE_SESSIONS_PER_HOUR"
+    )
+    voice_max_messages: int = Field(
+        default=80, ge=10, le=200, validation_alias="VOICE_MAX_MESSAGES"
+    )
+    voice_max_history_characters: int = Field(
+        default=60_000, ge=2_000, le=200_000, validation_alias="VOICE_MAX_HISTORY_CHARACTERS"
+    )
+    voice_max_output_tokens: int = Field(
+        default=300, ge=64, le=1024, validation_alias="VOICE_MAX_OUTPUT_TOKENS"
+    )
+    voice_bedrock_model_id: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=256,
+        pattern=r"^[a-zA-Z0-9.:/_-]+$",
+        validation_alias="VOICE_BEDROCK_MODEL_ID",
+    )
+    voice_aws_region: str | None = Field(
+        default=None, pattern=r"^[a-z]{2}(?:-[a-z]+)+-\d$", validation_alias="VOICE_AWS_REGION"
+    )
+    voice_reasoning_effort: Literal["low", "medium", "high"] | None = Field(
+        default="low", validation_alias="VOICE_REASONING_EFFORT"
+    )
+    voice_turn_timeout_seconds: float = Field(
+        default=20, ge=5, le=60, validation_alias="VOICE_TURN_TIMEOUT_SECONDS"
+    )
+
+    @model_validator(mode="after")
+    def voice_times_are_ordered(self):
+        if not (
+            self.voice_wrap_up_seconds
+            < self.voice_screening_seconds
+            < self.voice_session_expiry_seconds
+        ):
+            raise ValueError("Voice wrap-up must precede the screening limit and session expiry")
+        return self
+
+    @field_validator("voice_public_api_url", "voice_api_url")
+    @classmethod
+    def voice_http_url(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        url = _http_url.validate_python(value)
+        if url.scheme == "http" and not is_loopback(url.host or ""):
+            raise ValueError("Non-loopback voice URLs must use HTTPS")
+        if (
+            value != value.strip()
+            or url.username is not None
+            or url.password is not None
+            or url.query is not None
+            or url.fragment is not None
+        ):
+            raise ValueError("Voice URLs cannot include credentials, queries or fragments")
+        return str(url).removesuffix("/")
+
+    @field_validator("voice_agent_url")
+    @classmethod
+    def voice_agent_websocket(cls, value: str) -> str:
+        if (
+            not re.fullmatch(r"wss://[a-z0-9.-]+\.deepgram\.com/v1/agent/converse", value)
+            or ".." in value
+        ):
+            raise ValueError("VOICE_AGENT_URL must be a Deepgram wss:// agent endpoint")
+        return value
 
     @model_validator(mode="after")
     def scoring_weights_sum_to_100(self):
@@ -294,7 +426,7 @@ class Settings(BaseSettings):
             raise ValueError("AI_MODE must be mock or a registered LLM provider")
         return value
 
-    @field_validator("bedrock_model_id")
+    @field_validator("bedrock_model_id", "voice_bedrock_model_id")
     @classmethod
     def model_is_not_an_endpoint(cls, value: str | None) -> str | None:
         if value is not None and "://" in value:
@@ -320,6 +452,7 @@ def load_settings() -> Settings:
             "Invalid backend configuration. Check app/config.yaml, DOCS_ENABLED, "
             "CORS_ALLOWED_ORIGINS, LOG_LEVEL, "
             "database URLs, RESUME_*/AI_*/MATCH_*/RANKING_* settings, "
-            "AWS/Bedrock settings and backend/.env; "
+            "AWS/Bedrock settings, VOICE_*/DEEPGRAM_*/SESSION_SIGNING_SECRET settings "
+            "and backend/.env; "
             "remove legacy APP_ENV."
         ) from None

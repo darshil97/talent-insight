@@ -1,6 +1,6 @@
 # Talent Insight — project context
 
-Last updated: 2026-10-27 (Asia/Kolkata). The user-requested catalog performance module is implemented locally, reviewed and approved on 2026-10-27; see the final entry for verification and remaining remote-database latency. Module 11a (recruiter-style matching with a `transferable` level and applied-use rules, verified candidate name/title for uploads, and an availability ranking bonus) is implemented locally and awaits review; the shared Neon catalog is at migration `0002_candidate_availability`. Earlier the same day, a user-requested backend refactor of completed modules 8–11 (Jinja `.md` prompts, an LLM provider registry with an in-process cached Bedrock client, request IDs and key-point logging, and per-item validation salvage with retry hints) is implemented locally and awaits review; a first post-refactor demo refresh was blocked by a stale `AWS_BEARER_TOKEN_BEDROCK` exported in this machine's shell profile, which overrides `backend/.env`; rerun without that variable, the refresh regenerated all 13 synthetic assessments on first attempts. Previously, as of 2026-10-26: Modules 1–10 and the backend YAML configuration follow-up were reviewed and approved. Module 11, the Sci-fi / Mission workflow, the demo cache/upload fix and the four-domain demo catalog are implemented locally and await review. The fixture and shared Neon catalog have four jobs, twelve synthetic candidates and thirteen memberships. The sidebar count reads the jobs API. The user ran the manual Bedrock refresh; after a bounded JSON-format repair and validation, the 13-entry snapshot was generated and all entries reverified locally. Four entries have point scores and nine show uncertainty ranges. Module 12 has not been authorized. Private provider configuration is preserved. Read `AGENTS.md` first.
+Last updated: 2026-10-28 (Asia/Kolkata). **Module 13 (browser screening panel with voice and text, the text-mode backend and a Render/Vercel deployment checklist) is implemented locally and awaits review; Module 12 was reviewed and approved on 2026-10-28.** See the final entries. Earlier: **Module 12 (voice sessions, Deepgram token issuance and the server-side interviewer) was implemented locally.** It was approved after an architecture review: the interviewer runs in FastAPI on Bedrock as a Deepgram custom LLM, uploads use a signed screening context, and screenings are time-boxed to about ten minutes with adaptive topics. It was verified offline, plus two approved live checks on 2026-10-28: a Deepgram token grant succeeded, and one synthetic Bedrock interviewer turn succeeded with its first text after 4.6 s, too slow for voice. No full voice call has run. Earlier the same day: the user-requested catalog performance module is implemented locally, reviewed and approved on 2026-10-27; see the final entry for verification and remaining remote-database latency. Module 11a (recruiter-style matching with a `transferable` level and applied-use rules, verified candidate name/title for uploads, and an availability ranking bonus) is implemented locally and awaits review; the shared Neon catalog is at migration `0002_candidate_availability`. Earlier the same day, a user-requested backend refactor of completed modules 8–11 (Jinja `.md` prompts, an LLM provider registry with an in-process cached Bedrock client, request IDs and key-point logging, and per-item validation salvage with retry hints) is implemented locally and awaits review; a first post-refactor demo refresh was blocked by a stale `AWS_BEARER_TOKEN_BEDROCK` exported in this machine's shell profile, which overrides `backend/.env`; rerun without that variable, the refresh regenerated all 13 synthetic assessments on first attempts. Previously, as of 2026-10-26: Modules 1–10 and the backend YAML configuration follow-up were reviewed and approved. Module 11, the Sci-fi / Mission workflow, the demo cache/upload fix and the four-domain demo catalog are implemented locally and await review. The fixture and shared Neon catalog have four jobs, twelve synthetic candidates and thirteen memberships. The sidebar count reads the jobs API. The user ran the manual Bedrock refresh; after a bounded JSON-format repair and validation, the 13-entry snapshot was generated and all entries reverified locally. Four entries have point scores and nine show uncertainty ranges. Module 12 was later authorized and implemented (see above). Private provider configuration is preserved. Read `AGENTS.md` first.
 
 ## 1. Project overview
 
@@ -27,7 +27,7 @@ Agreed stack (frontend/backend installed, Neon catalog verified and a small synt
 | Voice | Deepgram Voice Agent; browser audio directly to provider with backend-issued short-lived token | Deepgram |
 | Storage | In-memory file processing initially; no object storage dependency | None initially |
 
-Browser → FastAPI over HTTPS for application operations; only FastAPI accesses Postgres and Bedrock. Browser → Deepgram for real-time audio. Reusable interviewer rules stay separate from server-prepared job/candidate context. No AWS key or permanent Deepgram key may reach the browser. Deepgram-to-Bedrock credential handling remains unresolved; see section 9 and [provider research](docs/provider-research.md).
+Browser → FastAPI over HTTPS for application operations; only FastAPI accesses Postgres and Bedrock. Browser → Deepgram for real-time audio. Reusable interviewer rules stay separate from server-prepared job/candidate context. No AWS key or permanent Deepgram key may reach the browser. Module 12 resolves Deepgram-to-Bedrock credentials: Deepgram calls a per-session FastAPI interviewer endpoint (OpenAI Chat Completions format), and FastAPI calls Bedrock server-side. See [voice sessions](docs/voice-sessions.md) and [provider research](docs/provider-research.md).
 
 ## 3. Finalized decisions
 
@@ -50,6 +50,13 @@ Browser → FastAPI over HTTPS for application operations; only FastAPI accesses
 - Treat all uploaded text as untrusted data, never instructions. Use job-related criteria only, no protected-trait inference or voice-characteristic scoring. Consent precedes audio capture/processing; provide text fallback.
 - Backend refactor decisions (user, 2026-10-27): follow the context-aware-summarization patterns. Prompts are Jinja-rendered Markdown under `backend/app/prompts/`; only instructions are templated and resume text stays in the JSON data message. LLM providers register through `app/llm/base.py::register_provider`; `AI_MODE` is `mock` or a registered provider name. Bedrock runs **in-process** through one cached `ChatBedrockConverse` client per settings value, replacing the per-attempt subprocess (user-accepted trade-off: a timed-out call finishes in its thread within the 60-second SDK read timeout and there is no per-call memory cap). Model output is **salvaged per item**: unverifiable facts are discarded and invalid, missing or uncited judgments become `unknown`; nothing is repaired into evidence. A stage retries once with server-written location hints only when the response is unusable or more than half of the items fail, and keeps the better attempt. Every response carries `X-Request-ID`, and the `app` logger records request IDs with codes and counts only.
 - Module 11a decisions (user, 2026-10-27): judge like a recruiter. A new `transferable` status (credit 0.75, between `met` 1 and `partial` 0.5) covers applied use of a comparable tool, language, platform or method, or closely adjacent work; `met` needs applied use in a role or project (or same-field evidence for "or equivalent" requirements); a skill that is only listed is at most `partial`; named credentials and legal requirements are never transferable. Uploaded candidates' name and current title are extracted in the same call, kept only as verified source spans, prefilled into editable fields, and never used for interpretation, scoring or logs. Availability (`immediate`, `serving_notice` with last working day, `not_serving` with notice days, or not provided) is stored for demo candidates in nullable columns (migration `0002_candidate_availability`) and entered for uploads in the add-resume panel; it yields a capped ranking bonus only (`ranking_score` = point score + bonus), never changes the match score, and not provided is never a deduction.
+- Module 12 decisions (user, 2026-10-27, after an architecture review):
+  - The voice interviewer is a FastAPI OpenAI-compatible endpoint that calls Bedrock server-side, used by Deepgram as a custom LLM. Rejected: AWS keys in `Settings`, even per-session STS keys; Deepgram stored configs; a Deepgram-managed LLM.
+  - Demo and uploaded candidates can be screened. Uploads use their extracted facts and statuses through a short-lived HMAC-signed `screening_context` returned by `/assess`.
+  - One module covers both session issuance and the interviewer.
+  - Screenings last about ten minutes, with wrap-up at nine. Topics adapt: a topic the candidate says they don't know is acknowledged and never revisited. Covering every topic is not required.
+  - The call ends through an `end_screening` client-side function.
+  - No new service, database table or persistence: sessions live in process memory.
 - External infrastructure changes, deployment and significant paid API usage require approval. The user explicitly authorized the module 4 Neon setup; its additive migration and synthetic seed were applied. No application deployment or commits requested.
 - Document limitations and obtain jurisdiction-specific review before real-world use; do not claim legal compliance or improved hiring outcomes.
 
@@ -91,6 +98,12 @@ frontend/                   Next.js App Router shell, TS/Tailwind/ESLint config
   src/components/resume-upload.tsx Memory-only PDF assessment, errors and clear/cancel
   src/components/demo-assessment.tsx Read-only synthetic snapshot evidence view
   src/components/assessment-result.tsx Shared evidence, score/range, gaps and source view
+  src/components/screening-panel.tsx Consent, voice or text screening, live transcript and clean-up
+  src/lib/screenings.ts     Typed screening transport: notice, start, token, end, text messages
+  src/lib/voice-agent.ts    Framework-free Deepgram Voice Agent protocol client (tested with fakes)
+  src/lib/voice-audio.ts    Browser microphone capture and agent playback (browser-verified only)
+  src/lib/pcm.ts            PCM conversion and 16 kHz downsampling
+  public/voice/mic-processor.js AudioWorklet batching microphone frames
   tests/catalog.test.ts     Offline Node tests for API contracts and failures
   tests/candidates.test.ts  Offline candidate context, provenance and Unicode checks
   tests/resumes.test.ts     Offline upload contracts, privacy, errors and cancellation
@@ -115,6 +128,8 @@ backend/
   app/api/admission.py      Per-process AI concurrency and rolling per-minute admission
   app/api/availability.py   Stateless POST /availability bonus for temporary uploads
   app/ranking.py            Availability input, days to join, capped bonus and ranking score
+  app/api/screenings.py     Voice notice, session start/token/end and the Deepgram-facing interviewer route
+  app/voice/                Session store, signed upload context, Deepgram grants, Settings builder, interviewer and its prompt
   app/core/                 Request-ID context/middleware and `app` logger configuration
   app/prompts/              Jinja loader plus extraction/interpretation `.md` prompts and partials
   app/llm/                  Provider protocol/registry, Bedrock adapter, cached client, call and JSON capture
@@ -134,6 +149,7 @@ backend/
   alembic.ini, alembic/     Initial owned-schema migration and configuration
   tests/                    Foundation, evidence, URL, offline SQL and opt-in read-only Neon checks
   tests/test_matching.py     Offline rubric, provenance and synthetic scenario checks
+  tests/test_screenings.py   Offline voice session, envelope, grant and interviewer checks
 docs/provider-research.md    Official sources, findings and open constraints
 docs/local-development.md    Conda setup, run/check commands and limitations
 docs/backend-foundation.md   Settings, HTTP/CORS/error contracts and limitations
@@ -145,6 +161,8 @@ docs/resumes.md              Upload contracts, settings, privacy and parser limi
 docs/structured-extraction.md API, provider settings, evidence rules and module 9 limitations
 docs/scoring.md              Assessment contract, rubric, unknown semantics and limitations
 docs/assessment-ui.md        Module 11 browser flows, temporary state and verification limits
+docs/voice-sessions.md       Voice architecture, endpoints, browser client, text mode, interviewer rules and trust boundaries
+docs/deployment.md           Render backend and Vercel frontend dashboard checklist, voice on/off and post-deploy checks
 ```
 
 Recommended future layout, to create only as each approved module needs it:
@@ -178,10 +196,10 @@ These are review gates, not authorization to implement every row. Dependencies i
 | 10 | Matching and deterministic scoring | Completed, reviewed and approved | 9 + explicit module 10 approval | Evidence-linked criterion interpretation, configurable weights/unknown bounds, deterministic rubric, offline API/scoring/Stubber tests |
 | 11 | Evidence-backed assessment UI | Completed, reviewed and approved | 10 + explicit module 11 approval | Resume-to-job and synthetic profile flows, excerpts, coverage, gaps and follow-ups; 22 frontend tests/lint/type/build; browser permission blocked manual check |
 | 11a | Recruiter-style matching, candidate identity and availability ranking | Completed, reviewed and approved | 11 + user request and approved plan | `transferable` status (0.75) and applied-use rules, verified name/title extraction for uploads, availability columns and capped ranking bonus, upload panel; 372 backend/31 frontend tests, Neon migration and seed, two live refreshes and a browser smoke test |
-| 12 | Voice configuration and token issuance | Pending | 11 + architecture review | Approve credential-safe design; authoritative job/candidate context, consent validation, expiry/replay rules, bounded token endpoint; mocked provider/security tests |
-| 13 | Browser voice and text fallback | Pending | 12 | Consent modal, direct audio, live transcript, mute/end/error controls, interruption/disconnect handling; browser scenarios and approved live test |
+| 12 | Voice sessions, token issuance and server-side interviewer | Completed, reviewed and approved (2026-10-28) | 11 + architecture review + approval received | FastAPI interviewer as a Deepgram custom LLM; consent, signed upload context, expiry/replay/admission, bounded token route, time-boxed adaptive interviewer; 51 new offline tests, 438 backend tests in total |
+| 13 | Browser voice and text fallback | Implemented locally, awaiting review; live voice unverified | 12 + approval received | Consent modal, direct audio, live transcript, mute/end/error controls, interruption/disconnect handling, closing the socket on `end_screening`, a text alternative reusing the interviewer; public HTTPS for Deepgram (tunnel or Render); browser scenarios and an approved live test measuring turn latency |
 | 14 | Structured screening reports | Pending | 13 | Validated report, explicit completion, idempotency, incomplete-session behavior; evidence/report schema/duplicate tests |
-| 15 | Hardening and deployment readiness | Pending | 14 | End-to-end demo, abuse/cost controls, retention review, usage logging, Vercel/Render instructions, authorized integration verification |
+| 15 | Hardening and deployment readiness | Pending; module 13 added a minimal Render (Singapore, Free) and Vercel dashboard checklist | 14 | End-to-end demo, abuse/cost controls, retention review, usage logging, Vercel/Render instructions, authorized integration verification |
 
 Dependencies are installed when needed. Security and tests accompany each module; module 15 consolidates them. Split large modules into smaller review gates if needed. Phase 1 = modules 2–11, Phase 2 = modules 12–14, Phase 3 = module 15.
 
@@ -223,7 +241,7 @@ Dependencies are installed when needed. Security and tests accompany each module
 
 ## 7. Environment and configuration
 
-Examples contain no secrets. See [local setup](docs/local-development.md), [backend contract](docs/backend-foundation.md), [PDF extraction](docs/resumes.md), [structured extraction](docs/structured-extraction.md) and [database setup](docs/database.md). Packaged `backend/app/config.yaml` holds nested non-secret defaults; `app/config.py` validates them and applies process/private-dotenv overrides, with process precedence, empty-value fallthrough and unknown-key rejection. There are no application environment modes. Both database URLs and the user-provided Bedrock token remain private; selected region/model/method and explicit Bedrock mode are still saved in ignored `backend/.env` with mode 0600. Health/startup/plain PDF extraction make no database or provider call. Structured and assessment routes first read canonical catalog context; explicit Bedrock calls consume inference. Deepgram/session variables remain future contracts. Do not request secrets in chat.
+Examples contain no secrets. See [local setup](docs/local-development.md), [backend contract](docs/backend-foundation.md), [PDF extraction](docs/resumes.md), [structured extraction](docs/structured-extraction.md) and [database setup](docs/database.md). Packaged `backend/app/config.yaml` holds nested non-secret defaults; `app/config.py` validates them and applies process/private-dotenv overrides, with process precedence, empty-value fallthrough and unknown-key rejection. There are no application environment modes. Both database URLs and the user-provided Bedrock token remain private; selected region/model/method and explicit Bedrock mode are still saved in ignored `backend/.env` with mode 0600. Health/startup/plain PDF extraction make no database or provider call. Structured and assessment routes first read canonical catalog context; explicit Bedrock calls consume inference. Voice variables are implemented in module 12; no live Deepgram key has been used. Do not request secrets in chat.
 
 | Name | Owner | Purpose / handling |
 | --- | --- | --- |
@@ -256,8 +274,13 @@ Examples contain no secrets. See [local setup](docs/local-development.md), [back
 | `AI_REQUESTS_PER_MINUTE` | Backend | Implemented rolling per-process admission count; default 5, allowed 1–20; timestamps only |
 | `AWS_PROFILE` | Backend / local only | Optional local AWS profile via SDK credential chain |
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN` | Backend only | Standard AWS SDK credentials where necessary; prefer temporary/role-based access; never browser settings |
-| `DEEPGRAM_API_KEY` | Backend / Render | Permanent key used only server-side to issue temporary tokens |
-| `SESSION_SIGNING_SECRET` | Backend, proposed for voice | If signed temporary context/session capabilities are selected; exact mechanism pending module 12 |
+| `VOICE_MODE` | Backend | Implemented in module 12: `mock` or `deepgram`; unset disables **voice** only (module 13 text screenings need just `AI_MODE` and `SESSION_SIGNING_SECRET`). Keep it unset on the public Render service except during supervised tests. No fallback |
+| `DEEPGRAM_API_KEY` | Backend / Render | Implemented SecretStr; Member permission; used only for `/v1/auth/grant` to issue 30-second tokens |
+| `SESSION_SIGNING_SECRET` | Backend | Implemented SecretStr, at least 32 characters; HMAC key for the upload `screening_context` |
+| `VOICE_PUBLIC_API_URL` | Backend | Implemented; the backend origin Deepgram calls for interviewer turns. HTTPS in `deepgram` mode; loopback HTTP only in mock mode |
+| `VOICE_BEDROCK_MODEL_ID`, `VOICE_AWS_REGION` | Backend | Implemented 2026-10-28: interviewer model and region; unset values reuse `BEDROCK_MODEL_ID` and `AWS_REGION`. Separate cached client; `VOICE_REASONING_EFFORT` is sent only to `gpt-oss`. Selected and set in private `backend/.env`: `au.anthropic.claude-haiku-4-5-20251001-v1:0` |
+| `VOICE_AGENT_URL`, `VOICE_API_URL` | Backend | Implemented Deepgram endpoints; general region by default. Regional grant hosts are unverified |
+| `VOICE_*` limits and models | Backend | Implemented: token TTL 30 s, screening 600 s, wrap-up 540 s, expiry 900 s, context TTL 1800 s, turns 40, reconnects 2, concurrent 1, per hour 6, messages 80, history characters 60,000, output tokens 300, reasoning effort low, turn timeout 20 s; listen `flux-general-en`, speak `aura-2-thalia-en` |
 
 PDF/AI limits are implemented above; the frontend loads PDF limits from GET `/resumes/limits` but does not yet call structured extraction. Provider mode/credentials are server-owned. Scoring weights, distributed/public usage controls and session expiry remain future work. No storage credentials are required. CORS and per-process admission are not authentication or a substitute for a public monetary budget.
 
@@ -279,7 +302,7 @@ Use root `./run_local.sh start|stop|status|restart|logs` for both apps. `BACKEND
 - Database contract: runtime SQLAlchemy pool is bounded at five, zero overflow, pre-ping, hidden SQL parameters, ten-second connect timeout and prepared statements disabled. Alembic uses a direct endpoint/NullPool; offline SQL needs no URL. Migration version state is in public `talent_insight_alembic_version`; models and catalog are in `talent_insight`. Schema/model parity is verified against Neon by `alembic check` and the read-only integration test.
 - Seed contract: Pydantic validates fixture IDs, associations, question references, demo markers and claim excerpts before writes. Each quote's start/end offsets address the original synthetic resume. All batches upsert in one transaction. Non-fixture rows are preserved; no pruning/truncation/deletion. Removed fixtures or criterion-order restructuring require a deliberate data migration. Scenario labels are synthetic test metadata, not scores or recommendations.
 - Assessment backend and UI: criterion ID/status, interpreted reason and verified fact indices, plus deterministic category/overall score range and evidence coverage. Allowed statuses are `met`, `partial`, `not_met`, `unknown`; a point score requires all criteria resolved. The module 11 frontend shows the evidence view and job-linked follow-ups. Never turn an unavailable assessment into a confident zero or perfect match.
-- Uploaded profiles must never be trusted as authoritative client JSON. Module 8 can process statelessly; later session creation needs server-validated short-lived context or bounded expiring server state. Choose the mechanism in module 12 without introducing a new service unnecessarily.
+- Uploaded profiles must never be trusted as authoritative client JSON. Module 8 can process statelessly; Module 12 uses a short-lived HMAC-signed `screening_context` for uploads and bounded in-memory sessions, without a new service.
 - Reports contain job/candidate IDs, questions, candidate statements, criterion evidence, unresolved requirements, technical observations, human follow-ups, summary and suggested next step. Backend recalculates important outputs; clients cannot supply trusted scores or recommendations.
 - Validate upload bytes, size, type and parser behavior server-side. Bound page/text counts and processing time; reject encrypted, malformed, empty or scanned PDFs clearly. Do not invent missing text or add OCR implicitly.
 - Keep personal data out of routine logs, error traces, caches and permanent tables. Use no-store responses for temporary payloads. Explain that application non-persistence does not itself establish third-party retention behavior.
@@ -289,11 +312,16 @@ Use root `./run_local.sh start|stop|status|restart|logs` for both apps. `BACKEND
 
 ## 9. Known issues and unresolved decisions
 
-1. **Voice credential design:** documented native Deepgram Bedrock settings contain IAM/STS credentials. Browser-visible settings violate the agreed no-AWS-keys rule. Investigate server-managed secret configuration; a custom FastAPI reasoning endpoint is a documented-protocol fallback proposal, not an approved or tested integration. It keeps audio direct but adds latency, protocol handling and abuse-control work. Resolve before module 12, not before the resume milestone.
+1. **Voice credential design (resolved by design in module 12):** the FastAPI interviewer endpoint keeps AWS keys and instructions server-side. Still unverified live:
+   - Deepgram's streaming, function and tool-call behavior against a custom endpoint, and whether it appends a path to `endpoint.url`.
+   - Bedrock turn latency.
+   - A public HTTPS backend reachable by Deepgram.
+
+   The per-session capability is visible to the browser; it is bounded by the session's turns, size and expiry.
 2. **Provider access:** Neon is verified. The user's selected Sydney `openai.gpt-oss-120b-1:0` model accepted a small source-validated native-JSON extraction after explicit schema prompting. This does not establish provider-native enforcement, real-resume accuracy, stable reliability or account retention policy. Tool-output experiments returned no accepted result. Deepgram permissions and deployment origins remain unverified. Hosted secrets must use the same Neon URLs and backend-only provider credentials when deployment is authorized.
 3. **Local runtime selection:** Python availability is resolved through the dedicated Conda environment. Always activate `talent-insight` and prepend its bin directory on this machine, because shell PATH ordering otherwise selects Homebrew Node 26. Required project runtime families are Python 3.12 and Node 24.
 4. **Scoring validity:** module 10 fixed the arithmetic and unknown semantics, but the illustrative weights are not validated hiring science. Evidence citations prove location, not semantic relevance or competence. The new model interpretation prompt has no live accuracy evaluation; a complete model-generated point score must be reviewed by a human. No automatic decision threshold exists.
-5. **Untrusted client and usage controls:** CORS and a short-lived token cannot guarantee trusted settings, transcript authenticity or a maximum open voice session. Design server-enforceable cost limits before public voice. In-memory state/quotas require an explicit single-process limitation or later shared enforcement.
+5. **Untrusted client and usage controls:** CORS and a short-lived token cannot guarantee trusted settings, transcript authenticity or a maximum open voice session. Module 12 adds per-process admission (1 concurrent, 6 per hour) and a server-enforced interviewer time box and turn cap. Only the browser can close the Deepgram socket, and Deepgram bills by connection time. Design distributed, server-enforceable cost limits before public voice. In-memory state/quotas require an explicit single-process limitation or later shared enforcement.
 6. **Resume parsing and third-party privacy:** module 8 clearly rejects documents with no extractable text, including scans. Mixed PDFs may yield partial text, and strict parsing may reject repairable documents. Only synthetic PDFs are tested; real-document accuracy and future provider retention need review. macOS has no hard per-worker address-space cap; the Linux cap remains unverified. No claim of legal compliance.
 7. **Deployment and platform verification:** Vercel Node 24 and Render's configurable Python versions were checked in official docs. Local production compilation is verified; neither hosted application deployment nor Linux dependency installation is verified. Neon setup is complete, but no frontend/backend deployment configuration exists yet. Backend lock currently includes development tools; production dependency packaging remains deployment-readiness work.
 8. **Tooling compatibility:** ESLint 9.39.5 is deprecated upstream but is the latest 9.x version compatible with the installed Next.js React/accessibility plugins' declared peers. Keep it pinned until those plugins support ESLint 10; do not force unsupported peers. HTTPX's ASGI transport is used directly for the smoke test, avoiding Starlette's deprecated HTTPX TestClient path. Turbopack is not verified here; use the documented Webpack scripts.
@@ -371,3 +399,154 @@ Use root `./run_local.sh start|stop|status|restart|logs` for both apps. `BACKEND
 **User review (2026-10-27):** the user accepted the catalog performance changes ("Perfect, this is great"). This module is reviewed and approved; the verification results and remaining uncached/connection latency above remain applicable.
 
 **Exact next action:** await the user's selection and approval of the next module; no additional implementation is authorized by the performance approval. Earlier recruiter-authored accepted-equivalent and voice work remain pending. Further latency work is optional and requires separate review: a short-lived server-side cache restricted to curated synthetic catalog responses, with explicit freshness/invalidation rules, or backend/database placement when hosting is approved.
+
+**Module 12 — voice sessions, token issuance and server-side interviewer (2026-10-27, implemented locally, awaiting review):**
+
+Approved after an architecture review covering security, pricing and latency.
+- Rechecked Deepgram docs: native `aws_bedrock` takes only IAM/STS keys in the browser-sent `Settings`, and stored agent configs cannot hold secrets or per-session context.
+- So Deepgram calls a per-session FastAPI interviewer endpoint in OpenAI Chat Completions format, and FastAPI calls Bedrock with the existing backend credentials. Audio stays browser ↔ Deepgram.
+
+New routes:
+- `GET /screenings/notice`.
+- `POST /screenings`: consent, job, and a demo candidate or signed upload context. It issues a 30-second Deepgram token and the complete server-built `Settings`.
+- `POST /screenings/{id}/token` (bounded reconnects) and `POST /screenings/{id}/end` (idempotent).
+- `POST /screenings/{id}/chat/completions`, which accepts the capability as a bearer token and returns JSON or SSE.
+
+`/jobs/{id}/resumes/assess` now also returns `screening_context`, a 30-minute HMAC-signed token over fact kinds/values and requirement statuses, or `null` when voice is off.
+
+How the interviewer works:
+- **Prompt:** it discards client system prompts and model settings, and renders `app/voice/prompts/interviewer.md` from server context. Topics are ranked unknown → partial → transferable → not met → met, with authored questions as seeds. Resume phrases are included as escaped, untrusted JSON.
+- **Conduct:** one question at a time and at most one follow-up. Topics the candidate declines are never revisited, and full coverage is not required.
+- **Time box:** a 10-minute clock from the first turn, with wrap-up at 9 minutes. At 10 minutes or 40 turns it returns a fixed closing line plus an `end_screening` tool call without calling the model. A model-chosen ending uses an `[[END]]` marker, which the server strips even across streamed chunks.
+- **Model call:** 300 output tokens, low reasoning effort, a 20-second turn deadline; reasoning blocks are dropped. A failed turn gets a spoken retry, and two consecutive failures end the call.
+- **Mock mode:** `AI_MODE=mock` asks the authored questions in order.
+- **Sessions:** process memory only — a hashed capability, expiry, an activation timeout, admission (1 concurrent, 6 per hour), one model turn at a time and a bounded transcript for module 14.
+
+To keep the 13 demo snapshots valid, no file under `app/pipeline`, `app/llm` or `app/prompts` changed; the voice prompt has its own loader in `app/voice/`. `httpx==0.28.1`, already locked and installed, moved from a dev to a runtime dependency. Voice prompts are package data. `.env.example` gained placeholders. Docs: [voice sessions](docs/voice-sessions.md) and [provider research](docs/provider-research.md).
+
+**Verification:**
+- **Backend:** 438 passed with warnings as errors (51 new in `tests/test_screenings.py`; one scaffold test updated for the new routes); three opt-in Neon tests skipped. Ruff lint and format, `pip check`, the editable reinstall, offline seed validation (4 jobs, 12 candidates), offline refresh validation (13 memberships still valid, zero provider calls, snapshot unchanged) and the four launcher tests passed.
+- **Frontend:** code unchanged and all 38 Node tests passed. `npm run typecheck` could not run because `frontend/node_modules` is not installed in this checkout. The `/assess` decoder ignores the extra top-level field.
+
+**Not run:** no live Deepgram grant, Bedrock interviewer call, Neon access, migration, seed, deployment or commit.
+
+**Limits:**
+- The browser sees the session capability.
+- Transcripts are candidate statements.
+- Only the browser can close the Deepgram socket, which is billed per minute.
+- Sessions are lost on restart and limits apply per process.
+- Unverified: Deepgram's custom-endpoint streaming and function behavior, real turn latency, and AWS and Deepgram retention.
+
+**Exact next action:** the user reviews module 12. Optional, with explicit approval: one live `auth/grant` call with a real `DEEPGRAM_API_KEY`, and one short synthetic interviewer turn through Bedrock to measure latency. Module 13 (browser voice, text alternative, closing on `end_screening`, public HTTPS for Deepgram through a tunnel or Render, and region choice) needs separate approval.
+
+**Module 12 live checks (2026-10-28, user-approved):** one call of each kind ran from this Mac, using the `backend/.env` keys. No secrets were printed, and no Neon, migration, seed or deployment was involved.
+
+- **Deepgram grant:** a real `POST /v1/auth/grant` through `app/voice/deepgram.py` returned HTTP 200 in about 1.0 s, with a 485-character JWT and `expires_in` 30. The JWT scope is `asr:write`, not the documented `usage:write`; whether the Voice Agent socket accepts it is a module 13 check.
+- **Interviewer turn:** one synthetic turn through the real `/screenings` and `/chat/completions` routes in process. It used a mock Deepgram token, the fixture catalog, demo candidate Avery for Senior Data Scientist, `stream: true`, and Bedrock `gpt-oss-120b` in Sydney at low reasoning effort.
+  - The turn succeeded: a valid SSE stream ending in `[DONE]` with `finish_reason: stop`, no reasoning leak, and one job-related question on the top-priority partial-evidence topic.
+  - **First text arrived after 4,622 ms; the turn completed at 4,701 ms.** One sample, which cannot separate network time from model time, but far above the roughly 1–2 s a natural voice turn needs.
+
+**Exact next action:** the user reviews module 12. Recommended small follow-up, with approval: a separate interviewer model setting (no `app/llm` change), then bounded latency checks of faster models the account can invoke (for example `openai.gpt-oss-20b-1:0`). Module 13 needs separate approval.
+
+**Separate interviewer model (2026-10-28, user-requested):**
+
+Change:
+- New `VOICE_BEDROCK_MODEL_ID` and `VOICE_AWS_REGION` settings (`voice.bedrock_model_id` and `voice.aws_region` in YAML, unset by default). `app/voice/interviewer.py::interviewer_settings` copies the settings with those overrides and clears the extraction `bedrock_reasoning_effort`, so the interviewer gets its own cached Bedrock client.
+- `VOICE_REASONING_EFFORT` is now sent only to `gpt-oss` models; other families reject that field.
+- A Bedrock interviewer with no region or model is rejected at start with `interviewer_not_configured`.
+- No file in `app/pipeline`, `app/llm` or `app/prompts` changed, and offline refresh validation still accepts all 13 entries.
+- 441 backend tests pass (three new: model and region override, the reasoning field withheld for non-`gpt-oss` models, incomplete configuration); Ruff is clean.
+
+Checks:
+- A read-only Bedrock catalog listing for Sydney showed about 40 on-demand streaming models and the Australia-only Claude profiles.
+- A bounded comparison ran three scripted turns per model through the real routes: about 20 short calls, well under $0.10. Results:
+  - **Claude Haiku 4.5** (`au.` profile): best rule following (declined-topic switch, resume-specific question, clean end), about 1.0 s to first text when warm.
+  - **Nova Lite:** fastest, about 0.7 s, and correct.
+  - **Ministral 3 14B:** correct, but whole replies at once.
+  - **`gpt-oss-20b`:** repeated a declined question.
+  - **`gpt-oss-120b`:** several questions in one reply, then ended early. Its first text took 1.1–1.8 s today, against 4.6 s yesterday, so latency varies.
+  - **Claude Haiku 5.5:** `AccessDeniedException` for this account despite being listed.
+
+These are single samples from India, without Deepgram speech recognition or text-to-speech time. Details are in [voice sessions](docs/voice-sessions.md#interviewer-model-comparison-2026-10-28-user-approved).
+
+**Exact next action:** the user chooses the interviewer model. Recommended: `VOICE_BEDROCK_MODEL_ID=au.anthropic.claude-haiku-4-5-20251001-v1:0` in private `backend/.env`; Nova Lite is the faster, cheaper alternative. Then review module 12. Module 13 needs separate approval.
+
+**Interviewer model selected (2026-10-28):** after a public comparison of price, speed and benchmarks, the user chose Claude Haiku 4.5 over Nova Lite. Haiku costs about $0.05–0.10 per 10-minute screening against under $0.01 for Nova Lite; time to first token is similar, and Haiku scores clearly higher on benchmarks.
+- `VOICE_BEDROCK_MODEL_ID=au.anthropic.claude-haiku-4-5-20251001-v1:0` was appended to the private `backend/.env`, which keeps mode 0600 and contains no new secret.
+- A settings load confirmed extraction still uses `openai.gpt-oss-120b-1:0` and the interviewer uses the Haiku 4.5 Australia profile in `ap-southeast-2` with no reasoning field.
+- No provider call was made for this change; the earlier comparison already exercised this model through the same path.
+- `VOICE_MODE`, `VOICE_PUBLIC_API_URL` and `SESSION_SIGNING_SECRET` are still unset in `backend/.env`, so screening stays disabled when the app runs normally.
+
+**Exact next action:** the user reviews module 12. Module 13 (browser voice and text alternative) needs separate approval. It will need those three voice settings and a public HTTPS backend that Deepgram can reach.
+
+**Module 12 review (2026-10-28):** the user approved Module 12, including the Claude Haiku 4.5 interviewer setting.
+
+**Module 13 — browser screening and text alternative (2026-10-28, implemented locally, awaiting review):**
+
+User decisions:
+- Our own small voice client, with no new dependency (`@deepgram/agents` 0.2.0 was rejected: undocumented custom-endpoint and `mip_opt_out` support, and token caching and reconnect behavior that conflict with the backend).
+- One backend on Render in Singapore on the Free tier, kept awake by UptimeRobot, serving both the browser API and Deepgram's interviewer calls.
+- The frontend on Vercel, deployed by the user from a dashboard checklist; no `render.yaml`.
+- Live voice tested on Render only.
+- The user moves code to their Git device and deploys; no Git work in this folder.
+
+Backend:
+- `POST /screenings` accepts `mode: voice|text`. Text needs only AI-processing consent, makes no Deepgram call, records the greeting server-side, and returns `null` voice fields plus `greeting`.
+- New `POST /screenings/{id}/messages {capability, text}` → `{reply, ended}`. It builds history from the server transcript and reuses `plan_turn` and `_complete`, so voice can continue by text.
+- `GET /screenings/notice` adds `voice_available` and `text_available`. It returns 503 only without an interviewer or signing secret.
+- `/assess` issues `screening_context` whenever the interviewer and secret are configured, with or without voice.
+- New `check_screening_configured`; voice checks build on it.
+
+Frontend:
+- `screening-panel.tsx` on demo profiles and uploaded-candidate details. It covers server notice and consent, voice or text, a live transcript (`role=log`), a countdown, Mute, Continue by text, End and Close.
+- The microphone is requested before the session, so a refusal never spends the token.
+- `voice-agent.ts`:
+  - connects with the `["bearer", token]` subprotocol and sends the server Settings unchanged; audio goes only after `SettingsApplied`;
+  - stops playback when the candidate interrupts, acknowledges `end_screening` and ends after the closing audio;
+  - fails fast if the connection is refused before `Welcome`;
+  - reconnects at most twice through `/token`, replaying `agent.context` history without the greeting;
+  - sends `KeepAlive` while muted, and surfaces errors as codes only.
+- `voice-audio.ts`: an AudioWorklet at 16 kHz with a JS downsampling fallback, and 24 kHz playback with interruption.
+- `pcm.ts`: conversions.
+- Clean-up: a client backstop timer at the limit plus 30 seconds; unmount, `pagehide`, bfcache restore and Close stop audio and call `/end` with `keepalive`. No browser storage.
+- `Assessment` gains an optional, validated `screening_context`. The guide and review notes are updated.
+
+Docs: new [deployment](docs/deployment.md); updated [voice sessions](docs/voice-sessions.md), [assessment UI](docs/assessment-ui.md), [local development](docs/local-development.md) and the README.
+
+**Verification:**
+- **Backend:** 447 tests passed with warnings as errors (8 new or updated for text mode, notice flags and the messages route); three opt-in Neon checks skipped. Ruff, `pip check` and offline refresh validation (13 memberships, zero provider calls, snapshot unchanged) passed.
+- **Frontend:** `npm ci` (locked dependencies; `node_modules` had been missing), 52 Node tests (14 new: transport and decoders, the voice-agent protocol against a fake socket, microphone and player, PCM), ESLint, typecheck and the Webpack production build passed.
+- **In-app browser, mock mode** (`AI_MODE=mock`, `VOICE_MODE=mock`, Neon catalog read only):
+  - Text screenings worked for a demo candidate (Avery) and for an uploaded synthetic PDF: greeting, keyboard send, a topic change after "I don't know", End, and Close clearing the transcript. Browser storage was empty.
+  - Clearing the upload mid-screening called `/end`.
+  - Voice with the pane's blocked microphone showed the microphone message and created no session.
+  - Phone width (375 px) had no horizontal scroll, and the panel took focus when opened.
+  - Backend logs showed only codes and counts, no transcript text.
+- **Not run:** no live voice, Deepgram connection, Bedrock call, deployment, migration, seed or commit. Live voice remains unverified: `bearer` acceptance of the `asr:write` token, the endpoint path, the streaming contract through Render, the `end_screening` relay, latency and audio quality.
+
+**Files to move to the Git device** (Modules 12 and 13, plus earlier same-machine work if not yet moved):
+- Backend: `app/config.py`, `app/config.yaml`, `app/application.py`, `app/api/extraction.py`, `app/api/screenings.py`, `app/voice/` (all files including `prompts/interviewer.md`), `pyproject.toml`, `.env.example`, `tests/test_screenings.py`, `tests/test_scaffold.py`.
+- Frontend: `src/components/screening-panel.tsx`, `candidate-profile.tsx`, `candidate-pool.tsx`, `src/lib/screenings.ts`, `voice-agent.ts`, `voice-audio.ts`, `pcm.ts`, `assessments.ts`, `src/app/guide/page.tsx`, `src/app/globals.css`, `public/voice/mic-processor.js`, `tests/screenings.test.ts`, `tests/voice-agent.test.ts`, `tests/pcm.test.ts`, and `next-env.d.ts` (regenerated by Next).
+- Docs: `docs/voice-sessions.md`, `docs/deployment.md`, `docs/provider-research.md`, `docs/assessment-ui.md`, `docs/local-development.md`, `PROJECT_CONTEXT.md`, `README.md`.
+- Optional: the local preview helper `.claude/launch.json`.
+- Never: `backend/.env`, `frontend/.env.local`, `node_modules`, `.next`, `.run_local`.
+
+**Exact next action:** the user reviews Module 13, moves the files and deploys with [deployment](docs/deployment.md). After deployment: read-only checks of `/health` and `/screenings/notice` on Render and a text screening on Vercel. Then, with separate approval, a supervised live voice test with `VOICE_MODE=deepgram` set temporarily. Module 14 (structured screening reports) needs separate approval.
+
+**Module 13 UI follow-up (2026-10-28, user request):**
+- **Demo profile:** the screening panel moved above Resume evidence.
+- **Candidate table:** columns are now Candidate name, Title, Experience (was "Experience years"), Match estimate, Availability, Source, Screening and Details (was "Action").
+  - Each row has **Start** with a telephone-handset icon (labeled "Start screening for {name}"), which opens the consent step inline below the table with the candidate's name.
+  - Start buttons are disabled while a screening is starting or live.
+  - Details buttons read **View ↗**.
+- **Upload details:** the header has a Start screening action instead of an embedded panel, so the page has one screening area. Clearing the upload or leaving the page closes it.
+- **`ScreeningPanel` props:** `autoOpen`, `candidateName`, `onLiveChange` (also reports false on unmount) and `onClose`.
+
+**Verification:**
+- Lint, typecheck and 52 frontend tests passed.
+- In the in-app browser, against the user's own running dev servers (Bedrock mode, no signing secret, so the notice correctly returned "needs backend configuration"; no paid calls):
+  - the new headers and labels;
+  - Start opened the inline panel after the table, titled with the candidate's name and focused;
+  - Close removed it and re-enabled Start;
+  - the profile showed the panel before Resume evidence.
+- **Not run:** the production build, because the user's dev server was running. A live screening (to see the disabled state) was not exercised.

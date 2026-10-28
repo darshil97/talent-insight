@@ -13,12 +13,16 @@ from app.api.extraction import router as extraction_router
 from app.api.health import router as health_router
 from app.api.jobs import router as jobs_router
 from app.api.resumes import router as resumes_router
+from app.api.screenings import router as screenings_router
+from app.api.screenings import voice_error_handler
 from app.config import Settings, load_settings
 from app.core.logging import configure_logging
 from app.core.request_context import HEADER, RequestIdMiddleware
 from app.database import create_database_engine
 from app.errors import SafeErrorsMiddleware, register_error_handlers
 from app.pipeline.contracts import ExtractionFailure
+from app.voice.contracts import VoiceFailure
+from app.voice.sessions import SessionStore
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -51,14 +55,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.resume_active = 0
     app.state.ai_active = 0
     app.state.ai_requests = deque()
+    app.state.voice_sessions = SessionStore(settings)
+    # Tests replace this with an httpx mock transport; None uses the network.
+    app.state.deepgram_transport = None
     register_error_handlers(app)
     app.add_exception_handler(ExtractionFailure, extraction_error_handler)
+    app.add_exception_handler(VoiceFailure, voice_error_handler)
     app.include_router(health_router)
     app.include_router(jobs_router)
     app.include_router(candidates_router)
     app.include_router(resumes_router)
     app.include_router(extraction_router)
     app.include_router(availability_router)
+    app.include_router(screenings_router)
     app.add_middleware(SafeErrorsMiddleware)
     # Wraps the error boundary so sanitized HTTP 500s also carry the request ID.
     app.add_middleware(RequestIdMiddleware)

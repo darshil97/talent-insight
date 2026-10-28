@@ -54,3 +54,34 @@ matching:
 ranking:
   # [maximum days to join, bonus]; longer or unknown availability earns 0.
   availability_tiers: [[15, 5], [30, 4], [45, 3], [60, 2], [90, 1]]
+
+voice:
+  # mock or deepgram; unset disables screening. The interviewer also needs ai.mode.
+  mode: ${VOICE_MODE}
+  deepgram_api_key: ${DEEPGRAM_API_KEY}
+  # Signs upload screening context; at least 32 characters.
+  signing_secret: ${SESSION_SIGNING_SECRET}
+  # Public HTTPS backend origin that Deepgram calls for interviewer turns.
+  public_api_url: ${VOICE_PUBLIC_API_URL}
+  agent_url: wss://agent.deepgram.com/v1/agent/converse
+  api_url: https://api.deepgram.com
+  listen_model: flux-general-en
+  speak_model: aura-2-thalia-en
+  token_ttl_seconds: 30
+  screening_seconds: 600
+  wrap_up_seconds: 540
+  session_expiry_seconds: 900
+  context_ttl_seconds: 1800
+  max_turns: 40
+  max_reconnects: 2
+  max_concurrent: 1
+  sessions_per_hour: 6
+  max_messages: 80
+  max_history_characters: 60000
+  # Interviewer model and region; unset values use ai.bedrock. Prefer a low-latency model.
+  bedrock_model_id: ${VOICE_BEDROCK_MODEL_ID}
+  aws_region: ${VOICE_AWS_REGION}
+  max_output_tokens: 300
+  # Sent only to openai.gpt-oss models, which require reasoning; others get no reasoning field.
+  reasoning_effort: low
+  turn_timeout_seconds: 20

@@ -58,6 +58,7 @@ The examples contain no secrets. Both projects run without copying them; without
 | `backend/.env.example` | Optional `DOCS_ENABLED`, `CORS_ALLOWED_ORIGINS` | Private local overrides for docs visibility and permitted frontend origins |
 | `backend/.env.example` | `DATABASE_URL`, `DIRECT_DATABASE_URL` | Placeholder examples for the same Neon database; the ignored local `backend/.env` is already configured privately on this machine; see [database setup](database.md) |
 | `backend/.env.example` | `AI_MODE`, `AWS_REGION`, `BEDROCK_MODEL_ID`, `AWS_BEARER_TOKEN_BEDROCK` | Explicit mock/Bedrock provider selection and private credentials; [structured extraction](structured-extraction.md) documents the verified local model and limits |
+| `backend/.env.example` | `VOICE_MODE`, `VOICE_PUBLIC_API_URL`, `SESSION_SIGNING_SECRET`, `DEEPGRAM_API_KEY` | Module 12 voice screening; disabled unless `VOICE_MODE` and `AI_MODE` are set. `mock` needs no Deepgram key; see [voice sessions](voice-sessions.md) |
 | `backend/app/config.yaml` | `LOG_LEVEL`, `AI_TEMPERATURE`, `BEDROCK_REASONING_EFFORT` | `app` logger level (default `INFO`); model temperature (default 0); optional Bedrock reasoning effort, unset by default so nothing is sent |
 | `backend/app/config.yaml` | Matching weights | Backend-only integer category weights totaling 100; see [scoring](scoring.md) |
 
@@ -157,4 +158,10 @@ Known tooling constraint: ESLint 9 is deprecated by its maintainer, but the inst
 
 ## Deployment boundary
 
-The Neon catalog is initialized; no frontend or backend deployment is configured or authorized in this module. The intended Vercel project root is `frontend/`, with Node 24 and `NEXT_PUBLIC_API_BASE_URL` set to the HTTPS FastAPI origin before building. The intended Render root is `backend/`, with Python 3.12 and backend-only settings, including the same Neon URLs used locally. Runtime support was checked against [Vercel's Node documentation](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions) and [Render's Python documentation](https://render.com/docs/python-version). Deployment commands, validated hosted origins, provider secrets and deployment verification belong to later modules.
+The Neon catalog is initialized. Module 13 added a dashboard checklist for one Render backend (Singapore, Free) and the Vercel frontend; see [deployment](deployment.md). Nothing is deployed from this workspace, and Render needs a full `PYTHON_VERSION` such as `3.12.16`.
+
+Screenings run locally without any tunnel:
+- **Requirements:** set `AI_MODE` (`mock` for no provider calls) and `SESSION_SIGNING_SECRET` (32+ characters) in `backend/.env` or the process.
+- **Text screenings and the UI** then work on `127.0.0.1`.
+- **Voice:** `VOICE_MODE=mock` exercises the consent flow, but a mock token cannot open a real Deepgram call. Live voice needs a public HTTPS backend that Deepgram can reach; the Render backend is the tested route.
+- **Pointing a local frontend at Render:** set `NEXT_PUBLIC_API_BASE_URL=https://YOUR-SERVICE.onrender.com` in `frontend/.env.local`, then restart `npm run dev`.

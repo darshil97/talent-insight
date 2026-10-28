@@ -59,13 +59,21 @@ def test_openapi_describes_health_contract(
         "/jobs/{job_id}/resumes/structure",
         "/jobs/{job_id}/resumes/assess",
         "/availability",
+        "/screenings/notice",
+        "/screenings",
+        "/screenings/{session_id}/token",
+        "/screenings/{session_id}/end",
+        "/screenings/{session_id}/messages",
+        "/screenings/{session_id}/chat/completions",
     }
     assert all(
         set(path)
         == (
             {"post"}
-            if name in {"/resumes/extract", "/availability"}
-            or name.endswith(("/structure", "/assess"))
+            if name in {"/resumes/extract", "/availability", "/screenings"}
+            or name.endswith(
+                ("/structure", "/assess", "/token", "/end", "/completions", "/messages")
+            )
             else {"get"}
         )
         for name, path in schema["paths"].items()

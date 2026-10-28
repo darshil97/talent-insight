@@ -7,6 +7,7 @@ import { CandidateNotFound } from "@/components/candidate-not-found";
 import { availabilityLabel } from "@/lib/availability";
 import { decodeCandidateProfile, splitResume, type EvidenceClaim } from "@/lib/candidates";
 import { DemoAssessment } from "@/components/demo-assessment";
+import { ScreeningPanel } from "@/components/screening-panel";
 
 const kinds = [
   { key: "experience", label: "Experience excerpts" },
@@ -61,6 +62,7 @@ export function CandidateProfileView({ jobId, candidateId }: { jobId: string; ca
         <p className="mt-5 text-sm text-[#475a49]">Reviewing for <Link href={`/jobs/${jobId}`} className="rounded-sm font-semibold underline underline-offset-4">{job.title}</Link> · {job.client}</p>
       </section>
 
+      <ScreeningPanel key={`screening/${jobId}/${candidateId}`} jobId={jobId} jobTitle={job.title} candidate={{ kind: "demo", candidate_id: candidateId }} />
       <section aria-labelledby="evidence-heading" className="mt-8">
         <h2 id="evidence-heading" className="text-xl font-semibold">Resume evidence</h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-[#59665d]">These are curated excerpts from the synthetic source resume. Read the full wording, including any limits or uncertainty. Missing evidence is unknown and does not prove a skill is absent.</p>

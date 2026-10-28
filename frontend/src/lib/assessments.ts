@@ -21,6 +21,8 @@ export interface Assessment {
   judgments: Judgment[];
   scoring: { score: number | null; lower: number | null; upper: number | null; estimate: number | null; confidence: Confidence | null; resolved_count: number; unknown_count: number; mandatory_met: number; mandatory_total: number; categories: CategoryScore[] };
   notice: string;
+  /** Signed, short-lived job-bound context for starting a screening of this upload. */
+  screening_context?: string | null;
 }
 
 const messages: Record<string, string> = {
@@ -57,6 +59,8 @@ const fail = (): never => { throw new AssessmentError(); };
 
 export function decodeAssessment(value: unknown, job: JobDetail, kind: "uploaded_pdf" | "synthetic_demo", candidateId: string | null = null): Assessment {
   if (!object(value) || !object(value.structured) || !object(value.scoring) || !Array.isArray(value.judgments) || !text(value.notice)) return fail();
+  if (value.screening_context !== undefined && value.screening_context !== null &&
+      !(typeof value.screening_context === "string" && /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(value.screening_context) && value.screening_context.length <= 32_768)) return fail();
   const structured = value.structured;
   const context = structured.job;
   const requirements = object(context) && Array.isArray(context.requirements) ? context.requirements : null;

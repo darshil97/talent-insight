@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 const stages = [
   { number: "01 / SELECT", title: "Choose a job", description: "Read its requirements and open the Candidates tab." },
   { number: "02 / REVIEW", title: "Compare candidates", description: "Review synthetic demo profiles and their source evidence. Add a PDF to request a temporary assessment for the selected job." },
-  { number: "03 / FOLLOW UP", title: "Talk to a person", description: "A later consent-aware screening flow will offer audio and text options. Keep the final decision with a human." },
+  { number: "03 / FOLLOW UP", title: "Screen, then decide", description: "Optionally run a short consent-based AI screening by voice or text about job-related requirements. A person reviews it and makes the final decision." },
 ] as const;
 
 export default function Guide() {

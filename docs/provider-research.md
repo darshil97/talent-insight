@@ -1,6 +1,6 @@
 # Provider research and architecture constraints
 
-Reviewed official documentation on 2026-10-24 (Asia/Kolkata). Neon is verified. Module 9 subsequently verified one source-validated Bedrock extraction using synthetic text, as recorded below; other AI/voice findings remain research rather than verified integrations. Recheck documentation, account access and selected SDK versions for each integration.
+Reviewed official documentation on 2026-10-24 (Asia/Kolkata); Deepgram findings rechecked on 2026-10-27 for module 12. Neon is verified. Module 9 subsequently verified one source-validated Bedrock extraction using synthetic text, as recorded below; other AI/voice findings remain research rather than verified integrations. Recheck documentation, account access and selected SDK versions for each integration.
 
 ## Deepgram authentication
 
@@ -14,13 +14,28 @@ The [browser JavaScript SDK](https://developers.deepgram.com/docs/browser-agent-
 
 The [React integration](https://developers.deepgram.com/docs/browser-agent-react) provides `@deepgram/react`, context and hooks for connection, transcript and audio controls. Evaluate it when module 13 begins; pin and verify the selected package then. Do not install it during initial setup solely for future voice work.
 
-## Bedrock within Deepgram: decision required before module 12
+## Bedrock within Deepgram: module 12 decision (2026-10-27)
 
-Deepgram's [LLM configuration guide](https://developers.deepgram.com/docs/voice-agent-llm-models) documents `aws_bedrock` as a bring-your-own provider, with a regional endpoint, model ID and IAM or STS credentials in settings. Passing these settings through a browser would expose AWS credentials, contrary to this project's requirements. Do not implement that pattern, even with STS.
+Rechecked on 2026-10-27 against the [LLM models guide](https://developers.deepgram.com/docs/voice-agent-llm-models), [reusable agent configurations](https://developers.deepgram.com/docs/reusable-agent-configurations), the [April 2026 changelog](https://developers.deepgram.com/changelog/2026/4/8), [token authentication](https://developers.deepgram.com/guides/fundamentals/token-based-authentication), [regional endpoints](https://developers.deepgram.com/reference/regional-endpoints) and [pricing](https://deepgram.com/pricing).
 
-The same guide documents custom LLM endpoints using an OpenAI-compatible protocol. A proposed fallback is a narrowly scoped FastAPI reasoning endpoint that calls Bedrock server-side while audio stays browser-to-Deepgram. This is an architectural inference, not a verified integration. It adds a text request hop, protocol translation, hosting latency and an endpoint that needs session authorization and usage limits. It does not require changing the underlying model provider to OpenAI.
+- **Native Bedrock:** `think.provider.type: aws_bedrock` takes only `credentials` of type `iam` or `sts` (access key, secret key, optional session token) inside `Settings`. There is no Bedrock API-key option. Because the browser sends `Settings`, every visitor could read those keys. Even per-session STS keys limited to one model would leave the interviewer instructions editable in the browser and require new IAM setup. The only latency saved would be the hop through FastAPI; the model's own response time dominates. Not used.
+- **Reusable agent configurations** (April 2026): the `agent` block can be stored via the management API and referenced by UUID. Template variables (`DG_*`) are plain text, `is_sensitive` must be `false`, and the docs say not to store secrets. Variables are project-wide and visible to every project member, and configs are immutable. There is no dashboard support. A temporary token is not tied to a stored config, so a client can still send its own `Settings`. Not used.
+- **Token grants:** `POST /v1/auth/grant` takes `ttl_seconds` (default 30, maximum 3600) and returns a JWT with `usage:write` for `/listen`, `/speak`, `/read` and the `/agent` WebSocket. Management APIs are excluded. The token must be valid only when the connection opens, so it does not limit session length.
+- **Custom LLM:** `provider.type: open_ai` with `endpoint.url` and optional `endpoint.headers`, in the OpenAI Chat Completions format. The streaming contract, function forwarding and whether `think.prompt` is forwarded are not documented. `context_length` applies only to custom endpoints, and `mip_opt_out` exists.
+- **Regions:** agent endpoints are general (`agent.deepgram.com`), EU, AU (`api.au.deepgram.com`) and India (`api.in.deepgram.com`). The selected Bedrock model runs in Sydney.
+- **Pricing** (pay-as-you-go, billed by connection time):
+  - Standard managed LLM: $0.075/min.
+  - Advanced managed LLM: $0.163/min.
+  - BYO LLM: $0.065/min.
+  - New accounts get $200 of credit.
+  - Third-party price lists give Bedrock `gpt-oss-120b` at about $0.15 / $0.60 per million input/output tokens (AWS's own page not confirmed). That makes a 10-minute FastAPI-interviewer screening about $0.67, against about $0.75 on a managed Standard model.
 
-Before voice implementation, investigate whether a supported server-managed configuration can hide credentials and securely bind dynamic context. Otherwise present the reasoning-endpoint design for approval. Verify streaming/cancellation, endpoint authentication and whether a client-held session capability permits arbitrary requests; enforce authoritative context, bounded inputs and usage server-side. Do not silently switch to a managed LLM or proxy audio.
+**Decision, by the user after review:** a narrowly scoped FastAPI interviewer endpoint calls Bedrock server-side, and Deepgram calls it as a custom LLM, with audio staying browser ↔ Deepgram. See [voice sessions](voice-sessions.md). This keeps AWS keys and the interviewer's instructions on the server, and lets the server enforce the time box and see each turn. The costs are an extra text hop, a public HTTPS backend, and a per-session capability that the browser can see; that capability is bounded by turns, size and expiry. Still unverified: Deepgram's streaming and function behavior against a custom endpoint, and Deepgram and AWS retention. A managed LLM or proxied audio was not adopted.
+
+Live checks on 2026-10-28, one each, approved by the user:
+- **Deepgram grant:** a real `auth/grant` call returned a 30-second JWT in about 1.0 s. Its scope claim is `asr:write`, not the documented `usage:write`, and whether the Voice Agent socket accepts it is not yet verified.
+- **Interviewer turn:** one synthetic turn on `gpt-oss-120b` in Sydney, at low reasoning effort, produced its first text after 4.6 s and finished at 4.7 s, measured from India. That is too slow for natural voice. A faster interviewer model needs to be evaluated.
+- **Interviewer model comparison:** after the separate interviewer setting was added, three scripted turns per model were run. Claude Haiku 4.5 through the `au.` profile handled declined topics and endings best, with about 1 s to first text when warm. Nova Lite was fastest at about 0.7 s and also behaved correctly. Ministral 3 14B was correct but returned whole replies at once. `gpt-oss-20b` repeated a declined question, and `gpt-oss-120b` packed several questions into one reply and ended early. Claude Haiku 5.5 is listed but returns `AccessDeniedException` for this account. See [voice sessions](voice-sessions.md#interviewer-model-comparison-2026-10-28-user-approved). See [voice sessions](voice-sessions.md#live-checks-2026-10-28-user-approved).
 
 ## Backend Bedrock integration
 

@@ -22,6 +22,8 @@ from app.pipeline.contracts import (
     StructuredResume,
 )
 from app.pipeline.extraction import structure_resume
+from app.voice.contracts import UploadAssessment
+from app.voice.envelope import sign_context
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["structured extraction"])
@@ -126,9 +128,17 @@ async def structure_upload(
         return result
 
 
+def screening_context(assessment: Assessment, settings) -> str | None:
+    """Signed facts and statuses for a later screening; absent when screening is not set up."""
+    secret = settings.session_signing_secret
+    if settings.ai_mode is None or secret is None or len(secret.get_secret_value()) < 32:
+        return None
+    return sign_context(assessment, secret.get_secret_value(), settings.voice_context_ttl_seconds)
+
+
 @router.post(
     "/jobs/{job_id}/resumes/assess",
-    response_model=Assessment,
+    response_model=UploadAssessment,
     responses=responses,
     openapi_extra={
         "requestBody": {
@@ -139,13 +149,16 @@ async def structure_upload(
 )
 async def assess_upload(
     request: Request, response: Response, job: Annotated[ExtractionJob, Depends(job_context)]
-) -> Assessment | JSONResponse:
+) -> UploadAssessment | JSONResponse:
     async with ai_slot(request):
         extracted = await extract_upload(request, response)
         if isinstance(extracted, JSONResponse):
             return extracted
         source = ExtractionSource(kind="uploaded_pdf", pages=extracted.pages)
         structured = await structure_resume(job, source, request.app.state.settings)
-        result = await assess_resume(structured, request.app.state.settings)
+        settings = request.app.state.settings
+        result = await assess_resume(structured, settings)
         response.headers["Cache-Control"] = "no-store"
-        return result
+        return UploadAssessment(
+            **dict(result), screening_context=screening_context(result, settings)
+        )

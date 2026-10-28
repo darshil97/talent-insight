@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { AssessmentResult } from "@/components/assessment-result";
+import { PhoneIcon } from "@/components/phone-icon";
+import { ScreeningPanel } from "@/components/screening-panel";
 import { AvailabilityFields, completeAvailability } from "@/components/availability-fields";
 import { CatalogLoading, CatalogNotFound, CatalogUnavailable, useCatalog } from "@/components/catalog-resource";
 import { JobTabs } from "@/components/job-tabs";
@@ -14,6 +16,7 @@ import { fetchCatalog, type JobDetail } from "@/lib/catalog";
 import { prefetchCatalog } from "@/lib/catalog-cache";
 import { confidenceLabels, type Confidence } from "@/lib/estimate";
 import { decodeResumeLimits, ResumeError, type ResumeLimits } from "@/lib/resumes";
+import type { ScreeningCandidate } from "@/lib/screenings";
 
 type DemoRow = { kind: "demo"; name: string; rank: number | null; candidate: CandidateTableSummary };
 type UploadRow = {
@@ -21,6 +24,9 @@ type UploadRow = {
   availabilityInput: AvailabilityInput; availability: Availability | null;
 };
 type Row = DemoRow | UploadRow;
+type ScreeningTarget = { key: string; name: string; candidate: ScreeningCandidate | null };
+
+const rowLabel = (row: Row) => row.kind === "demo" ? row.name : row.name.trim() || "Uploaded candidate";
 
 function Score({ estimate, confidence, available }: { estimate: number | null; confidence: Confidence | null; available: boolean }) {
   if (!available) return <span className="mission-muted">Pending snapshot</span>;
@@ -37,6 +43,9 @@ function CandidateWorkspace({ job, candidates }: { job: JobDetail; candidates: C
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
   const [showDetails, setShowDetails] = useState(false);
+  const [screening, setScreening] = useState<ScreeningTarget | null>(null);
+  const [screeningLive, setScreeningLive] = useState(false);
+  const closeScreening = useCallback(() => setScreening(null), []);
   const request = useRef<AbortController | null>(null);
   const availabilityRequest = useRef<AbortController | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -54,7 +63,7 @@ function CandidateWorkspace({ job, candidates }: { job: JobDetail; candidates: C
   useEffect(() => {
     function discard() {
       request.current?.abort(); availabilityRequest.current?.abort();
-      setUpload(null); setProcessing(false); setShowDetails(false); setError(""); setAdding(false); setDraft(notProvided);
+      setUpload(null); setProcessing(false); setShowDetails(false); setError(""); setAdding(false); setDraft(notProvided); setScreening(null);
       if (input.current) input.current.value = "";
     }
     function restored(event: PageTransitionEvent) { if (event.persisted) discard(); }
@@ -69,7 +78,15 @@ function CandidateWorkspace({ job, candidates }: { job: JobDetail; candidates: C
   function clear() {
     request.current?.abort(); availabilityRequest.current?.abort();
     setUpload(null); setProcessing(false); setShowDetails(false); setError(""); setAdding(false); setDraft(notProvided);
+    setScreening((current) => current?.key === "upload" ? null : current);
     if (input.current) input.current.value = "";
+  }
+
+  /** Opens the consent step below the table; the backend allows one screening at a time. */
+  function screen(row: Row) {
+    setScreening(row.kind === "demo"
+      ? { key: row.candidate.id, name: row.name, candidate: { kind: "demo", candidate_id: row.candidate.id } }
+      : { key: "upload", name: rowLabel(row), candidate: row.assessment.screening_context ? { kind: "upload", context: row.assessment.screening_context } : null });
   }
 
   /** Only the cheap availability calculation runs again; the AI assessment is never repeated. */
@@ -146,7 +163,7 @@ function CandidateWorkspace({ job, candidates }: { job: JobDetail; candidates: C
     <p id="candidate-upload-help" className="mission-help">Choose a text-based PDF you have permission to process. Selection immediately sends it to the backend’s configured AI provider when Bedrock mode is active. Results need human review and clear on refresh. Scanned and password-protected PDFs are unsupported.</p>
     <p className="mission-upload-state" role="status">{processing ? <>Assessing the selected PDF… <button type="button" onClick={clear}>Cancel</button></> : upload ? <>New candidate added for this session. <button type="button" onClick={clear}>Clear upload</button></> : limits ? `PDF limit: ${(limits.max_bytes / (1024 * 1024)).toFixed(1)} MiB · ${limits.max_pages} pages` : <>Loading PDF limits… <button type="button" onClick={() => { setError(""); setLimitsAttempt((value) => value + 1); }}>Retry</button></>}</p>
     {error && <p role="alert" className="mission-error">{error}</p>}
-    <div className="mission-table-panel"><div className="mission-table-bar"><div><span>▦</span><strong>Candidate overview</strong><small>{rows.length}</small></div><small>JOB-SPECIFIC VIEW</small></div><div className="mission-table-scroll"><table className="mission-table"><thead><tr><th scope="col">Candidate name</th><th scope="col">Title</th><th scope="col">Experience years</th><th scope="col">Match estimate</th><th scope="col">Availability</th><th scope="col">Source</th><th scope="col">Action</th></tr></thead><tbody>
+    <div className="mission-table-panel"><div className="mission-table-bar"><div><span>▦</span><strong>Candidate overview</strong><small>{rows.length}</small></div><small>JOB-SPECIFIC VIEW</small></div><div className="mission-table-scroll"><table className="mission-table"><thead><tr><th scope="col">Candidate name</th><th scope="col">Title</th><th scope="col">Experience</th><th scope="col">Match estimate</th><th scope="col">Availability</th><th scope="col">Source</th><th scope="col">Screening</th><th scope="col">Details</th></tr></thead><tbody>
       {rows.map((row) => <tr key={row.kind === "demo" ? row.candidate.id : "uploaded"} className={row.kind === "upload" ? "mission-new-row" : ""}>
         <td><div className="mission-person"><span className="mission-avatar">{row.kind === "demo" ? row.name.split(" ").map((part) => part[0]).join("") : "↑"}</span><div>{row.kind === "demo" ? <Link onMouseEnter={() => warmProfile(row.candidate.id)} onFocus={() => warmProfile(row.candidate.id)} href={`/jobs/${job.id}/candidates/${row.candidate.id}`}>{row.name}</Link> : <button type="button" onClick={() => setShowDetails(true)}>{row.name.trim() || "Uploaded candidate"} <b>JUST ADDED</b></button>}<small>{row.kind === "demo" ? "Synthetic demo candidate" : row.filename}</small></div></div></td>
         <td>{row.kind === "demo" ? row.candidate.headline : row.title.trim() || <span className="mission-muted">Not provided</span>}</td>
@@ -154,11 +171,13 @@ function CandidateWorkspace({ job, candidates }: { job: JobDetail; candidates: C
         <td><Score estimate={row.kind === "upload" ? row.assessment.scoring.estimate : row.candidate.match_estimate} confidence={row.kind === "upload" ? row.assessment.scoring.confidence : row.candidate.confidence} available={row.kind === "upload" || row.candidate.snapshot_available} /></td>
         <td><span className={(row.kind === "demo" ? row.candidate.availability.status : row.availability?.status) ? "" : "mission-muted"}>{availabilityLabel(row.kind === "demo" ? row.candidate.availability : row.availability)}</span></td>
         <td><span className="mission-tag">{row.kind === "demo" ? "Demo" : "Temporary"}</span></td>
-        <td>{row.kind === "demo" ? <Link className="mission-outline-button" onMouseEnter={() => warmProfile(row.candidate.id)} onFocus={() => warmProfile(row.candidate.id)} href={`/jobs/${job.id}/candidates/${row.candidate.id}`}>View details ↗</Link> : <button type="button" className="mission-outline-button" onClick={() => setShowDetails(true)}>View details ↗</button>}</td>
+        <td><button type="button" className="mission-outline-button mission-start-button" disabled={screeningLive || (row.kind === "upload" && !row.assessment.screening_context)} aria-label={`Start screening for ${rowLabel(row)}`} title={screeningLive ? "A screening is in progress" : row.kind === "upload" && !row.assessment.screening_context ? "Screening is not configured on the backend" : undefined} onClick={() => screen(row)}><PhoneIcon />Start</button></td>
+        <td>{row.kind === "demo" ? <Link className="mission-outline-button" aria-label={`View details for ${row.name}`} onMouseEnter={() => warmProfile(row.candidate.id)} onFocus={() => warmProfile(row.candidate.id)} href={`/jobs/${job.id}/candidates/${row.candidate.id}`}>View ↗</Link> : <button type="button" className="mission-outline-button" aria-label={`View details for ${rowLabel(row)}`} onClick={() => setShowDetails(true)}>View ↗</button>}</td>
       </tr>)}
     </tbody></table></div><div className="mission-table-foot"><span>Demo scores come from the last validated snapshot; availability is self-reported.</span><span>Uploaded results clear on refresh or navigation.</span></div></div>
-    {upload && showDetails && <section ref={details} tabIndex={-1} aria-labelledby="uploaded-candidate-heading" className="mission-detail-panel"><div className="mission-detail-top"><div><p className="mission-kicker">TEMPORARY CANDIDATE / SOURCE REVIEW</p><h2 id="uploaded-candidate-heading">{upload.name.trim() || "Uploaded candidate"}</h2><p>{upload.title.trim() || "Position not provided"} · {availabilityLabel(upload.availability)}. Review the source evidence before using this assessment.</p></div><button type="button" className="mission-outline-button" onClick={() => setShowDetails(false)}>Close details</button></div><AssessmentResult assessment={upload.assessment} job={job} /></section>}
-    <p className="mission-review-note">Assessments support human review. Screening will be added after consent and text alternative workflows are ready.</p>
+    {screening && <ScreeningPanel key={`screening/${job.id}/${screening.key}`} jobId={job.id} jobTitle={job.title} candidate={screening.candidate} candidateName={screening.name} autoOpen onLiveChange={setScreeningLive} onClose={closeScreening} unavailableReason="Screening is not configured on the backend, so this assessment has no screening context." />}
+    {upload && showDetails && <section ref={details} tabIndex={-1} aria-labelledby="uploaded-candidate-heading" className="mission-detail-panel"><div className="mission-detail-top"><div><p className="mission-kicker">TEMPORARY CANDIDATE / SOURCE REVIEW</p><h2 id="uploaded-candidate-heading">{upload.name.trim() || "Uploaded candidate"}</h2><p>{upload.title.trim() || "Position not provided"} · {availabilityLabel(upload.availability)}. Review the source evidence before using this assessment.</p></div><div className="mission-detail-actions"><button type="button" className="mission-outline-button" disabled={screeningLive || !upload.assessment.screening_context} onClick={() => screen(upload)}><PhoneIcon />Start screening</button><button type="button" className="mission-outline-button" onClick={() => setShowDetails(false)}>Close details</button></div></div><AssessmentResult assessment={upload.assessment} job={job} /></section>}
+    <p className="mission-review-note">Assessments and optional AI screenings support human review. People make the final decision.</p>
   </>;
 }
 

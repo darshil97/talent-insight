@@ -19,3 +19,15 @@ Offline checks cover context/source/quote/count validation, Unicode offsets, upl
 ## Match estimate and confidence (2026-10-27)
 
 The Candidates table shows one **Match estimate** per candidate with a confidence label (Very high, High, Medium, Low) instead of a range, and sorts every assessed candidate by estimate plus the availability bonus; previously ranges sorted alphabetically after point scores. The details view shows the estimate and confidence first, then the range as "If unverified items resolve" and mandatory coverage. Uploads rank the same way: `POST /availability` receives the upload's `match_estimate`.
+
+## Screening panel (module 13, 2026-10-28)
+
+Screening can start from the job's candidate table or the demo profile:
+- **Candidate table:** columns are Candidate name, Title, Experience, Match estimate, Availability, Source, **Screening**, **Details**. A row's **Start** button (telephone-handset icon) opens the consent step just below the table, titled with the candidate's name. Other Start buttons are disabled while a screening is starting or live, because the backend allows one at a time. Details shows **View ↗**.
+- **Upload details:** the header has a **Start screening** action that opens the same inline panel.
+- **Demo profile:** the panel sits above Resume evidence.
+
+The optional **AI screening conversation** panel It covers server notice and consent, voice or text, a live transcript, a countdown, Mute, Continue by text and End. See [voice sessions](voice-sessions.md#browser-client-and-text-alternative-module-13).
+- **Uploads:** the panel needs the upload's signed `screening_context`. Without it, Start is disabled with an explanation.
+- **Clean-up:** clearing the upload, navigating away, refreshing or closing the panel discards the transcript and ends the backend session.
+- **Assessment type:** the `Assessment` type now includes the optional `screening_context`, validated by `decodeAssessment`.
