@@ -1,7 +1,9 @@
 """Application composition without import-time environment loading."""
 
+import asyncio
+import logging
 from collections import deque
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,8 +23,21 @@ from app.core.request_context import HEADER, RequestIdMiddleware
 from app.database import create_database_engine
 from app.errors import SafeErrorsMiddleware, register_error_handlers
 from app.pipeline.contracts import ExtractionFailure
+from app.voice import sessions
 from app.voice.contracts import VoiceFailure
 from app.voice.sessions import SessionStore
+
+logger = logging.getLogger(__name__)
+
+
+async def purge_sessions(app: FastAPI) -> None:
+    """Delete expired screenings on a timer, so transcripts never wait for the next request."""
+    while True:
+        await asyncio.sleep(sessions.PURGE_INTERVAL_SECONDS)
+        try:
+            app.state.voice_sessions.purge()
+        except Exception as exc:
+            logger.error("Session purge failed (%s)", type(exc).__name__)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -33,9 +48,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI):
         if settings.database_url is not None:
             app.state.database_engine = create_database_engine(settings.database_url)
+        purger = asyncio.create_task(purge_sessions(app))
         try:
             yield
         finally:
+            purger.cancel()
+            with suppress(asyncio.CancelledError):
+                await purger
             if app.state.database_engine is not None:
                 app.state.database_engine.dispose()
                 app.state.database_engine = None
@@ -56,8 +75,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.ai_active = 0
     app.state.ai_requests = deque()
     app.state.voice_sessions = SessionStore(settings)
-    # Tests replace this with an httpx mock transport; None uses the network.
+    # Tests replace these with httpx mock transports; None uses the network.
     app.state.deepgram_transport = None
+    app.state.turnstile_transport = None
     register_error_handlers(app)
     app.add_exception_handler(ExtractionFailure, extraction_error_handler)
     app.add_exception_handler(VoiceFailure, voice_error_handler)

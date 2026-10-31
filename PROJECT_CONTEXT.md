@@ -1,6 +1,6 @@
 # Talent Insight — project context
 
-Last updated: 2026-10-31 (Asia/Kolkata). **Module 13 (browser screening panel with voice and text, its 2026-10-31 voice, upload and transcript follow-ups, and the Render/Vercel deployment) was reviewed and approved on 2026-10-31; the user confirmed it is deployed and working. Module 14 (structured screening reports, the recruiter-first report, integrity flags and quote verification) was reviewed and approved on 2026-10-31; it is uncommitted and not yet deployed. Module 15 (hardening) is the next pending module and needs approval. Work now happens directly on the user's Git device, so no file transfer is needed.** See the final entries. Earlier: Module 12 was reviewed and approved on 2026-10-28. Earlier: **Module 12 (voice sessions, Deepgram token issuance and the server-side interviewer) was implemented locally.** It was approved after an architecture review: the interviewer runs in FastAPI on Bedrock as a Deepgram custom LLM, uploads use a signed screening context, and screenings are time-boxed to about ten minutes with adaptive topics. It was verified offline, plus two approved live checks on 2026-10-28: a Deepgram token grant succeeded, and one synthetic Bedrock interviewer turn succeeded with its first text after 4.6 s, too slow for voice. No full voice call has run. Earlier the same day: the user-requested catalog performance module is implemented locally, reviewed and approved on 2026-10-27; see the final entry for verification and remaining remote-database latency. Module 11a (recruiter-style matching with a `transferable` level and applied-use rules, verified candidate name/title for uploads, and an availability ranking bonus) is implemented locally and awaits review; the shared Neon catalog is at migration `0002_candidate_availability`. Earlier the same day, a user-requested backend refactor of completed modules 8–11 (Jinja `.md` prompts, an LLM provider registry with an in-process cached Bedrock client, request IDs and key-point logging, and per-item validation salvage with retry hints) is implemented locally and awaits review; a first post-refactor demo refresh was blocked by a stale `AWS_BEARER_TOKEN_BEDROCK` exported in this machine's shell profile, which overrides `backend/.env`; rerun without that variable, the refresh regenerated all 13 synthetic assessments on first attempts. Previously, as of 2026-10-26: Modules 1–10 and the backend YAML configuration follow-up were reviewed and approved. Module 11, the Sci-fi / Mission workflow, the demo cache/upload fix and the four-domain demo catalog are implemented locally and await review. The fixture and shared Neon catalog have four jobs, twelve synthetic candidates and thirteen memberships. The sidebar count reads the jobs API. The user ran the manual Bedrock refresh; after a bounded JSON-format repair and validation, the 13-entry snapshot was generated and all entries reverified locally. Four entries have point scores and nine show uncertainty ranges. Module 12 was later authorized and implemented (see above). Private provider configuration is preserved. Read `AGENTS.md` first.
+Last updated: 2026-10-31 (Asia/Kolkata). **Module 13 (browser screening panel with voice and text, its 2026-10-31 voice, upload and transcript follow-ups, and the Render/Vercel deployment) was reviewed and approved on 2026-10-31; the user confirmed it is deployed and working. Module 14 (structured screening reports, the recruiter-first report, integrity flags and quote verification) was reviewed and approved on 2026-10-31; the user committed it as `58afd1c` and reported a full run on Render and Vercel on 2026-10-31. Module 15 (hardening) was completed and approved on 2026-10-31, so every roadmap module is done: gates 15a (Cloudflare Turnstile bot check and a daily screening cap) and 15b (a 60-second session purge timer and a counts-only usage line) are approved but uncommitted and not deployed, and the user's deployed run (gate 15c) covered `58afd1c`, before them. Work now happens directly on the user's Git device, so no file transfer is needed.** See the final entries. Earlier: Module 12 was reviewed and approved on 2026-10-28. Earlier: **Module 12 (voice sessions, Deepgram token issuance and the server-side interviewer) was implemented locally.** It was approved after an architecture review: the interviewer runs in FastAPI on Bedrock as a Deepgram custom LLM, uploads use a signed screening context, and screenings are time-boxed to about ten minutes with adaptive topics. It was verified offline, plus two approved live checks on 2026-10-28: a Deepgram token grant succeeded, and one synthetic Bedrock interviewer turn succeeded with its first text after 4.6 s, too slow for voice. No full voice call has run. Earlier the same day: the user-requested catalog performance module is implemented locally, reviewed and approved on 2026-10-27; see the final entry for verification and remaining remote-database latency. Module 11a (recruiter-style matching with a `transferable` level and applied-use rules, verified candidate name/title for uploads, and an availability ranking bonus) is implemented locally and awaits review; the shared Neon catalog is at migration `0002_candidate_availability`. Earlier the same day, a user-requested backend refactor of completed modules 8–11 (Jinja `.md` prompts, an LLM provider registry with an in-process cached Bedrock client, request IDs and key-point logging, and per-item validation salvage with retry hints) is implemented locally and awaits review; a first post-refactor demo refresh was blocked by a stale `AWS_BEARER_TOKEN_BEDROCK` exported in this machine's shell profile, which overrides `backend/.env`; rerun without that variable, the refresh regenerated all 13 synthetic assessments on first attempts. Previously, as of 2026-10-26: Modules 1–10 and the backend YAML configuration follow-up were reviewed and approved. Module 11, the Sci-fi / Mission workflow, the demo cache/upload fix and the four-domain demo catalog are implemented locally and await review. The fixture and shared Neon catalog have four jobs, twelve synthetic candidates and thirteen memberships. The sidebar count reads the jobs API. The user ran the manual Bedrock refresh; after a bounded JSON-format repair and validation, the 13-entry snapshot was generated and all entries reverified locally. Four entries have point scores and nine show uncertainty ranges. Module 12 was later authorized and implemented (see above). Private provider configuration is preserved. Read `AGENTS.md` first.
 
 ## 1. Project overview
 
@@ -199,8 +199,8 @@ These are review gates, not authorization to implement every row. Dependencies i
 | 11a | Recruiter-style matching, candidate identity and availability ranking | Completed, reviewed and approved | 11 + user request and approved plan | `transferable` status (0.75) and applied-use rules, verified name/title extraction for uploads, availability columns and capped ranking bonus, upload panel; 372 backend/31 frontend tests, Neon migration and seed, two live refreshes and a browser smoke test |
 | 12 | Voice sessions, token issuance and server-side interviewer | Completed, reviewed and approved (2026-10-28) | 11 + architecture review + approval received | FastAPI interviewer as a Deepgram custom LLM; consent, signed upload context, expiry/replay/admission, bounded token route, time-boxed adaptive interviewer; 51 new offline tests, 438 backend tests in total |
 | 13 | Browser voice and text fallback | Completed, reviewed and approved (2026-10-31); deployed on Render and Vercel, live voice working | 12 + approval received | Consent modal, direct audio, live transcript, mute/end/error controls, interruption/disconnect handling, closing the socket on `end_screening`, a text alternative reusing the interviewer; public HTTPS for Deepgram (tunnel or Render); browser scenarios and an approved live test measuring turn latency |
-| 14 | Structured screening reports | Completed, reviewed and approved (2026-10-31); live report and integrity checks ran on synthetic screenings; not yet deployed | 13 | Validated report, explicit completion, idempotency, incomplete-session behavior; evidence/report schema/duplicate tests |
-| 15 | Hardening and deployment readiness | Pending; module 13 added a minimal Render (Singapore, Free) and Vercel dashboard checklist | 14 | End-to-end demo, abuse/cost controls, retention review, usage logging, Vercel/Render instructions, authorized integration verification |
+| 14 | Structured screening reports | Completed, reviewed and approved (2026-10-31); live report and integrity checks ran on synthetic screenings; committed as `58afd1c`, deployed, and covered by the user's full Render/Vercel run (user-reported) | 13 | Validated report, explicit completion, idempotency, incomplete-session behavior; evidence/report schema/duplicate tests |
+| 15 | Hardening and deployment readiness | Completed and approved (2026-10-31): 15a bot check and daily cap, 15b retention and logging review, 15c the user's full Render/Vercel run (user-reported, at `58afd1c`). 15a and 15b are uncommitted and not deployed, so they are verified locally only | 14 | End-to-end demo, abuse/cost controls, retention review, usage logging, Vercel/Render instructions, authorized integration verification |
 
 Dependencies are installed when needed. Security and tests accompany each module; module 15 consolidates them. Split large modules into smaller review gates if needed. Phase 1 = modules 2–11, Phase 2 = modules 12–14, Phase 3 = module 15.
 
@@ -281,7 +281,8 @@ Examples contain no secrets. See [local setup](docs/local-development.md), [back
 | `VOICE_PUBLIC_API_URL` | Backend | Implemented; the backend origin Deepgram calls for interviewer turns. HTTPS in `deepgram` mode; loopback HTTP only in mock mode |
 | `VOICE_BEDROCK_MODEL_ID`, `VOICE_AWS_REGION` | Backend | Implemented 2026-10-28: interviewer model and region; unset values reuse `BEDROCK_MODEL_ID` and `AWS_REGION`. Separate cached client; `VOICE_REASONING_EFFORT` is sent only to `gpt-oss`. Selected and set in private `backend/.env`: `au.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | `VOICE_AGENT_URL`, `VOICE_API_URL` | Backend | Implemented Deepgram endpoints; general region by default. Regional grant hosts are unverified |
-| `VOICE_*` limits and models | Backend | Implemented: token TTL 30 s, screening 600 s, wrap-up 540 s, expiry 900 s, context TTL 1800 s, turns 40, reconnects 2, concurrent 1, per hour 6, messages 80, history characters 60,000, output tokens 300, reasoning effort low, turn timeout 20 s; listen `flux-general-en`, speak `aura-2-thalia-en` |
+| `VOICE_*` limits and models | Backend | Implemented: token TTL 30 s, screening 600 s, wrap-up 540 s, expiry 900 s, context TTL 1800 s, turns 40, reconnects 2, concurrent 1, per hour 6, per day 20 (module 15a), messages 80, history characters 60,000, output tokens 300, reasoning effort low, turn timeout 20 s; listen `flux-general-en`, speak `aura-2-thalia-en` |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Backend / Render | Implemented in module 15a: Cloudflare Turnstile bot check before a screening starts; off unless both are set, and one without the other fails startup. The site key is public and reaches the browser through `/screenings/notice`; nothing is set on Vercel. The secret is a SecretStr |
 
 PDF/AI limits are implemented above; the frontend loads PDF limits from GET `/resumes/limits` but does not yet call structured extraction. Provider mode/credentials are server-owned. Scoring weights, distributed/public usage controls and session expiry remain future work. No storage credentials are required. CORS and per-process admission are not authentication or a substitute for a public monetary budget.
 
@@ -326,7 +327,7 @@ Use root `./run_local.sh start|stop|status|restart|logs` for both apps. `BACKEND
 6. **Resume parsing and third-party privacy:** module 8 clearly rejects documents with no extractable text, including scans. Mixed PDFs may yield partial text, and strict parsing may reject repairable documents. Only synthetic PDFs are tested; real-document accuracy and future provider retention need review. macOS has no hard per-worker address-space cap; the Linux cap remains unverified. No claim of legal compliance.
 7. **Deployment and platform verification:** Vercel Node 24 and Render's configurable Python versions were checked in official docs. Local production compilation is verified; neither hosted application deployment nor Linux dependency installation is verified. Neon setup is complete, but no frontend/backend deployment configuration exists yet. Backend lock currently includes development tools; production dependency packaging remains deployment-readiness work.
 8. **Tooling compatibility:** ESLint 9.39.5 is deprecated upstream but is the latest 9.x version compatible with the installed Next.js React/accessibility plugins' declared peers. Keep it pinned until those plugins support ESLint 10; do not force unsupported peers. HTTPX's ASGI transport is used directly for the smoke test, avoiding Starlette's deprecated HTTPX TestClient path. Turbopack is not verified here; use the documented Webpack scripts.
-9. **Foundation boundaries:** health does not verify provider/database readiness. PDF and AI input/output/time/attempt/concurrency limits plus per-process extraction admission counts are implemented; distributed budgets, public abuse controls and voice-session limits remain pending. Restart resets counters and multiple API processes multiply capacity. CORS does not authenticate callers. Swagger's default UI uses external CDN assets; `/openapi.json` and health do not need them. Non-editable deployments should use process settings rather than the source-tree dotenv path.
+9. **Foundation boundaries:** health does not verify provider/database readiness. PDF and AI input/output/time/attempt/concurrency limits plus per-process extraction admission counts are implemented; distributed budgets remain pending; voice-session limits were added in module 12 and a public bot check on screening start in module 15a. Restart resets counters and multiple API processes multiply capacity. CORS does not authenticate callers. Swagger's default UI uses external CDN assets; `/openapi.json` and health do not need them. Non-editable deployments should use process settings rather than the source-tree dotenv path.
 
 ## 10. Last completed milestone and next action
 
@@ -735,4 +736,113 @@ Frontend:
   - an end-to-end deployed demo check.
 - Optional, earlier ideas not approved: recruiter-authored accepted equivalents per requirement (module 11a), and removing the stale `AWS_BEARER_TOKEN_BEDROCK` export from this machine's shell profile.
 
-**Exact next action:** the user decides whether to commit and deploy module 14 and whether to approve a module 15 plan. Do not start module 15 without approval.
+**Module 15 approval (2026-10-31):** the user approved module 15 as three review gates and asked to start with 15a:
+- **15a**: abuse and cost controls (below).
+- **15b**: privacy, retention and logging review, plus a counts-only usage log line per screening.
+- **15c**: deployment docs and one supervised end-to-end run on Render and Vercel.
+
+The user also confirmed module 14 is committed (`58afd1c`).
+
+**Module 15a — bot check and daily cap (2026-10-31, implemented locally, uncommitted, awaiting review):**
+
+User decisions:
+- The check covers **screening start only**, voice and text. Resume assessment keeps its existing AI limits.
+- Disclosure is a **line beside the widget**, not a notice change, so `NOTICE_VERSION` stays `2026-10-27`.
+- Add a **daily cap of 20 starts** per process.
+
+Backend:
+- New `app/voice/turnstile.py`:
+  - one siteverify `POST` with `httpx`, a 10-second timeout and no retry;
+  - sends only the secret and token, not the visitor's IP;
+  - requires `success` and the action `screening_start`;
+  - Cloudflare's test-key results carry no action but are flagged `metadata.result_with_testing_key`; production secrets reject test tokens, so the flag is accepted;
+  - failures map to `bot_check_failed` (403) or `bot_check_unavailable` (503, `Retry-After: 30`, also for `invalid-input-secret`), so the check fails closed;
+  - logs show only Cloudflare error codes.
+- `POST /screenings` verifies the token after the configuration and consent checks, and before the catalog read, the session admission and the Deepgram grant. A failed check therefore never uses the hourly or daily limits; until now any caller could exhaust the hourly limit.
+- `ScreeningRequest.bot_check_token` is optional, printable ASCII, at most 2048 characters. `Notice.bot_check_site_key` is null when the check is off.
+- Settings `turnstile_site_key` (pattern-checked) and `turnstile_secret_key` (SecretStr), under `bot_check:` in `config.yaml`. A validator requires both or neither.
+- `voice_sessions_per_day` (`VOICE_SESSIONS_PER_DAY`, default 20, 1–500) is a rolling 24-hour count in `SessionStore`. It is checked before the hourly limit and returns 429 `voice_daily_limit` with `Retry-After: 3600`. It is per process and resets on restart, like the hourly limit.
+- `app.state.turnstile_transport` exists for tests.
+
+Frontend:
+- New `src/lib/turnstile.ts`: loads Cloudflare's explicit-render script once, with no npm dependency; a failed load can be retried.
+- New `src/components/turnstile-widget.tsx`: dark theme, flexible size, the action `screening_start`. It reports each token, or null on expiry or error, and shows a message if the script cannot load.
+- `screening-panel.tsx` shows the widget when the notice has a site key and disables **Agree and start** until a token exists. It clears the token as the start request is sent and remounts the widget after a failed start, because tokens are single use.
+- `decodeNotice` validates the site key; a missing key (an older backend) means no check. `startScreening` sends `bot_check_token` only when there is one. Three new error messages.
+- No content security policy exists, so none needed changing.
+
+Docs: [deployment](docs/deployment.md) (Cloudflare steps, Render keys, behaviour, post-deploy checks), [local development](docs/local-development.md) (Cloudflare's always-pass test pair), [voice sessions](docs/voice-sessions.md); `backend/.env.example` placeholders. A local `backend-mock-botcheck` entry in the ignored `.claude/launch.json` runs the backend in mock AI mode with the test pair.
+
+**Verification:**
+- **Backend:** 480 tests passed with warnings as errors, 3 opt-in Neon checks skipped. New tests:
+  - off by default, and both keys required;
+  - the check passes before any session, and only the secret and token are sent, never logged;
+  - test-key results pass;
+  - ten failure shapes fail closed without using the limits, in both modes;
+  - the rolling daily cap.
+- Ruff lint and format passed. The offline snapshot validation passed (13 memberships, 0 provider calls, snapshot unchanged); fingerprinted paths are untouched.
+- **Frontend:** 69 tests (3 new: token sending, site-key decoding, script loader), ESLint, typecheck and the Webpack production build passed. In one slow full run the existing real-timer test "the short fallback waits for the turn's first audio" failed (`listening` vs `speaking`). It passed in 3 isolated runs and 2 further full runs, and its files are unchanged, so it is a timing flake that remains.
+- **In-app browser, local:** mock AI, Neon catalog read only, Cloudflare's published test keys, and real calls to Cloudflare's widget and siteverify at no cost.
+  - The widget rendered and passed, and the start button enabled only after consent and the token.
+  - The first start exposed the missing action on test-key results (403, a fresh widget and the error message, as designed). After the fix, `Bot check passed with Cloudflare test keys in 125 ms` was logged and a text screening started.
+  - At 375 px wide the widget is 300 px, with no horizontal scroll.
+- **Not run:** a real widget with the user's keys, Render and Vercel, voice with the bot check, and the script-blocked message in a browser (only the loader's failure path is unit-tested). No deployment, Neon write, migration or commit ran.
+
+**Limits:**
+- Turnstile stops simple scripts. A person, or a script using a paid solving service, can still pass once per screening and hold a Deepgram connection, so the module 13 safeguards still apply: prepaid credit, `VOICE_SESSIONS_PER_HOUR=3`, weekly usage checks.
+- The limits are per process and reset when Render restarts.
+- A Cloudflare outage blocks screenings.
+
+**Exact next action:** the user reviews gate 15a. To deploy it:
+1. Create the Turnstile widget (steps in [deployment](docs/deployment.md)).
+2. Add `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` on Render, and optionally `VOICE_SESSIONS_PER_DAY`.
+3. Commit when the user asks, then run the post-deploy checks.
+
+Do not start gate 15b without approval.
+
+**Module 15a review (2026-10-31):** the user approved gate 15a and asked to proceed with gate 15b if anything needs doing. 15a is uncommitted and not deployed; the Turnstile widget and Render keys are still to be created by the user.
+
+**Module 15b — privacy, retention and logging review (2026-10-31, implemented locally, uncommitted, awaiting review):**
+
+Review findings that needed no change:
+- **Logs:** every backend log line carries codes, counts, timings or model IDs only. Request lines use route templates. Render runs with `--no-access-log`. Unhandled errors log only the exception class. The `app` logger alone is configured, so SDK and `httpx` INFO lines (which include URLs) are not shown at the defaults.
+- **No storage:** PDFs reach the parser over stdin with no temp files, the API never writes uploads or screenings to Neon, and the frontend uses no browser storage or upload caching.
+- **Providers:** Deepgram `mip_opt_out: true`, LangChain and LangSmith tracing forced off, and no visitor IP sent to Cloudflare.
+
+Changes:
+- **Purge timer:** expired sessions used to be deleted only when another screening request called `purge()`, so on an idle server a transcript and report could stay in memory for hours, against the documented 15 minutes. The application lifespan now runs a task that purges every 60 seconds (`sessions.PURGE_INTERVAL_SECONDS`). It is cancelled on shutdown and logs only the exception class if a purge fails.
+- **Usage line:** when a session is deleted, `log_usage` writes one counts-only `Screening usage:` line: mode, candidate kind, end reason (or `not_started` / `not_ended`), seconds from start to the last request that used the session, candidate answers, interviewer turns, turn requests, reconnects and whether a report was built. It has no text, IDs or tokens.
+  - `ScreeningSession` gains `mode` (set by `store.create(context, mode)`) and `last_seen` (updated by `store.get`).
+  - A restart drops sessions without a usage line, and for voice the seconds are a lower bound on Deepgram's billed connection time.
+- **For the user:** keep Bedrock **Model invocation logging** off in the AWS console. The app cannot check this account setting; if it is on, AWS stores resume and transcript prompts.
+
+Docs: new [data retention and logs](docs/data-retention.md), with a data table, the log rules, the usage line, the weekly check and provider settings. Also updated: [deployment](docs/deployment.md) safeguards, [voice sessions](docs/voice-sessions.md), and the README docs list. The README's stale module-status sentence now points here. No frontend change and no new dependency.
+
+**Verification:**
+- **Backend:** 483 tests passed with warnings as errors, 3 opt-in Neon checks skipped. New tests:
+  - the usage line's exact counts, with no answer text, session ID or capability in the app's log records;
+  - abandoned sessions are logged when their slot is released;
+  - the lifespan timer purges an expired session with no request.
+- Ruff lint and format passed. Offline snapshot validation passed (13 memberships, 0 provider calls, snapshot unchanged).
+- **Live under uvicorn:** mock AI, Neon catalog read only, and `VOICE_SCREENING_SECONDS=60`, `VOICE_WRAP_UP_SECONDS=30`, `VOICE_SESSION_EXPIRY_SECONDS=120`. One text screening started at 22:19:17, and no further request was sent. The timer deleted it at 22:22:06, 169 s after the start (within expiry plus the purge interval), logging `Screening usage: text, demo candidate, not_started, …` with request ID `-`. No errors were logged.
+- Frontend code was unchanged, so frontend checks were not rerun.
+- **Not run:** the purge timer and usage line on Render, a weekly usage comparison, and the Bedrock invocation-logging setting (the user checks it in the AWS console). No deployment, Neon write, migration or commit ran.
+
+**Module 15 completion (2026-10-31):** the user reported a full run on Render and Vercel and asked to mark everything done. Gates 15a and 15b are approved, gate 15c is recorded as done, and module 15 and the roadmap are complete.
+
+Caveats recorded at completion:
+- The run was not observed here. `origin/main` was at `58afd1c` (module 14), and the 15a and 15b changes were still uncommitted locally.
+- The deployed run therefore covered modules 1–14. The bot check, daily cap, purge timer and usage line are verified locally only.
+
+**Open items (none started):**
+- **Ship 15a and 15b:**
+  1. Commit when the user asks.
+  2. Create the Turnstile widget and add `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` on Render.
+  3. Deploy, then check that `/screenings/notice` shows `bot_check_site_key` and that Render logs `Bot check passed in N ms`. About 15 minutes after a screening, a `Screening usage:` line should appear.
+- Keep Bedrock **Model invocation logging** off in the AWS console.
+- Optional, not approved:
+  - remove test tools (pytest, Ruff) from the Render install lock;
+  - recruiter-authored accepted equivalents (module 11a);
+  - remove the stale `AWS_BEARER_TOKEN_BEDROCK` export from this machine's shell profile.
+
+**Exact next action:** none on the roadmap. The user decides whether to commit and deploy 15a and 15b, and whether to take up any optional item.

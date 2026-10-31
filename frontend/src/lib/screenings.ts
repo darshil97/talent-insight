@@ -3,7 +3,8 @@ import { apiBaseUrl } from "./catalog.ts";
 
 export type ScreeningMode = "voice" | "text";
 export type ScreeningCandidate = { kind: "demo"; candidate_id: string } | { kind: "upload"; context: string };
-export interface ScreeningNotice { notice_version: string; text: string; screening_minutes: number; voice_available: boolean; text_available: boolean }
+/** `bot_check_site_key` is the public Cloudflare Turnstile key when a bot check must pass before a screening starts. */
+export interface ScreeningNotice { notice_version: string; text: string; screening_minutes: number; voice_available: boolean; text_available: boolean; bot_check_site_key: string | null }
 export interface ScreeningStart {
   session_id: string; capability: string; mode: ScreeningMode; expires_at: string; greeting: string;
   screening_seconds: number; max_turns: number;
@@ -47,6 +48,9 @@ const messages: Record<string, string> = {
   reconnect_limit_reached: "The call could not reconnect again. Continue by text or start a new screening.",
   voice_busy: "Another screening is in progress. Try again shortly.",
   voice_rate_limited: "The screening limit was reached. Try again later.",
+  voice_daily_limit: "The daily screening limit was reached. Try again later.",
+  bot_check_failed: "The bot check did not pass or has expired. Complete it again, then start.",
+  bot_check_unavailable: "The bot check is unavailable right now. Try again shortly.",
   turn_in_progress: "The interviewer is still answering. Wait a moment and send again.",
   voice_provider_access_denied: "The voice provider rejected the backend key. Use the text option or check the backend.",
   voice_provider_throttled: "The voice provider is busy. Try again shortly or use the text option.",
@@ -104,9 +108,12 @@ const agentUrl = (value: unknown): value is string => typeof value === "string" 
 const fail = (): never => { throw new ScreeningError(); };
 
 export function decodeNotice(value: unknown): ScreeningNotice {
+  // A backend from before the bot check sends no key, which means no check.
+  const siteKey = object(value) ? value.bot_check_site_key ?? null : null;
   if (!object(value) || !text(value.notice_version) || !text(value.text) || !integer(value.screening_minutes, 1, 30) ||
-      typeof value.voice_available !== "boolean" || typeof value.text_available !== "boolean") return fail();
-  return value as unknown as ScreeningNotice;
+      typeof value.voice_available !== "boolean" || typeof value.text_available !== "boolean" ||
+      (siteKey !== null && !(typeof siteKey === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(siteKey)))) return fail();
+  return { ...(value as unknown as ScreeningNotice), bot_check_site_key: siteKey };
 }
 
 export function decodeStart(value: unknown, mode: ScreeningMode): ScreeningStart {
@@ -203,9 +210,11 @@ export function getNotice(signal: AbortSignal): Promise<ScreeningNotice> {
   return request("/screenings/notice", { method: "GET" }, decodeNotice, signal, 20_000);
 }
 
-export function startScreening(jobId: string, candidate: ScreeningCandidate, mode: ScreeningMode, notice: ScreeningNotice, signal: AbortSignal): Promise<ScreeningStart> {
+/** The bot-check token is single use: the backend spends it on this request whether or not the screening starts. */
+export function startScreening(jobId: string, candidate: ScreeningCandidate, mode: ScreeningMode, notice: ScreeningNotice, signal: AbortSignal, botCheckToken: string | null = null): Promise<ScreeningStart> {
   const consent = { audio_capture: mode === "voice", ai_processing: true, notice_version: notice.notice_version };
-  return request("/screenings", { method: "POST", body: { job_id: jobId, candidate, consent, mode } }, (value) => decodeStart(value, mode), signal, 30_000);
+  const body = { job_id: jobId, candidate, consent, mode, ...(botCheckToken ? { bot_check_token: botCheckToken } : {}) };
+  return request("/screenings", { method: "POST", body }, (value) => decodeStart(value, mode), signal, 30_000);
 }
 
 export function reconnectToken(session: ScreeningSession, signal: AbortSignal): Promise<TokenGrant> {

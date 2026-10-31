@@ -76,6 +76,8 @@ voice:
   max_reconnects: 2
   max_concurrent: 1
   sessions_per_hour: 6
+  # A rolling 24-hour cap; like the hourly one, it is per process and resets on restart.
+  sessions_per_day: 20
   max_messages: 80
   max_history_characters: 60000
   # Interviewer model and region; unset values use ai.bedrock. Prefer a low-latency model.
@@ -85,3 +87,9 @@ voice:
   # Sent only to openai.gpt-oss models, which require reasoning; others get no reasoning field.
   reasoning_effort: low
   turn_timeout_seconds: 20
+
+bot_check:
+  # Cloudflare Turnstile before a screening starts. Off unless both keys are set;
+  # the site key is public and reaches the browser through the screening notice.
+  turnstile_site_key: ${TURNSTILE_SITE_KEY}
+  turnstile_secret_key: ${TURNSTILE_SECRET_KEY}

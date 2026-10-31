@@ -16,11 +16,13 @@ from app.config import Settings
 from app.demo_cache import load_cache
 from app.models import DemoCandidate, Job, JobRequirement
 from app.seed import load_seed
-from app.voice import envelope, interviewer
+from app.voice import envelope, interviewer, sessions
 from app.voice.context import demo_context, upload_context
 from app.voice.contracts import NOTICE_VERSION, ContextFact, ContextJudgment, VoiceFailure
 from app.voice.deepgram import MOCK_TOKEN
 from app.voice.envelope import EnvelopePayload, sign_context, verify_context
+from app.voice.sessions import ACTIVATION_SECONDS, SessionStore
+from app.voice.turnstile import ACTION, VERIFY_URL
 
 SECRET = "test-signing-secret-" + "x" * 32
 CONSENT = {"audio_capture": True, "ai_processing": True, "notice_version": NOTICE_VERSION}
@@ -82,12 +84,12 @@ def make_app(catalog_rows):
     return build
 
 
-def start(api_request, app, candidate=DEMO, consent=CONSENT, job_id="demo_ds"):
+def start(api_request, app, candidate=DEMO, consent=CONSENT, job_id="demo_ds", **extra):
     return api_request(
         app,
         "POST",
         "/screenings",
-        json={"job_id": job_id, "candidate": candidate, "consent": consent},
+        json={"job_id": job_id, "candidate": candidate, "consent": consent, **extra},
     )
 
 
@@ -546,6 +548,208 @@ def test_grant_failures_map_to_safe_codes_and_release_the_session(
     assert (response.status_code, response.json()["error"]["code"]) == (status, code)
     assert "dg-permanent-key" not in response.text
     assert app.state.voice_sessions.open_count() == 0
+
+
+# --- bot check and daily limit ---
+
+TURNSTILE = {"turnstile_site_key": "0x4AAAAAAAsitekey", "turnstile_secret_key": "ts-secret-key"}
+PASSED = {"success": True, "action": ACTION, "hostname": "app.example.test", "error-codes": []}
+
+
+def turnstile_app(make_app, handler, **overrides):
+    app = make_app(**TURNSTILE, **overrides)
+    app.state.turnstile_transport = httpx.MockTransport(handler)
+    return app
+
+
+def test_bot_check_is_off_by_default_and_needs_both_keys(make_app, api_request):
+    notice = api_request(make_app(), "GET", "/screenings/notice")
+    assert notice.json()["bot_check_site_key"] is None
+    for key in TURNSTILE:
+        with pytest.raises(ValueError):
+            voice_settings(**{key: TURNSTILE[key]})
+
+
+def test_bot_check_passes_before_a_session_and_sends_only_secret_and_token(
+    make_app, api_request, caplog
+):
+    seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, json=PASSED)
+
+    caplog.set_level(logging.INFO)
+    app = turnstile_app(make_app, handler)
+    notice = api_request(app, "GET", "/screenings/notice")
+    assert notice.json()["bot_check_site_key"] == "0x4AAAAAAAsitekey"
+    missing = start(api_request, app)
+    assert (missing.status_code, missing.json()["error"]["code"]) == (403, "bot_check_failed")
+    assert seen == [] and len(app.state.voice_sessions._created) == 0
+    response = start(api_request, app, bot_check_token="cf.token-1")
+    assert response.status_code == 201
+    assert str(seen[0].url) == VERIFY_URL
+    assert httpx.QueryParams(seen[0].content.decode()) == httpx.QueryParams(
+        {"secret": "ts-secret-key", "response": "cf.token-1"}
+    )
+    assert "ts-secret-key" not in response.text + notice.text
+    for secret in ("ts-secret-key", "cf.token-1"):
+        assert secret not in caplog.text
+    assert "Bot check passed in" in caplog.text
+
+
+def test_cloudflare_test_keys_pass_without_an_action(make_app, api_request, caplog):
+    # Captured from siteverify with Cloudflare's always-pass test secret on 2026-10-31.
+    testing = {
+        "success": True,
+        "hostname": "example.com",
+        "error-codes": [],
+        "metadata": {"result_with_testing_key": True},
+    }
+    caplog.set_level(logging.INFO)
+    app = turnstile_app(make_app, lambda request: httpx.Response(200, json=testing))
+    response = start(api_request, app, bot_check_token="XXXX.DUMMY.TOKEN.XXXX")
+    assert response.status_code == 201
+    assert "Bot check passed with Cloudflare test keys" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "result,code,status",
+    [
+        (
+            httpx.Response(200, json={"success": False, "error-codes": ["invalid-input-response"]}),
+            "bot_check_failed",
+            403,
+        ),
+        (
+            httpx.Response(200, json={"success": False, "error-codes": ["timeout-or-duplicate"]}),
+            "bot_check_failed",
+            403,
+        ),
+        (httpx.Response(200, json={**PASSED, "action": "upload"}), "bot_check_failed", 403),
+        (httpx.Response(200, json={"success": True, "error-codes": []}), "bot_check_failed", 403),
+        (
+            httpx.Response(200, json={"success": False, "error-codes": ["invalid-input-secret"]}),
+            "bot_check_unavailable",
+            503,
+        ),
+        (httpx.Response(200, json={"error-codes": []}), "bot_check_unavailable", 503),
+        (httpx.Response(200, text="not json"), "bot_check_unavailable", 503),
+        (httpx.Response(500), "bot_check_unavailable", 503),
+        (httpx.ConnectError("refused"), "bot_check_unavailable", 503),
+        (httpx.ReadTimeout("slow"), "bot_check_unavailable", 503),
+    ],
+)
+def test_bot_check_failures_fail_closed_without_using_the_limits(
+    make_app, api_request, result, code, status
+):
+    def handler(request):
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    app = turnstile_app(make_app, handler)
+    for mode in ("voice", "text"):
+        response = start(api_request, app, bot_check_token="cf.token", mode=mode)
+        assert (response.status_code, response.json()["error"]["code"]) == (status, code)
+        assert response.headers.get("retry-after") == ("30" if status == 503 else None)
+    assert len(app.state.voice_sessions._created) == 0
+
+
+def test_daily_limit_counts_a_rolling_day(make_app, api_request):
+    app = make_app(voice_sessions_per_hour=2, voice_sessions_per_day=3)
+    now = [1000.0]
+    app.state.voice_sessions = SessionStore(app.state.settings, clock=lambda: now[0])
+
+    def start_and_end():
+        response = start(api_request, app)
+        if response.status_code == 201:
+            body = response.json()
+            api_request(
+                app,
+                "POST",
+                f"/screenings/{body['session_id']}/end",
+                json={"capability": body["capability"]},
+            )
+        return response
+
+    assert [start_and_end().status_code for _ in range(2)] == [201, 201]
+    hourly = start_and_end()
+    assert (hourly.status_code, hourly.json()["error"]["code"]) == (429, "voice_rate_limited")
+    now[0] += 3600
+    assert start_and_end().status_code == 201
+    now[0] += 3600
+    daily = start_and_end()
+    assert (daily.status_code, daily.json()["error"]["code"]) == (429, "voice_daily_limit")
+    assert daily.headers["retry-after"] == "3600"
+    now[0] = 1000.0 + 86_400
+    assert start_and_end().status_code == 201
+
+
+# --- retention and usage logging ---
+
+
+def test_usage_line_has_counts_but_no_text_or_ids(make_app, api_request, caplog):
+    caplog.set_level(logging.INFO)
+    app = make_app()
+    now = [1000.0]
+    store = SessionStore(app.state.settings, clock=lambda: now[0])
+    app.state.voice_sessions = store
+    started = start(api_request, app, mode="text")
+    body = started.json()
+    capability = {"capability": body["capability"]}
+    now[0] += 30
+    answer = "I tuned the private churn model in dbt."
+    path = f"/screenings/{body['session_id']}"
+    reply = api_request(app, "POST", f"{path}/messages", json={**capability, "text": answer})
+    assert reply.status_code == 200
+    now[0] += 10
+    api_request(app, "POST", f"{path}/end", json=capability)
+    voice = start(api_request, app)
+    now[0] = 1000.0 + app.state.settings.voice_session_expiry_seconds
+    store.purge()
+    assert store._sessions == {}
+    # The app's own records only: the test client's httpx logger prints request URLs.
+    logged = [record.getMessage() for record in caplog.records if record.name.startswith("app.")]
+    assert [line for line in logged if line.startswith("Screening usage")] == [
+        "Screening usage: text, demo candidate, ended_early, 40 s to last request, 1 answers, "
+        "1 interviewer turns, 1 turn requests, 0 reconnects, report none",
+        "Screening usage: voice, demo candidate, not_started, 0 s to last request, 0 answers, "
+        "0 interviewer turns, 0 turn requests, 0 reconnects, report none",
+    ]
+    for private in (answer, body["session_id"], body["capability"], voice.json()["capability"]):
+        assert all(private not in line for line in logged)
+
+
+def test_abandoned_sessions_are_logged_when_their_slot_is_released(make_app, api_request, caplog):
+    caplog.set_level(logging.INFO)
+    app = make_app()
+    now = [1000.0]
+    store = SessionStore(app.state.settings, clock=lambda: now[0])
+    app.state.voice_sessions = store
+    start(api_request, app)
+    now[0] += ACTIVATION_SECONDS
+    store.purge()
+    assert store._sessions == {}
+    assert "Screening usage: voice, demo candidate, not_started" in caplog.text
+
+
+def test_expired_sessions_leave_memory_without_any_request(
+    make_app, api_request, monkeypatch, caplog
+):
+    caplog.set_level(logging.INFO)
+    monkeypatch.setattr(sessions, "PURGE_INTERVAL_SECONDS", 0.01)
+    app = make_app()
+    started = start(api_request, app, mode="text")
+    stored(app, started).expires = 0
+
+    async def idle_server():
+        async with app.router.lifespan_context(app):
+            await asyncio.sleep(0.1)
+
+    asyncio.run(idle_server())
+    assert app.state.voice_sessions._sessions == {}
+    assert "Screening usage: text" in caplog.text
 
 
 # --- interviewer endpoint ---

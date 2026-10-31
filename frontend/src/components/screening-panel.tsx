@@ -8,6 +8,7 @@ import {
 import { MicIcon } from "@/components/mic-icon";
 import { PhoneIcon } from "@/components/phone-icon";
 import { ScreeningReportView } from "@/components/screening-report";
+import { TurnstileWidget } from "@/components/turnstile-widget";
 import { VoiceAgent, type VoiceStatus } from "@/lib/voice-agent";
 import { browserVoiceDeps, requestMicrophonePermission, voiceSupported } from "@/lib/voice-audio";
 
@@ -17,6 +18,8 @@ type ReportState = { state: "idle" | "loading" } | { state: "ready"; report: Scr
 // The backend enforces the real reconnect limit; this only stops the client asking sooner.
 const MAX_RECONNECTS = 2;
 const BACKSTOP_MS = 30_000;
+// The backend accepts a bot-check token only when it was issued for this action.
+const BOT_CHECK_ACTION = "screening_start";
 // The meter rises with each louder frame and falls back gradually, so speech reads as a steady glow.
 const LEVEL_DECAY = 0.85;
 const voiceStatusLabels: Record<VoiceStatus, string> = {
@@ -53,6 +56,9 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
   const [mode, setMode] = useState<ScreeningMode>("voice");
   const [aiConsent, setAiConsent] = useState(false);
   const [audioConsent, setAudioConsent] = useState(false);
+  const [botToken, setBotToken] = useState<string | null>(null);
+  // A new value remounts the bot check, because each token can be spent only once.
+  const [botAttempt, setBotAttempt] = useState(0);
   const [channel, setChannel] = useState<ScreeningMode>("text");
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("connecting");
   const [muted, setMuted] = useState(false);
@@ -125,6 +131,7 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
     setMuted(false);
     setAiConsent(false);
     setAudioConsent(false);
+    setBotToken(null);
     setReport({ state: "idle" });
     endedSession.current = null;
   }, [release]);
@@ -216,12 +223,16 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
     }
     const controller = new AbortController();
     requests.current = controller;
+    // The backend spends the token on this request, whatever the outcome.
+    const token = botToken;
+    setBotToken(null);
     let started: ScreeningStart;
     try {
-      started = await startScreening(jobId, candidate, mode, notice, controller.signal);
+      started = await startScreening(jobId, candidate, mode, notice, controller.signal, token);
     } catch (failure) {
       if (controller.signal.aborted) return;
       setError(failure instanceof ScreeningError ? failure.message : "Screening could not start.");
+      setBotAttempt((attempt) => attempt + 1);
       setPhase("consent");
       return;
     }
@@ -347,7 +358,8 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
           </fieldset>
           <label className="mission-choice"><input type="checkbox" checked={aiConsent} onChange={(event) => setAiConsent(event.target.checked)} />I agree to the conversation being processed by AI as described above.</label>
           {mode === "voice" && <label className="mission-choice"><input type="checkbox" checked={audioConsent} onChange={(event) => setAudioConsent(event.target.checked)} />I agree to my microphone audio being captured for this conversation.</label>}
-          <button type="submit" className="mission-button" disabled={phase === "starting" || !aiConsent || (mode === "voice" && !audioConsent)}>{phase === "starting" ? "Starting…" : "Agree and start"}</button>
+          {notice.bot_check_site_key && <TurnstileWidget key={botAttempt} siteKey={notice.bot_check_site_key} action={BOT_CHECK_ACTION} onToken={setBotToken} />}
+          <button type="submit" className="mission-button" disabled={phase === "starting" || !aiConsent || (mode === "voice" && !audioConsent) || (notice.bot_check_site_key !== null && !botToken)}>{phase === "starting" ? "Starting…" : "Agree and start"}</button>
         </form> : !error && <p role="status" className="mission-help">Loading the screening notice…</p>
       )}
 

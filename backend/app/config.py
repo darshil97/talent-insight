@@ -77,6 +77,7 @@ _yaml_fields = {
     "voice.max_reconnects": "voice_max_reconnects",
     "voice.max_concurrent": "voice_max_concurrent",
     "voice.sessions_per_hour": "voice_sessions_per_hour",
+    "voice.sessions_per_day": "voice_sessions_per_day",
     "voice.max_messages": "voice_max_messages",
     "voice.max_history_characters": "voice_max_history_characters",
     "voice.max_output_tokens": "voice_max_output_tokens",
@@ -84,6 +85,8 @@ _yaml_fields = {
     "voice.aws_region": "voice_aws_region",
     "voice.reasoning_effort": "voice_reasoning_effort",
     "voice.turn_timeout_seconds": "voice_turn_timeout_seconds",
+    "bot_check.turnstile_site_key": "turnstile_site_key",
+    "bot_check.turnstile_secret_key": "turnstile_secret_key",
 }
 _model_name = r"^[a-z0-9][a-z0-9.-]{0,79}$"
 
@@ -294,6 +297,9 @@ class Settings(BaseSettings):
     voice_sessions_per_hour: int = Field(
         default=6, ge=1, le=60, validation_alias="VOICE_SESSIONS_PER_HOUR"
     )
+    voice_sessions_per_day: int = Field(
+        default=20, ge=1, le=500, validation_alias="VOICE_SESSIONS_PER_DAY"
+    )
     voice_max_messages: int = Field(
         default=80, ge=10, le=200, validation_alias="VOICE_MAX_MESSAGES"
     )
@@ -319,6 +325,19 @@ class Settings(BaseSettings):
     voice_turn_timeout_seconds: float = Field(
         default=20, ge=5, le=60, validation_alias="VOICE_TURN_TIMEOUT_SECONDS"
     )
+    # Cloudflare Turnstile before a screening starts; off unless both keys are set.
+    turnstile_site_key: str | None = Field(
+        default=None, pattern=r"^[A-Za-z0-9_-]{1,64}$", validation_alias="TURNSTILE_SITE_KEY"
+    )
+    turnstile_secret_key: SecretStr | None = Field(
+        default=None, validation_alias="TURNSTILE_SECRET_KEY"
+    )
+
+    @model_validator(mode="after")
+    def turnstile_keys_are_paired(self):
+        if (self.turnstile_site_key is None) != (self.turnstile_secret_key is None):
+            raise ValueError("Set both Turnstile keys or neither")
+        return self
 
     @model_validator(mode="after")
     def voice_times_are_ordered(self):
@@ -452,7 +471,8 @@ def load_settings() -> Settings:
             "Invalid backend configuration. Check app/config.yaml, DOCS_ENABLED, "
             "CORS_ALLOWED_ORIGINS, LOG_LEVEL, "
             "database URLs, RESUME_*/AI_*/MATCH_*/RANKING_* settings, "
-            "AWS/Bedrock settings, VOICE_*/DEEPGRAM_*/SESSION_SIGNING_SECRET settings "
+            "AWS/Bedrock settings, VOICE_*/DEEPGRAM_*/SESSION_SIGNING_SECRET settings, "
+            "TURNSTILE_* keys "
             "and backend/.env; "
             "remove legacy APP_ENV."
         ) from None

@@ -303,6 +303,8 @@ main:focus {
 .mission-screening-top p:not(.mission-kicker) { margin: 0; max-width: 720px; color: #a7bab6; font-size: 13px; line-height: 1.7; }
 .mission-screening .mission-outline-button { min-height: 48px; }
 .mission-screening-consent { display: grid; gap: 14px; max-width: 760px; }
+.mission-bot-check { display: grid; gap: 6px; max-width: 420px; }
+.mission-bot-check .mission-help { margin: 0; }
 .mission-screening-notice { margin: 0; padding: 14px 16px; border-left: 3px solid #f2a762; background: #1a292d; color: #d3dfdc; font-size: 13px; line-height: 1.7; }
 .mission-choice { display: flex; align-items: start; gap: 10px; min-height: 32px; color: #d3dfdc; font: 13px/1.6 Arial, sans-serif; }
 .mission-choice input { margin-top: 4px; width: 18px; height: 18px; accent-color: #f2a762; flex: none; }

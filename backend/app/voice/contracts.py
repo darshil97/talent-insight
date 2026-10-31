@@ -56,6 +56,10 @@ class ScreeningRequest(StrictInput):
     consent: Consent
     # Text needs no microphone, Deepgram token or public backend URL.
     mode: Literal["voice", "text"] = "voice"
+    # The Cloudflare Turnstile token; required only when the bot check is configured.
+    bot_check_token: Annotated[str, StringConstraints(pattern=r"^[\x21-\x7e]{1,2048}$")] | None = (
+        None
+    )
 
 
 class CapabilityRequest(StrictInput):
@@ -78,6 +82,8 @@ class Notice(BaseModel):
     screening_minutes: int
     voice_available: bool
     text_available: bool
+    # The public Turnstile site key when a bot check must pass before a screening starts.
+    bot_check_site_key: str | None = None
 
 
 class ScreeningStart(BaseModel):

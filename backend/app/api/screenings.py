@@ -52,6 +52,7 @@ from app.voice.interviewer import (
 )
 from app.voice.report import ScreeningReport, build_report
 from app.voice.sessions import ScreeningSession, TranscriptTurn
+from app.voice.turnstile import verify_bot_check
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/screenings", tags=["screenings"])
@@ -86,6 +87,9 @@ ERRORS = {
     ),
     "voice_busy": (503, "Another screening is in progress. Try again shortly."),
     "voice_rate_limited": (429, "The screening limit was reached. Try again later."),
+    "voice_daily_limit": (429, "The daily screening limit was reached. Try again later."),
+    "bot_check_failed": (403, "The bot check did not pass or has expired. Complete it again."),
+    "bot_check_unavailable": (503, "The bot check is unavailable. Try again shortly."),
     "turn_in_progress": (409, "The interviewer is still answering the previous turn."),
     "chat_request_too_large": (413, "The conversation request is too large."),
     "invalid_chat_request": (422, "The conversation request is invalid."),
@@ -110,10 +114,14 @@ _REPORT_ERRORS = {
 _RETRY_AFTER = {
     "voice_busy": "30",
     "voice_rate_limited": "600",
+    "voice_daily_limit": "3600",
+    "bot_check_unavailable": "30",
     "voice_provider_throttled": "5",
     "turn_in_progress": "1",
 }
-responses = {status: {"model": ErrorResponse} for status in (404, 409, 413, 422, 429, 503, 504)}
+responses = {
+    status: {"model": ErrorResponse} for status in (403, 404, 409, 413, 422, 429, 503, 504)
+}
 
 
 async def voice_error_handler(_request: Request, exc: VoiceFailure) -> JSONResponse:
@@ -164,6 +172,7 @@ def notice(request: Request, response: Response) -> Notice:
         screening_minutes=settings.voice_screening_seconds // 60,
         voice_available=_voice_available(settings),
         text_available=True,
+        bot_check_site_key=settings.turnstile_site_key,
     )
 
 
@@ -185,6 +194,8 @@ async def start_screening(
         and consent.notice_version == NOTICE_VERSION
     ):
         raise VoiceFailure("consent_required")
+    # Before any catalog read or session, so a failed check never uses the screening limits.
+    await verify_bot_check(settings, body.bot_check_token, request.app.state.turnstile_transport)
     if body.candidate.kind == "upload":
         payload = verify_context(
             body.candidate.context,
@@ -199,7 +210,7 @@ async def start_screening(
         )
         context = demo_context(job, assessment)
     store = request.app.state.voice_sessions
-    session, capability = store.create(context)
+    session, capability = store.create(context, body.mode)
     opening = greeting(context.job_title, settings.voice_screening_seconds // 60)
     grant = None
     if voice:

@@ -106,10 +106,11 @@ When voice is configured, `POST /jobs/{job_id}/resumes/assess` returns `screenin
 `app/voice/sessions.py` keeps sessions in process memory:
 - An opaque ID, plus a SHA-256 hash of a random 256-bit capability compared in constant time.
 - State: `issued` → `active` (first interviewer turn) → `ended`.
-- A session is removed at `VOICE_SESSION_EXPIRY_SECONDS` (900).
+- A session is removed at `VOICE_SESSION_EXPIRY_SECONDS` (900). Since module 15b a timer started with the application purges expired sessions every 60 seconds, so a transcript and report leave memory even when no further request arrives, and each deleted session logs one counts-only `Screening usage` line ([data retention](data-retention.md)).
 - An issued session that never reaches the interviewer is dropped after 180 seconds.
 - An active session past its limit plus 60 seconds stops counting as open.
-- Admission limits: `VOICE_MAX_CONCURRENT` open sessions (1) and `VOICE_SESSIONS_PER_HOUR` starts (6; failed starts still count).
+- Admission limits: `VOICE_MAX_CONCURRENT` open sessions (1), `VOICE_SESSIONS_PER_HOUR` starts (6) and `VOICE_SESSIONS_PER_DAY` starts over a rolling 24 hours (20, `voice_daily_limit`). Starts that fail after admission, such as a Deepgram grant failure, still count; a failed bot check does not, because it runs before admission.
+- **Bot check (module 15a):** when `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` are set, `POST /screenings` needs a `bot_check_token` that Cloudflare's siteverify accepts for the action `screening_start` (`app/voice/turnstile.py`). The notice returns `bot_check_site_key` so the browser can render the widget. See [deployment](deployment.md).
 - **Overlapping interviewer requests (2026-10-31):** Deepgram can send the next `/chat/completions` request before it drops the previous one. Render logs showed this rejected with 409 `turn_in_progress`, then Deepgram retried about three times and gave up, ending the voice call. Now the newest request wins. Each request becomes the session's active turn, and an older stream stops at its next model output: it closes its Bedrock stream and ends its response without `[DONE]`. It doesn't record the transcript or count as a failure, because the newer request carries the whole conversation. The log line `Interviewer turn replaced by a newer request` marks it.
 - Only finished replies count toward the 40-turn cap. Every request, replaced or not, also counts toward a raw cap of 3 × the turn cap.
 - Text messages still allow one model turn at a time and return `turn_in_progress` while one runs; a stuck turn stops blocking after the turn timeout plus 5 seconds.
@@ -127,7 +128,7 @@ Defaults are in `backend/app/config.yaml` under `voice:`; secrets go in `backend
 | `VOICE_PUBLIC_API_URL` | The backend origin Deepgram can reach. Must be HTTPS in `deepgram` mode; loopback HTTP works only in mock mode. |
 | `VOICE_BEDROCK_MODEL_ID`, `VOICE_AWS_REGION` | Interviewer model and region; unset values reuse `BEDROCK_MODEL_ID` and `AWS_REGION`. The interviewer gets its own cached client, so turns never queue behind assessments. The extraction `BEDROCK_REASONING_EFFORT` is never applied to it. `VOICE_REASONING_EFFORT` is sent only to `gpt-oss` models. |
 | `VOICE_AGENT_URL`, `VOICE_API_URL` | Deepgram endpoints; defaults are the general region. Regional agent hosts are documented, but regional grant hosts are unverified. |
-| `VOICE_*` limits | Token TTL 30 s, screening 600 s, wrap-up 540 s, expiry 900 s (validated as wrap-up < screening < expiry), context TTL 1800 s, turns 40, reconnects 2, concurrent 1, per hour 6, messages 80, history characters 60,000, output tokens 300, turn timeout 20 s. |
+| `VOICE_*` limits | Token TTL 30 s, screening 600 s, wrap-up 540 s, expiry 900 s (validated as wrap-up < screening < expiry), context TTL 1800 s, turns 40, reconnects 2, concurrent 1, per hour 6, per day 20, messages 80, history characters 60,000, output tokens 300, turn timeout 20 s. |
 
 ## Trust boundaries and limits
 

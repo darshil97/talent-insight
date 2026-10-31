@@ -6,6 +6,7 @@ apply their own limits; this is a single-process safeguard, not a distributed qu
 
 import hashlib
 import hmac
+import logging
 import secrets
 import time
 from collections import deque
@@ -15,12 +16,18 @@ from typing import Literal
 
 from app.voice.contracts import InterviewContext, VoiceFailure
 
+logger = logging.getLogger(__name__)
 MAX_SESSIONS = 64
 # An issued session that never reaches the interviewer stops holding a slot after this.
 ACTIVATION_SECONDS = 180
 # An active session whose client keeps talking past the limit stops counting as open.
 OVERRUN_GRACE_SECONDS = 60
 MAX_TRANSCRIPT_TURNS = 120
+# Start times are kept for a day: the hourly and daily limits both count them.
+HOUR_SECONDS = 3600
+DAY_SECONDS = 86_400
+# The application deletes expired sessions this often, even when no request arrives.
+PURGE_INTERVAL_SECONDS = 60
 State = Literal["issued", "active", "ended"]
 
 
@@ -41,6 +48,9 @@ class ScreeningSession:
     context: InterviewContext = field(repr=False)
     created: float
     expires: float
+    mode: Literal["voice", "text"] = "voice"
+    # The latest request that presented this session's capability, for the usage line.
+    last_seen: float = 0.0
     state: State = "issued"
     started: float | None = None
     reconnects: int = 0
@@ -75,6 +85,7 @@ class SessionStore:
                 session.state == "issued" and now - session.created >= ACTIVATION_SECONDS
             ):
                 del self._sessions[session_id]
+                log_usage(session)
             elif (
                 session.state == "active"
                 and session.started is not None
@@ -87,17 +98,24 @@ class SessionStore:
     def open_count(self) -> int:
         return sum(session.state != "ended" for session in self._sessions.values())
 
-    def create(self, context: InterviewContext) -> tuple[ScreeningSession, str]:
+    def create(
+        self, context: InterviewContext, mode: Literal["voice", "text"] = "voice"
+    ) -> tuple[ScreeningSession, str]:
         self.purge()
         now = self.clock()
-        while self._created and self._created[0] <= now - 3600:
+        while self._created and self._created[0] <= now - DAY_SECONDS:
             self._created.popleft()
         if (
             self.open_count() >= self.settings.voice_max_concurrent
             or len(self._sessions) >= MAX_SESSIONS
         ):
             raise VoiceFailure("voice_busy")
-        if len(self._created) >= self.settings.voice_sessions_per_hour:
+        if len(self._created) >= self.settings.voice_sessions_per_day:
+            raise VoiceFailure("voice_daily_limit")
+        if (
+            sum(created > now - HOUR_SECONDS for created in self._created)
+            >= self.settings.voice_sessions_per_hour
+        ):
             raise VoiceFailure("voice_rate_limited")
         capability = secrets.token_urlsafe(32)
         session = ScreeningSession(
@@ -106,6 +124,8 @@ class SessionStore:
             context=context,
             created=now,
             expires=now + self.settings.voice_session_expiry_seconds,
+            mode=mode,
+            last_seen=now,
         )
         self._sessions[session.id] = session
         self._created.append(now)
@@ -117,6 +137,7 @@ class SessionStore:
         session = self._sessions.get(session_id)
         if session is None or not hmac.compare_digest(_hash(capability), session.capability_hash):
             raise VoiceFailure("screening_not_found")
+        session.last_seen = self.clock()
         return session
 
     def discard(self, session_id: str) -> None:
@@ -125,3 +146,21 @@ class SessionStore:
 
     def remaining_seconds(self, session: ScreeningSession) -> float:
         return max(0.0, session.expires - self.clock())
+
+
+def log_usage(session: ScreeningSession) -> None:
+    """One counts-only line as a session is deleted, for weekly usage checks: no text or IDs."""
+    outcome = session.end_reason or ("not_started" if session.state == "issued" else "not_ended")
+    logger.info(
+        "Screening usage: %s, %s candidate, %s, %.0f s to last request, %d answers, "
+        "%d interviewer turns, %d turn requests, %d reconnects, report %s",
+        session.mode,
+        session.context.candidate_kind,
+        outcome,
+        session.last_seen - session.created,
+        sum(turn.role == "candidate" for turn in session.transcript),
+        session.turns,
+        session.requests,
+        session.reconnects,
+        "built" if session.report is not None else "none",
+    )

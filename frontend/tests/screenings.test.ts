@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { afterEach, mock, test } from "node:test";
-import { decodeStart, endScreening, getNotice, reconnectToken, ScreeningError, sendMessage, startScreening, voiceErrorMessage, appendTurn, decodeReport, requestReport } from "../src/lib/screenings.ts";
+import { decodeNotice, decodeStart, endScreening, getNotice, reconnectToken, ScreeningError, sendMessage, startScreening, voiceErrorMessage, appendTurn, decodeReport, requestReport } from "../src/lib/screenings.ts";
 
-const notice = { notice_version: "2026-10-27", text: "AI screening notice; a human recruiter decides.", screening_minutes: 10, voice_available: true, text_available: true };
+const notice = { notice_version: "2026-10-27", text: "AI screening notice; a human recruiter decides.", screening_minutes: 10, voice_available: true, text_available: true, bot_check_site_key: null };
 const session = { session_id: "S".repeat(22), capability: "C".repeat(43) };
 const voiceStart = {
   ...session, mode: "voice", expires_at: "2026-10-28T10:00:00Z", greeting: "Hello, I'm an AI screening assistant.",
@@ -31,6 +31,25 @@ test("start sends consent for the chosen mode and decodes the session", async ()
   });
   assert.deepEqual(await startScreening("demo_ds", candidate, "text", notice, new AbortController().signal), textStart);
   assert.equal(JSON.parse(String(fetch.mock.calls[1].arguments[1]?.body)).consent.audio_capture, false);
+});
+
+test("the bot-check token is sent only when there is one", async () => {
+  const fetch = mock.method(globalThis, "fetch", async () => Response.json(textStart, { status: 201 }));
+  const candidate = { kind: "demo", candidate_id: "demo_ds_avery" } as const;
+  const checked = { ...notice, bot_check_site_key: "0x4AAAAAAAsitekey" };
+  await startScreening("demo_ds", candidate, "text", checked, new AbortController().signal, "cf.token-1");
+  await startScreening("demo_ds", candidate, "text", notice, new AbortController().signal);
+  const bodies = fetch.mock.calls.map((call) => JSON.parse(String(call.arguments[1]?.body)));
+  assert.equal(bodies[0].bot_check_token, "cf.token-1");
+  assert.ok(!("bot_check_token" in bodies[1]));
+});
+
+test("the notice carries a valid site key, or none from an older backend", () => {
+  assert.equal(decodeNotice({ ...notice, bot_check_site_key: "0x4AAAAAAAsitekey" }).bot_check_site_key, "0x4AAAAAAAsitekey");
+  const older: Record<string, unknown> = { ...notice };
+  delete older.bot_check_site_key;
+  assert.deepEqual(decodeNotice(older), notice);
+  for (const key of ["", "has space", "<script>", 42]) assert.throws(() => decodeNotice({ ...notice, bot_check_site_key: key }), ScreeningError);
 });
 
 test("decoders reject mismatched modes, foreign agent hosts and malformed sessions", () => {

@@ -43,7 +43,8 @@ The backend's [health endpoint](http://localhost:8000/health) returns `{"status"
 - [Assessment UI](docs/assessment-ui.md): module 11 flows, temporary data, evidence display and verification limits.
 - [Voice sessions](docs/voice-sessions.md): voice architecture, endpoints, browser client, text alternative, interviewer rules and trust boundaries.
 - [Deployment](docs/deployment.md): Render backend and Vercel frontend dashboard checklist, voice on/off procedure and post-deploy checks.
+- [Data retention and logs](docs/data-retention.md): where candidate data lives, when it is deleted, what is logged and the weekly usage check.
 
 The planned stack is Next.js/React/TypeScript/Tailwind on Vercel, FastAPI/Pydantic on Render, Neon Postgres, AWS Bedrock via LangChain, and Deepgram for browser voice. Uploaded personal data will not become permanent demo records.
 
-Work proceeds one module at a time with review between modules. The demo snapshot contains thirteen validated synthetic assessments; future fixture changes need a separately approved Neon seed and a manual provider refresh. Module 12 is approved; module 13 awaits review. Live voice needs the deployed Render backend and a supervised test. Neon, the synthetic refresh and one explicitly authorized full uploaded-PDF assessment are verified; matching-model accuracy, voice integration and hosted deployment remain unverified.
+Work proceeds one module at a time with review between modules. The demo snapshot contains thirteen validated synthetic assessments; future fixture changes need a separately approved Neon seed and a manual provider refresh. Current module status, verification results and the next task are kept in [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md).

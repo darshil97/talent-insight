@@ -27,7 +27,7 @@ Copy the changed files to the device that has the Git repository, then commit an
 Notes on these values:
 - Keep a single Uvicorn worker. Screening sessions and admission limits live in process memory, so more workers would split them.
 - The install is non-editable: configuration, fixtures, the demo snapshot and prompts ship as package data, and `backend/.env` is simply absent on Render.
-- The lock still includes test tools (pytest, Ruff); trimming it is module 15 work.
+- The lock still includes test tools (pytest, Ruff); trimming it is an optional follow-up.
 
 **Environment, plain values:**
 
@@ -56,6 +56,7 @@ Notes on these values:
 | `AWS_BEARER_TOKEN_BEDROCK` | Your Bedrock API key. |
 | `DEEPGRAM_API_KEY` | Your Deepgram key, with Member permission. |
 | `SESSION_SIGNING_SECRET` | A new random value of at least 32 characters, e.g. from `python -c "import secrets; print(secrets.token_urlsafe(32))"`. Use a different value from your local one. |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | The two keys of your Cloudflare Turnstile widget; see the bot check below. The site key is public; the secret is not. |
 
 **After the first deploy, add `VOICE_PUBLIC_API_URL`.**
 - Copy the service URL shown at the top of the Render dashboard, e.g. `https://YOUR-SERVICE.onrender.com` (HTTPS, no trailing slash), and add it as `VOICE_PUBLIC_API_URL`. Render restarts the service.
@@ -76,9 +77,26 @@ Notes on these values:
 - **What doesn't.** The audio connection runs browser ↔ Deepgram. A script that takes a token from `POST /screenings` and ignores `end_screening` keeps the connection, and the Deepgram bill (about $0.065 per minute), running. The backend stops answering at 10 minutes and deletes the session at 15, but it cannot close that connection. Deepgram's own idle timeout is unverified, and a script can send silence.
 - **Safeguards (no code):**
   - Use a dedicated Deepgram project and key for the demo, funded with prepaid credit and no automatic top-up if your plan allows, so the worst case is that credit. Confirm in Deepgram's billing settings how usage behaves when the credit runs out.
-  - Set `VOICE_SESSIONS_PER_HOUR=3` on Render (default 6). Limits apply per process and reset on restart; they cap starts, not call length.
-  - Check Deepgram usage weekly; an hours-long connection stands out.
-- **Planned fix (module 15, needs approval):** a bot check such as Cloudflare Turnstile on screening start. It keeps the demo open to people without a login while stopping scripts from collecting tokens.
+  - Set `VOICE_SESSIONS_PER_HOUR=3` on Render (default 6). `VOICE_SESSIONS_PER_DAY` caps starts over a rolling 24 hours (default 20, so about 200 call minutes). Limits apply per process and reset on restart; they cap starts, not call length.
+  - Check Deepgram usage weekly; an hours-long connection stands out. Compare it with the backend's `Screening usage` log lines ([data retention](data-retention.md)).
+  - In the AWS Bedrock console, keep **Settings → Model invocation logging** off, so AWS does not store resume and transcript prompts.
+- **Bot check (module 15a):** Cloudflare Turnstile must pass before a screening starts; see below. It keeps the demo open to people without a login while stopping simple scripts from collecting tokens. A person, or a script that pays a solving service, can still pass it once per screening, so the safeguards above still apply.
+
+**Bot check: Cloudflare Turnstile (module 15a).** `POST /screenings` verifies a Turnstile token before it reads the catalog, creates a session or asks Deepgram for a token, for voice and text alike. A failed check therefore never uses the hourly or daily limit.
+
+Set it up once (Cloudflare's free plan; your domain does not move and DNS does not change):
+1. In the Cloudflare dashboard, open **Turnstile** → **Add widget**.
+2. **Widget name:** anything, e.g. `talent-insight`.
+3. **Hostnames:** your Vercel production hostname only, e.g. `your-app.vercel.app`, without `https://`, port or path. A Vercel preview URL is a separate hostname; add it only to test there (10 per widget on the free plan). Don't add `localhost`: local runs use Cloudflare's test keys (see [local development](local-development.md)). Add a custom domain here if you add one to Vercel.
+4. **Widget mode:** Managed (most visitors see nothing or a checkbox). Leave **pre-clearance** off. Select **Create**.
+5. Add both keys to Render as `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`. Keep the secret in a password manager, never in Git or chat. **Nothing goes on Vercel:** the backend sends the public site key with `/screenings/notice`, so the frontend shows the widget exactly when the backend requires it.
+
+Behaviour:
+- Both keys unset: no check. One key without the other: the backend refuses to start.
+- The consent form shows the widget and the line "Cloudflare checks that you're a person before the screening starts."; **Agree and start** stays disabled until it passes.
+- A token is valid for 5 minutes and works once. A rejected or expired token returns 403 `bot_check_failed`, and the form shows a fresh widget.
+- If Cloudflare cannot be reached, screenings do not start (503 `bot_check_unavailable`) rather than skipping the check.
+- The backend sends Cloudflare only the secret and the token, not the visitor's IP address, and requires the token's action to be `screening_start`. Logs show only Cloudflare's error codes, never the token or secret.
 
 Changing an environment variable on Render restarts the service and drops any screening in progress.
 
@@ -121,8 +139,8 @@ curl -s https://YOUR-SERVICE.onrender.com/screenings/notice
 ```
 
 - `/health` should return `{"status":"ok"}`.
-- `/screenings/notice` should report `text_available: true`, and `voice_available` only while `VOICE_MODE=deepgram`.
-- In the Vercel app: open Jobs, a role and a demo candidate. Run a short text screening on the profile page.
+- `/screenings/notice` should report `text_available: true`, and `voice_available` only while `VOICE_MODE=deepgram`. With the Turnstile keys set, `bot_check_site_key` shows the public site key.
+- In the Vercel app: open Jobs, a role and a demo candidate. Run a short text screening on the profile page. With the bot check on, the widget should pass, and the Render log should show `Bot check passed in N ms` before `Screening started: text`. A `Bot check rejected: …` or `Bot check unavailable: …` line names Cloudflare's error code; `invalid-input-secret` means the secret key is wrong.
 - Upload a text-based resume PDF to a role. The Render log should show `PDF extracted: … pages, … characters in X ms`.
   - If the upload fails with "PDF processing took too long" (log: `PDF extraction failed with extraction_timeout`, HTTP 408), check that `RESUME_TIMEOUT_SECONDS=30` is set.
   - 30 is the highest value the backend accepts; a higher value stops it starting.
