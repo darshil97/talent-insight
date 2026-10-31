@@ -30,7 +30,7 @@ Deepgram's native Bedrock option needs AWS access keys in the `Settings` message
 **Errors:** all errors use the standard `{"error": {"code", "message"}}` body with `no-store`. Codes:
 - Configuration: `voice_not_configured`, `interviewer_not_configured`, `voice_configuration_error`.
 - Start and session: `consent_required`, `invalid_screening_context`, `screening_not_found`, `screening_ended`, `reconnect_limit_reached`.
-- Admission and turns: `voice_busy`, `voice_rate_limited`, `turn_in_progress`, `chat_request_too_large`, `invalid_chat_request`.
+- Admission and turns: `voice_busy`, `voice_rate_limited`, `turn_in_progress` (text messages only), `chat_request_too_large`, `invalid_chat_request`.
 - Deepgram: `voice_provider_access_denied`, `voice_provider_throttled`, `voice_provider_timeout`, `voice_provider_unavailable`.
 
 Unknown sessions, expired sessions and wrong capabilities all return the same `screening_not_found`.
@@ -43,9 +43,11 @@ The flow:
 1. **Consent.** The panel loads the notice and offers Voice (disabled when the backend or browser can't do it) or Text. It requires AI-processing consent, plus microphone consent for voice.
 2. **Microphone check.** For voice, the panel requests microphone permission **before** creating a session, so a refusal never creates a session or spends the 30-second token.
 3. **Voice call.** `src/lib/voice-agent.ts` connects to `agent_url` with the `["bearer", token]` subprotocol and sends the server `Settings` unchanged on `Welcome`.
-   - **Audio:** microphone PCM (16 kHz `linear16` via `public/voice/mic-processor.js` and `src/lib/pcm.ts`) is sent only after `SettingsApplied`. Agent audio plays at 24 kHz, and playback stops when the candidate starts speaking.
+   - **Audio:** microphone PCM (16 kHz `linear16` via `public/voice/mic-processor.js` and `src/lib/pcm.ts`) is sent only after `SettingsApplied`. Agent audio plays at 24 kHz.
+   - **Half duplex (2026-10-31):** from the first agent audio chunk or `AgentStartedSpeaking`, the microphone is held: each frame is replaced by zero-filled silence of the same length, so the stream stays continuous but echo and background noise never reach the agent. The status reads "The interviewer is speaking. You're muted until they finish." The hold is released only after `AgentAudioDone` **and** the end of local playback, plus a 250 ms echo tail. If `AgentAudioDone` is lost, a fallback releases the hold once playback has been idle for 2 seconds after the turn's last audio chunk, or for 10 seconds if no audio has arrived since the hold began (slow text-to-speech start). It never runs during the closing line. Then the status reads "Listening. Start speaking whenever you're ready." The candidate can no longer interrupt a question. A `UserStartedSpeaking` that races the agent's start still stops playback and releases the hold, and a reconnect releases it too.
+   - **Mic level:** a 48 px mic button (also the manual mute toggle) glows with the loudness of each frame actually sent: RMS mapped from −55 to −15 dBFS, with a gradual decay. It shows no glow, and a slashed icon, while held or muted. The level is written to a CSS variable, not React state.
    - **Ending:** a client-side `end_screening` request is acknowledged, and the call ends after the closing audio plays.
-   - **Mute:** sends `KeepAlive` instead of audio.
+   - **Manual mute:** sends `KeepAlive` instead of audio.
    - **Failures:** a connection refused before `Welcome` fails immediately. A dropped call reconnects at most twice through `/token`, replaying the conversation as `agent.context` history without the greeting. Errors surface as codes only.
 4. **Text.** Text mode, or "Continue by text" after a voice problem, uses `/messages`.
 5. **Ending and clean-up.** A countdown shows the remaining time, and a client backstop closes the screening 30 seconds after the limit. End, Close, unmount, `pagehide` and back/forward restoration stop the microphone and socket and call `/end` with `keepalive`. The transcript lives only in React state; nothing is written to browser storage.
@@ -106,7 +108,9 @@ When voice is configured, `POST /jobs/{job_id}/resumes/assess` returns `screenin
 - An issued session that never reaches the interviewer is dropped after 180 seconds.
 - An active session past its limit plus 60 seconds stops counting as open.
 - Admission limits: `VOICE_MAX_CONCURRENT` open sessions (1) and `VOICE_SESSIONS_PER_HOUR` starts (6; failed starts still count).
-- One model turn at a time per session. A stuck turn stops blocking after the turn timeout plus 5 seconds.
+- **Overlapping interviewer requests (2026-10-31):** Deepgram can send the next `/chat/completions` request before it drops the previous one. Render logs showed this rejected with 409 `turn_in_progress`, then Deepgram retried about three times and gave up, ending the voice call. Now the newest request wins. Each request becomes the session's active turn, and an older stream stops at its next model output: it closes its Bedrock stream and ends its response without `[DONE]`. It doesn't record the transcript or count as a failure, because the newer request carries the whole conversation. The log line `Interviewer turn replaced by a newer request` marks it.
+- Only finished replies count toward the 40-turn cap. Every request, replaced or not, also counts toward a raw cap of 3 × the turn cap.
+- Text messages still allow one model turn at a time and return `turn_in_progress` while one runs; a stuck turn stops blocking after the turn timeout plus 5 seconds.
 - A restart drops every session, and multiple API processes would each apply their own limits.
 
 ## Configuration
@@ -143,7 +147,7 @@ Offline only (`backend/tests/test_screenings.py`, 51 tests), using `VOICE_MODE=m
 - Grant success and every failure mapping.
 - Capability checks; topic order; the system prompt replaced; output and reasoning options.
 - SSE marker stripping with the `end_screening` signal.
-- Wrap-up at 540 s and the closing at 600 s with no model call; the turn cap; failure fallback; concurrent turns; request bounds; history bounds; delimiter escaping.
+- Wrap-up at 540 s and the closing at 600 s with no model call; the turn cap; failure fallback; replaced (overlapping) turns and the request cap; request bounds; history bounds; delimiter escaping.
 - Logs containing no capability, token, transcript or secret.
 
 These offline tests made no live Deepgram, Bedrock or Neon call; see the live checks below.

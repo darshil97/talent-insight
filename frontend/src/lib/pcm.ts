@@ -16,6 +16,21 @@ export function int16ToFloat(input: Int16Array): Float32Array {
   return output;
 }
 
+const LEVEL_FLOOR_DB = -55;
+const LEVEL_CEILING_DB = -15;
+
+/** Loudness of a 16-bit PCM frame in [0, 1]: RMS in dBFS mapped linearly from -55 dB to -15 dB. */
+export function micLevel(bytes: ArrayBuffer): number {
+  const samples = new Int16Array(bytes, 0, Math.floor(bytes.byteLength / 2));
+  if (!samples.length) return 0;
+  let sum = 0;
+  for (const sample of samples) sum += (sample / 0x8000) ** 2;
+  const rms = Math.sqrt(sum / samples.length);
+  if (rms === 0) return 0;
+  const db = 20 * Math.log10(rms);
+  return Math.max(0, Math.min(1, (db - LEVEL_FLOOR_DB) / (LEVEL_CEILING_DB - LEVEL_FLOOR_DB)));
+}
+
 /** Agent audio as samples; a trailing odd byte from a split frame is dropped. */
 export function pcmBytesToFloat(bytes: ArrayBuffer): Float32Array {
   return int16ToFloat(new Int16Array(bytes, 0, Math.floor(bytes.byteLength / 2)));

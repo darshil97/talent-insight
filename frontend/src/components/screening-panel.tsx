@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import {
-  endScreening, getNotice, reconnectToken, ScreeningError, sendMessage, startScreening,
+  endScreening, getNotice, reconnectToken, ScreeningError, sendMessage, startScreening, voiceErrorMessage,
   type ScreeningCandidate, type ScreeningMode, type ScreeningNotice, type ScreeningStart,
 } from "@/lib/screenings";
+import { MicIcon } from "@/components/mic-icon";
 import { PhoneIcon } from "@/components/phone-icon";
 import { VoiceAgent, type VoiceStatus } from "@/lib/voice-agent";
 import { browserVoiceDeps, requestMicrophonePermission, voiceSupported } from "@/lib/voice-audio";
@@ -15,18 +16,14 @@ type Phase = "closed" | "consent" | "starting" | "live" | "ended";
 // The backend enforces the real reconnect limit; this only stops the client asking sooner.
 const MAX_RECONNECTS = 2;
 const BACKSTOP_MS = 30_000;
+// The meter rises with each louder frame and falls back gradually, so speech reads as a steady glow.
+const LEVEL_DECAY = 0.85;
 const voiceStatusLabels: Record<VoiceStatus, string> = {
   connecting: "Connecting to the voice interviewer…",
-  listening: "Listening. Speak when you are ready.",
+  listening: "Listening. Start speaking whenever you're ready.",
   thinking: "The interviewer is thinking…",
-  speaking: "The interviewer is speaking. You can interrupt at any time.",
+  speaking: "The interviewer is speaking. You're muted until they finish.",
   reconnecting: "Reconnecting…",
-};
-const voiceErrors: Record<string, string> = {
-  microphone_denied: "Microphone access was blocked. Continue by text, or allow the microphone and start again.",
-  microphone_unavailable: "No usable microphone was found. Continue by text.",
-  connection_failed: "The voice service refused the connection. Continue by text.",
-  connection_lost: "The call disconnected and could not reconnect. Continue by text.",
 };
 
 // Wall-clock reads happen only in event handlers and timers, never during render.
@@ -70,6 +67,8 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
   const voice = useRef<VoiceAgent | null>(null);
   const requests = useRef<AbortController | null>(null);
   const backstop = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const micButton = useRef<HTMLButtonElement>(null);
+  const micLevel = useRef(0);
 
   const release = useCallback(() => {
     voice.current?.stop();
@@ -177,7 +176,7 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
       try {
         await requestMicrophonePermission();
       } catch {
-        setError(voiceErrors.microphone_denied);
+        setError(voiceErrorMessage("microphone_denied"));
         setPhase("consent");
         return;
       }
@@ -217,13 +216,18 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
       {
         status: setVoiceStatus,
         transcript: (role, text) => addTurn({ role, text }),
+        // About 25 updates a second go straight to a CSS variable, without re-rendering the transcript.
+        level: (value) => {
+          micLevel.current = Math.max(value, micLevel.current * LEVEL_DECAY);
+          micButton.current?.style.setProperty("--mic-level", micLevel.current.toFixed(3));
+        },
         ended: (reason, code) => {
           if (voice.current !== agent) return;
           voice.current = null;
           if (reason === "interviewer") finish();
           else if (reason === "failed") {
             setVoiceLost(true);
-            setError(voiceErrors[code ?? ""] ?? "The voice service reported a problem. Continue by text.");
+            setError(voiceErrorMessage(code));
           }
         },
       },
@@ -286,6 +290,8 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
   }
 
   const live = phase === "live";
+  const held = voiceStatus === "speaking";
+  const micState = muted ? "muted" : held ? "held" : "live";
   return (
     <section ref={panel} tabIndex={-1} aria-labelledby="screening-heading" className="mission-screening">
       <div className="mission-screening-top">
@@ -324,8 +330,12 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
 
       {live && channel === "voice" && (
         <div className="mission-screening-controls">
-          <p role="status" className="mission-help">{voiceLost ? "Voice is disconnected." : muted ? "Microphone muted." : voiceStatusLabels[voiceStatus]}</p>
-          {!voiceLost && <button type="button" className="mission-outline-button" onClick={toggleMute} aria-pressed={muted}>{muted ? "Unmute" : "Mute"}</button>}
+          {!voiceLost && (
+            <button type="button" ref={micButton} className="mission-mic" data-state={micState} onClick={toggleMute} aria-pressed={muted} aria-label={muted ? "Unmute microphone" : "Mute microphone"} title={muted ? "Unmute microphone" : "Mute microphone"}>
+              <MicIcon off={micState !== "live"} />
+            </button>
+          )}
+          <p role="status" className="mission-help">{voiceLost ? "Voice is disconnected." : held ? voiceStatusLabels.speaking : muted ? "Microphone muted." : voiceStatusLabels[voiceStatus]}</p>
           <button type="button" className="mission-outline-button" onClick={switchToText}>Continue by text</button>
           <button type="button" className="mission-outline-button" onClick={() => finish()}>End screening</button>
         </div>

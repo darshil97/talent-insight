@@ -271,9 +271,7 @@ async def text_message(
         {"messages": [*history, {"role": "user", "content": body.text}]}
     )
     turn = plan_turn(session, chat, settings, now)
-    if turn.deltas is not None:
-        session.in_flight_since = now
-    result = await _complete(session, chat, turn)
+    result = await _complete(session, chat, turn, _begin(session, turn, now))
     response.headers["Cache-Control"] = "no-store"
     return MessageReply(
         reply=result["choices"][0]["message"]["content"], ended=session.state == "ended"
@@ -310,43 +308,65 @@ async def chat_completions(session_id: SessionPath, request: Request):
     session = store.get(session_id, _bearer(request.headers.get("authorization")))
     chat = parse_chat(await _read_limited(request))
     now = store.clock()
-    started = session.in_flight_since
-    if started is not None and now - started < settings.voice_turn_timeout_seconds + 5:
-        raise VoiceFailure("turn_in_progress")
+    # Deepgram can send the next request before it drops the previous one. Rejecting it made
+    # Deepgram give up on the call, so the newest request wins and an older stream stops.
     turn = plan_turn(session, chat, settings, now)
-    if turn.deltas is not None:
-        session.in_flight_since = now
+    turn_id = _begin(session, turn, now)
     headers = {"Cache-Control": "no-store"}
     if not chat.stream:
-        return JSONResponse(await _complete(session, chat, turn), headers=headers)
+        return JSONResponse(await _complete(session, chat, turn, turn_id), headers=headers)
     return StreamingResponse(
-        _stream(session, chat, turn), media_type="text/event-stream", headers=headers
+        _stream(session, chat, turn, turn_id), media_type="text/event-stream", headers=headers
     )
 
 
-async def _complete(session, chat, turn) -> dict:
+def _begin(session, turn, now: float) -> int:
+    """Make this request the session's active turn, replacing any older one."""
+    if session.in_flight_since is not None:
+        logger.info("Interviewer turn replaced by a newer request")
+    session.active_turn += 1
+    session.in_flight_since = now if turn.deltas is not None else None
+    return session.active_turn
+
+
+def _finish(session, turn_id: int) -> bool:
+    """Release in-flight state if this turn is still active; return whether it is."""
+    active = session.active_turn == turn_id
+    if active:
+        session.in_flight_since = None
+    return active
+
+
+async def _complete(session, chat, turn, turn_id: int) -> dict:
     text, end = turn.fixed or "", turn.end
     if turn.deltas is not None:
         marker = MarkerFilter()
         try:
             async for delta in turn.deltas:
+                if session.active_turn != turn_id:
+                    break
                 marker.feed(delta)
-            text, end = marker.text, marker.ended
-            if not text:
-                raise VoiceFailure("invalid_model_output")
-            session.failures = 0
+            else:
+                text, end = marker.text, marker.ended
+                if not text:
+                    raise VoiceFailure("invalid_model_output")
+                session.failures = 0
         except VoiceFailure:
-            text, end = failure_reply(session)
+            if session.active_turn == turn_id:
+                text, end = failure_reply(session)
         finally:
-            session.in_flight_since = None
             await turn.deltas.aclose()
-    record(session, chat, text, end)
+    # A replaced turn changes nothing: the newer request carries the whole conversation.
+    if not _finish(session, turn_id):
+        return completion("", False)
+    record(session, chat, text, end, turn.counted)
     return completion(text, end)
 
 
-async def _stream(session, chat, turn):
+async def _stream(session, chat, turn, turn_id: int):
     marker = MarkerFilter()
     sent = False
+    replaced = False
     text, end = turn.fixed or "", turn.end
     try:
         yield chunk({"role": "assistant", "content": ""})
@@ -356,6 +376,10 @@ async def _stream(session, chat, turn):
         else:
             try:
                 async for delta in turn.deltas:
+                    if session.active_turn != turn_id:
+                        # Deepgram has moved on to a newer request; stop the model and end.
+                        replaced = True
+                        return
                     piece = marker.feed(delta)
                     if piece:
                         sent = True
@@ -369,6 +393,9 @@ async def _stream(session, chat, turn):
                     raise VoiceFailure("invalid_model_output")
                 session.failures = 0
             except VoiceFailure:
+                if session.active_turn != turn_id:
+                    replaced = True
+                    return
                 if sent:
                     # Keep what was already spoken; the next turn starts normally.
                     text, end = marker.text, False
@@ -379,6 +406,6 @@ async def _stream(session, chat, turn):
             yield event
     finally:
         if turn.deltas is not None:
-            session.in_flight_since = None
             await turn.deltas.aclose()
-        record(session, chat, text, end)
+        if _finish(session, turn_id) and not replaced:
+            record(session, chat, text, end, turn.counted)

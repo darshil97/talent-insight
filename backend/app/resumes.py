@@ -6,11 +6,14 @@ import logging
 import os
 import sys
 import time
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.config import Settings
+# The parser process imports this module for its contracts; settings (and their database and
+# YAML dependencies) are needed only for type checking, which keeps the worker's start-up cheap.
+if TYPE_CHECKING:
+    from app.config import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +77,7 @@ def worker_environment() -> dict[str, str]:
     }
 
 
-async def extract_pdf(data: bytes, settings: Settings) -> ExtractedResume:
+async def extract_pdf(data: bytes, settings: "Settings") -> ExtractedResume:
     started = time.perf_counter()
     try:
         result = await _extract_pdf(data, settings)
@@ -90,7 +93,7 @@ async def extract_pdf(data: bytes, settings: Settings) -> ExtractedResume:
     return result
 
 
-async def _extract_pdf(data: bytes, settings: Settings) -> ExtractedResume:
+async def _extract_pdf(data: bytes, settings: "Settings") -> ExtractedResume:
     process = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",

@@ -316,6 +316,13 @@ main:focus {
 .mission-turn-candidate span { color: #9cadaa; }
 .mission-screening-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .mission-screening-controls .mission-help { flex: 1 1 260px; margin: 0; }
+/* Mic button: the glow scales with --mic-level (0–1) set by the voice client; held or muted shows no glow. */
+.mission-mic { position: relative; flex: none; display: inline-grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 1px solid #f2a762; border-radius: 50%; background: #101b20; color: #f2a762; cursor: pointer; }
+.mission-mic::before { content: ""; position: absolute; inset: -6px; border-radius: 50%; background: radial-gradient(circle, rgba(242, 167, 98, .55) 0%, rgba(242, 167, 98, .18) 55%, rgba(242, 167, 98, 0) 72%); transform: scale(calc(1 + var(--mic-level, 0) * .8)); opacity: calc(.15 + var(--mic-level, 0) * .85); transition: transform 90ms linear, opacity 90ms linear; pointer-events: none; }
+.mission-mic[data-state="held"], .mission-mic[data-state="muted"] { border-color: #567071; color: #9cadaa; }
+.mission-mic[data-state="held"]::before, .mission-mic[data-state="muted"]::before { opacity: 0; }
+.mission-mic:focus-visible { outline: 2px solid #f2a762; outline-offset: 3px; }
+.mission-mic-icon { position: relative; width: 22px; height: 22px; }
 .mission-screening-reply { display: grid; gap: 10px; }
 .mission-screening-reply label { color: #b9c8c4; font: 700 11px Arial, sans-serif; letter-spacing: .04em; }
 .mission-screening-reply textarea { min-height: 84px; background: #101b20; color: #e5efed; border: 1px solid #567071; padding: 10px; font: 14px/1.6 Arial, sans-serif; resize: vertical; }

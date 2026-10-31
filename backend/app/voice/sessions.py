@@ -44,9 +44,14 @@ class ScreeningSession:
     state: State = "issued"
     started: float | None = None
     reconnects: int = 0
+    # Finished interviewer turns, for the conversation cap.
     turns: int = 0
+    # Every turn request, including ones a newer request replaced; a larger safety cap.
+    requests: int = 0
     failures: int = 0
-    # Set while a model turn runs; a stale value cannot block the session forever.
+    # The newest turn request; an older model stream stops when this moves past it.
+    active_turn: int = 0
+    # Set while the active model turn runs; a stale value cannot block the session forever.
     in_flight_since: float | None = None
     transcript: list[TranscriptTurn] = field(default_factory=list, repr=False)
 

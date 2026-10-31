@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, mock, test } from "node:test";
-import { decodeStart, endScreening, getNotice, reconnectToken, ScreeningError, sendMessage, startScreening } from "../src/lib/screenings.ts";
+import { decodeStart, endScreening, getNotice, reconnectToken, ScreeningError, sendMessage, startScreening, voiceErrorMessage } from "../src/lib/screenings.ts";
 
 const notice = { notice_version: "2026-10-27", text: "AI screening notice; a human recruiter decides.", screening_minutes: 10, voice_available: true, text_available: true };
 const session = { session_id: "S".repeat(22), capability: "C".repeat(43) };
@@ -81,4 +81,11 @@ test("end is fire-and-forget with keepalive", async () => {
   endScreening(session);
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.equal(fetch.mock.callCount(), 1);
+});
+
+test("voice errors name known causes and show provider codes, never other text", () => {
+  assert.match(voiceErrorMessage("microphone_denied"), /Microphone access was blocked/);
+  assert.equal(voiceErrorMessage("FAILED_TO_THINK"), "The voice service reported a problem (code: FAILED_TO_THINK). Continue by text.");
+  assert.equal(voiceErrorMessage(undefined), "The voice service reported a problem. Continue by text.");
+  assert.equal(voiceErrorMessage("<b>provider text</b>"), "The voice service reported a problem. Continue by text.");
 });

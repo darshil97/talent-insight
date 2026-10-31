@@ -27,6 +27,7 @@ function harness(options: { tokens?: string[]; micError?: Error; maxReconnects?:
   let frame: ((pcm: ArrayBuffer) => void) | null = null;
   let micStopped = false;
   let interrupted = 0;
+  const player = { idle: true };
   const tokens = [...(options.tokens ?? [])];
   const deps: VoiceAgentDeps = {
     createSocket: (url, protocols) => { const socket = new FakeSocket(url, protocols); sockets.push(socket); return socket; },
@@ -35,7 +36,7 @@ function harness(options: { tokens?: string[]; micError?: Error; maxReconnects?:
       frame = onFrame;
       return { stop: () => { micStopped = true; } };
     },
-    createPlayer: () => ({ play: (chunk) => played.push(chunk), interrupt: () => { interrupted += 1; }, idle: () => true, close: () => undefined }),
+    createPlayer: () => ({ play: (chunk) => played.push(chunk), interrupt: () => { interrupted += 1; }, idle: () => player.idle, close: () => undefined }),
     reconnectToken: async () => { const token = tokens.shift(); if (!token) throw new Error("limit"); return token; },
   };
   const settings = { type: "Settings", agent: { greeting: "Hello", think: {} } };
@@ -43,11 +44,17 @@ function harness(options: { tokens?: string[]; micError?: Error; maxReconnects?:
     status: (status) => events.push(["status", status]),
     transcript: (role, text) => events.push(["transcript", role, text]),
     ended: (reason, code) => events.push(["ended", reason, code]),
+    level: (value) => events.push(["level", value]),
   });
-  return { agent, sockets, events, played, settings, frame: () => frame, micStopped: () => micStopped, interrupted: () => interrupted };
+  return { agent, sockets, events, played, player, settings, frame: () => frame, micStopped: () => micStopped, interrupted: () => interrupted };
 }
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+/** A loud 16-bit frame: every sample at half scale. */
+const loudFrame = () => new Int16Array(640).fill(0x4000).buffer;
+const statuses = (events: unknown[][]) => events.filter((event) => event[0] === "status").map((event) => event[1]);
+const lastLevel = (events: unknown[][]) => events.filter((event) => event[0] === "level").at(-1)?.[1];
 
 test("connects with the bearer subprotocol and sends server Settings unchanged", async () => {
   const h = harness();
@@ -147,4 +154,104 @@ test("agent errors end with a safe code, mute holds audio, and stop is idempoten
   assert.deepEqual(h.events.at(-1), ["ended", "failed", "agent_error"]);
   h.agent.stop();
   assert.equal(h.events.filter((event) => event[0] === "ended").length, 1);
+});
+
+test("agent audio holds the microphone and sends silence until playback finishes", async () => {
+  const h = harness();
+  await h.agent.start();
+  const socket = h.sockets[0];
+  socket.receive({ type: "Welcome" });
+  socket.receive({ type: "SettingsApplied" });
+  h.frame()!(loudFrame());
+  assert.ok((lastLevel(h.events) as number) > 0.5);
+
+  // The greeting arrives as audio without AgentStartedSpeaking.
+  h.player.idle = false;
+  socket.receive(new ArrayBuffer(8));
+  assert.equal(statuses(h.events).at(-1), "speaking");
+  h.frame()!(loudFrame());
+  const held = socket.sent.at(-1) as ArrayBuffer;
+  assert.equal(held.byteLength, 1280);
+  assert.ok(new Int16Array(held).every((sample) => sample === 0));
+  assert.equal(lastLevel(h.events), 0);
+
+  // Deepgram has sent everything, but the browser is still playing it.
+  socket.receive({ type: "AgentAudioDone" });
+  await wait(400);
+  assert.equal(statuses(h.events).at(-1), "speaking");
+  h.player.idle = true;
+  await wait(450);
+  assert.equal(statuses(h.events).at(-1), "listening");
+  h.frame()!(loudFrame());
+  assert.ok(new Int16Array(socket.sent.at(-1) as ArrayBuffer).every((sample) => sample === 0x4000));
+  assert.ok((lastLevel(h.events) as number) > 0.5);
+  h.agent.stop();
+});
+
+test("an interruption or reconnect releases the hold, and a stale unmute is ignored", async () => {
+  const h = harness({ tokens: ["jwt2"] });
+  await h.agent.start();
+  const socket = h.sockets[0];
+  socket.receive({ type: "Welcome" });
+  socket.receive({ type: "SettingsApplied" });
+  socket.receive({ type: "AgentStartedSpeaking" });
+  socket.receive({ type: "UserStartedSpeaking" });
+  h.frame()!(loudFrame());
+  assert.ok(new Int16Array(socket.sent.at(-1) as ArrayBuffer).some((sample) => sample !== 0));
+
+  // A first turn's unmute must not open the microphone during the next turn.
+  socket.receive({ type: "AgentStartedSpeaking" });
+  socket.receive({ type: "AgentAudioDone" });
+  socket.receive({ type: "AgentStartedSpeaking" });
+  await wait(400);
+  assert.equal(statuses(h.events).at(-1), "speaking");
+
+  socket.onclose?.({});
+  await flush();
+  const second = h.sockets[1];
+  second.receive({ type: "Welcome" });
+  second.receive({ type: "SettingsApplied" });
+  h.frame()!(loudFrame());
+  assert.ok(new Int16Array(second.sent.at(-1) as ArrayBuffer).some((sample) => sample !== 0));
+  h.agent.stop();
+});
+
+test("a lost AgentAudioDone opens the microphone after two idle seconds", async () => {
+  const h = harness();
+  await h.agent.start();
+  const socket = h.sockets[0];
+  socket.receive({ type: "Welcome" });
+  socket.receive({ type: "SettingsApplied" });
+  h.player.idle = false;
+  socket.receive(new ArrayBuffer(8));
+  // Playback still running: no fallback however long it takes.
+  await wait(2_200);
+  assert.equal(statuses(h.events).at(-1), "speaking");
+  h.player.idle = true;
+  await wait(1_500);
+  assert.equal(statuses(h.events).at(-1), "speaking");
+  await wait(700);
+  assert.equal(statuses(h.events).at(-1), "listening");
+  h.frame()!(loudFrame());
+  assert.ok(new Int16Array(socket.sent.at(-1) as ArrayBuffer).every((sample) => sample === 0x4000));
+  h.agent.stop();
+});
+
+test("the short fallback waits for the turn's first audio, however late it arrives", async () => {
+  const h = harness();
+  await h.agent.start();
+  const socket = h.sockets[0];
+  socket.receive({ type: "Welcome" });
+  socket.receive({ type: "SettingsApplied" });
+  socket.receive({ type: "AgentStartedSpeaking" });
+  // No audio yet: the two-second fallback must not open the microphone.
+  await wait(2_500);
+  assert.equal(statuses(h.events).at(-1), "speaking");
+  // A short chunk that finishes at once restarts the two-second count from its arrival.
+  socket.receive(new ArrayBuffer(8));
+  await wait(1_500);
+  assert.equal(statuses(h.events).at(-1), "speaking");
+  await wait(800);
+  assert.equal(statuses(h.events).at(-1), "listening");
+  h.agent.stop();
 });

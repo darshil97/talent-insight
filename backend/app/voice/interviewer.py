@@ -30,6 +30,8 @@ MAX_CHAT_BYTES = 512 * 1024
 MAX_RAW_MESSAGES = 400
 MAX_MESSAGE_CHARACTERS = 20_000
 MAX_CONSECUTIVE_FAILURES = 2
+# Deepgram may send overlapping requests for one turn; allow that many per finished turn.
+REQUEST_BUDGET_FACTOR = 3
 CLOSING_TIME_UP = (
     "We've reached the end of our time. Thank you for speaking with me. "
     "A recruiter will review this conversation and follow up with next steps."
@@ -82,6 +84,8 @@ class Turn:
     fixed: str | None
     end: bool
     deltas: AsyncIterator[str] | None = None
+    # A conversational reply, counted toward the turn cap once it finishes.
+    counted: bool = False
 
 
 class MarkerFilter:
@@ -298,19 +302,28 @@ def plan_turn(session: ScreeningSession, chat: ChatRequest, settings, now: float
     if session.started is None:
         session.started = now
         session.state = "active"
-    session.turns += 1
+    session.requests += 1
     elapsed = now - session.started
-    if elapsed >= settings.voice_screening_seconds or session.turns > settings.voice_max_turns:
+    if (
+        elapsed >= settings.voice_screening_seconds
+        or session.turns >= settings.voice_max_turns
+        or session.requests > settings.voice_max_turns * REQUEST_BUDGET_FACTOR
+    ):
         return Turn(CLOSING_TIME_UP, True)
     turns = conversation(chat)
     if settings.ai_mode == MOCK_MODE:
         text, end = scripted_reply(session.context, turns)
-        return Turn(text, end)
+        return Turn(text, end, counted=True)
     system = render_prompt(session.context, settings, elapsed)
-    return Turn(None, False, model_deltas(settings, system, model_history(turns, settings)))
+    deltas = model_deltas(settings, system, model_history(turns, settings))
+    return Turn(None, False, deltas, counted=True)
 
 
-def record(session: ScreeningSession, chat: ChatRequest, reply: str, end: bool) -> None:
+def record(
+    session: ScreeningSession, chat: ChatRequest, reply: str, end: bool, counted: bool = False
+) -> None:
+    if counted:
+        session.turns += 1
     turns = [
         TranscriptTurn("candidate" if role == "user" else "interviewer", text)
         for role, text in conversation(chat)

@@ -1,5 +1,6 @@
 """Voice screening sessions, Deepgram grants and the interviewer endpoint, fully offline."""
 
+import asyncio
 import json
 import logging
 import time
@@ -759,17 +760,92 @@ def test_model_failures_fall_back_then_end(make_app, api_request, fake_model):
     assert stored(app, started).state == "ended"
 
 
-def test_concurrent_turns_are_rejected_until_stale(make_app, api_request):
+class OverlapModel:
+    """The first stream pauses after its first words, so a second request can overlap it."""
+
+    def __init__(self, after_release: str):
+        self.after_release = after_release
+        self.calls = 0
+        self.paused = asyncio.Event()
+        self.release = asyncio.Event()
+
+    async def astream(self, messages, config=None, **kwargs):
+        self.calls += 1
+        if self.calls > 1:
+            yield FakeChunk([{"type": "text", "text": "Second question?"}])
+            return
+        yield FakeChunk([{"type": "text", "text": "First "}])
+        self.paused.set()
+        await self.release.wait()
+        if self.after_release == "error":
+            raise RuntimeError("provider detail")
+        yield FakeChunk([{"type": "text", "text": "question?"}])
+
+
+@pytest.mark.parametrize("after_release", ["text", "error"])
+def test_a_newer_request_replaces_the_in_flight_turn(
+    make_app, api_request, monkeypatch, after_release
+):
+    model = OverlapModel(after_release)
+    monkeypatch.setattr(interviewer, "get_chat_model", lambda settings: model)
+    app = make_app(**BEDROCK)
+    started = start(api_request, app)
+    body = started.json()
+    path = f"/screenings/{body['session_id']}/chat/completions"
+    auth = {"Authorization": f"Bearer {body['capability']}"}
+
+    def turn(content):
+        return {"messages": [{"role": "user", "content": content}], "stream": True}
+
+    async def overlap():
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            first = asyncio.create_task(client.post(path, json=turn("I built"), headers=auth))
+            await model.paused.wait()
+            # Deepgram sends the next request before dropping the first one.
+            second = await client.post(path, json=turn("I built an API."), headers=auth)
+            model.release.set()
+            return await first, second
+
+    first, second = asyncio.run(overlap())
+
+    def spoken(response):
+        events = [json.loads(event) for event in sse_events(response) if event != "[DONE]"]
+        return "".join(item["choices"][0]["delta"].get("content", "") for item in events)
+
+    assert second.status_code == 200 and sse_events(second)[-1] == "[DONE]"
+    assert spoken(second) == "Second question?"
+    # The replaced stream stops quietly: no failure line, no end of turn.
+    assert first.status_code == 200 and "[DONE]" not in first.text
+    assert "question?" not in spoken(first) and interviewer.FALLBACK_LINE not in spoken(first)
+    session = stored(app, started)
+    assert [(t.role, t.text) for t in session.transcript][-2:] == [
+        ("candidate", "I built an API."),
+        ("interviewer", "Second question?"),
+    ]
+    assert (session.requests, session.turns, session.failures) == (2, 1, 0)
+    assert session.in_flight_since is None and session.state == "active"
+
+
+def test_a_voice_request_is_never_rejected_for_a_running_turn(make_app, api_request):
     app = make_app()
     store = app.state.voice_sessions
-    now = [10.0]
-    store.clock = lambda: now[0]
+    store.clock = lambda: 10.0
     started = start(api_request, app)
     stored(app, started).in_flight_since = 10.0
-    busy = chat(api_request, app, started, [{"role": "user", "content": "hi"}])
-    assert (busy.status_code, busy.json()["error"]["code"]) == (409, "turn_in_progress")
-    now[0] += 26
-    assert chat(api_request, app, started, [{"role": "user", "content": "hi"}]).status_code == 200
+    reply = chat(api_request, app, started, [{"role": "user", "content": "hi"}])
+    assert reply.status_code == 200
+    assert stored(app, started).active_turn == 1
+
+
+def test_overlapping_requests_have_their_own_cap(make_app, api_request):
+    app = make_app(voice_max_turns=4)
+    started = start(api_request, app)
+    session = stored(app, started)
+    session.requests = 4 * interviewer.REQUEST_BUDGET_FACTOR
+    capped = chat(api_request, app, started, [{"role": "user", "content": "ok"}]).json()
+    assert capped["choices"][0]["message"]["content"] == interviewer.CLOSING_TIME_UP
+    assert session.turns == 0
 
 
 def test_interviewer_request_bounds(make_app, api_request):

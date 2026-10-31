@@ -2,7 +2,10 @@
  * Minimal Deepgram Voice Agent client. The backend builds the complete Settings message; this
  * client sends it unchanged, streams microphone PCM, plays agent audio and reports transcript
  * turns. Socket, microphone and player are injected so the protocol can be tested without audio.
+ * The call is half duplex: while the interviewer's audio plays, the microphone is held and silence
+ * is sent instead, so echo or background noise cannot interrupt the question.
  */
+import { micLevel } from "./pcm.ts";
 
 export interface SocketLike {
   binaryType: string;
@@ -28,6 +31,8 @@ export type VoiceEnd = "interviewer" | "local" | "failed";
 export interface VoiceAgentEvents {
   status(status: VoiceStatus): void;
   transcript(role: "candidate" | "interviewer", text: string): void;
+  /** Loudness in [0, 1] of each microphone frame actually sent; 0 while held, muted or not connected. */
+  level?(value: number): void;
   /** Called once. `code` is a safe identifier, never transcript or provider text. */
   ended(reason: VoiceEnd, code?: string): void;
 }
@@ -37,6 +42,13 @@ export const END_FUNCTION = "end_screening";
 const OPEN = 1;
 const KEEPALIVE_MS = 5_000;
 const END_GRACE_MS = 8_000;
+const PLAYBACK_POLL_MS = 100;
+// Lets room echo of the interviewer's last syllable fade before the microphone opens.
+const UNMUTE_TAIL_MS = 250;
+// If AgentAudioDone never arrives, silence this long after playback still opens the microphone.
+const HOLD_FALLBACK_MS = 2_000;
+// Text-to-speech can be slow to start; before any audio of a turn arrives, wait much longer.
+const FIRST_AUDIO_FALLBACK_MS = 10_000;
 
 const object = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -50,6 +62,10 @@ export class VoiceAgent {
   #ready = false;
   #welcomed = false;
   #muted = false;
+  #agentSpeaking = false;
+  #agentTurn = 0;
+  #holdId = 0;
+  #lastAudioAt = 0;
   #finished = false;
   #ending = false;
   #reconnects = 0;
@@ -94,6 +110,7 @@ export class VoiceAgent {
   #connect(token: string): void {
     this.#ready = false;
     this.#welcomed = false;
+    this.#releaseHold();
     this.#events.status(this.#reconnects ? "reconnecting" : "connecting");
     let socket: SocketLike;
     try {
@@ -122,6 +139,9 @@ export class VoiceAgent {
     if (socket !== this.#socket || this.#finished) return;
     if (data instanceof ArrayBuffer) {
       this.#player?.play(data);
+      // The greeting can arrive without AgentStartedSpeaking; any agent audio holds the microphone.
+      this.#hold();
+      this.#lastAudioAt = Date.now();
       return;
     }
     let message: unknown;
@@ -147,19 +167,21 @@ export class VoiceAgent {
         }
         break;
       case "UserStartedSpeaking":
-        // The candidate may interrupt; drop queued agent speech immediately.
+        // Only reachable when the candidate began just before the agent; their turn wins.
         this.#player?.interrupt();
+        this.#releaseHold();
         this.#events.status("listening");
         break;
       case "AgentThinking":
-        this.#events.status("thinking");
+        if (!this.#agentSpeaking) this.#events.status("thinking");
         break;
       case "AgentStartedSpeaking":
-        this.#events.status("speaking");
+        this.#hold();
         break;
       case "AgentAudioDone":
-        if (this.#ending) this.#finishAfterPlayback();
-        else this.#events.status("listening");
+        // Deepgram has sent the last audio, but queued speech may still be playing.
+        if (this.#ending) this.#afterPlayback(() => this.#finish("interviewer"));
+        else this.#listenAfterPlayback();
         break;
       case "FunctionCallRequest":
         this.#functionCalls(message.functions);
@@ -186,17 +208,78 @@ export class VoiceAgent {
     }
   }
 
-  #finishAfterPlayback(): void {
+  #afterPlayback(done: () => void): void {
     const check = () => {
       if (this.#finished) return;
-      if (!this.#player || this.#player.idle()) this.#finish("interviewer");
-      else setTimeout(check, 200);
+      if (!this.#player || this.#player.idle()) done();
+      else setTimeout(check, PLAYBACK_POLL_MS);
     };
     check();
   }
 
+  #hold(): void {
+    // Any new agent audio also cancels a pending unmute from the previous turn.
+    this.#agentTurn += 1;
+    if (this.#agentSpeaking) return;
+    this.#agentSpeaking = true;
+    this.#events.status("speaking");
+    this.#watchHold();
+  }
+
+  /**
+   * Releases a hold whose AgentAudioDone was lost: after the player has been idle for the fallback
+   * since the last audio, or for the longer first-audio fallback when none has arrived this turn.
+   */
+  #watchHold(): void {
+    const id = ++this.#holdId;
+    const started = Date.now();
+    let idleSince: number | null = null;
+    const check = () => {
+      if (this.#finished || !this.#agentSpeaking || id !== this.#holdId) return;
+      if (this.#ending || (this.#player && !this.#player.idle())) idleSince = null;
+      else {
+        const now = Date.now();
+        if (idleSince === null || idleSince < this.#lastAudioAt) idleSince = now;
+        const limit = this.#lastAudioAt >= started ? HOLD_FALLBACK_MS : FIRST_AUDIO_FALLBACK_MS;
+        if (now - idleSince >= limit) {
+          this.#releaseHold();
+          this.#events.status("listening");
+          return;
+        }
+      }
+      setTimeout(check, PLAYBACK_POLL_MS);
+    };
+    setTimeout(check, PLAYBACK_POLL_MS);
+  }
+
+  #releaseHold(): void {
+    this.#agentSpeaking = false;
+    this.#agentTurn += 1;
+  }
+
+  #listenAfterPlayback(): void {
+    const turn = this.#agentTurn;
+    this.#afterPlayback(() => setTimeout(() => {
+      // A newer agent turn, an interruption or a reconnect has taken over.
+      if (this.#finished || turn !== this.#agentTurn) return;
+      this.#releaseHold();
+      this.#events.status("listening");
+    }, UNMUTE_TAIL_MS));
+  }
+
   #sendAudio(frame: ArrayBuffer): void {
-    if (this.#ready && !this.#muted && this.#socket?.readyState === OPEN) this.#socket.send(frame);
+    if (!this.#ready || this.#muted || this.#socket?.readyState !== OPEN) {
+      this.#events.level?.(0);
+      return;
+    }
+    if (this.#agentSpeaking) {
+      // Silence keeps the audio stream continuous without letting the microphone reach the agent.
+      this.#socket.send(new ArrayBuffer(frame.byteLength));
+      this.#events.level?.(0);
+      return;
+    }
+    this.#socket.send(frame);
+    this.#events.level?.(micLevel(frame));
   }
 
   #sendJson(message: Record<string, unknown>): void {

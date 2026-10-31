@@ -40,6 +40,7 @@ Notes on these values:
 | `AWS_REGION` | `ap-southeast-2` |
 | `BEDROCK_MODEL_ID` | `openai.gpt-oss-120b-1:0` (resume assessment) |
 | `VOICE_BEDROCK_MODEL_ID` | `au.anthropic.claude-haiku-4-5-20251001-v1:0` (interviewer) |
+| `RESUME_TIMEOUT_SECONDS` | `30` (the maximum). Render Free has 0.1 CPU, and the default 10 s PDF limit timed out on a one-page resume that takes 0.5 s locally. |
 | `CORS_ALLOWED_ORIGINS` | `["https://YOUR-APP.vercel.app","http://127.0.0.1:3000","http://localhost:3000"]` |
 
 `CORS_ALLOWED_ORIGINS` notes:
@@ -54,14 +55,34 @@ Notes on these values:
 | `DATABASE_URL` | The same pooled Neon URL as in your local `backend/.env`. |
 | `AWS_BEARER_TOKEN_BEDROCK` | Your Bedrock API key. |
 | `DEEPGRAM_API_KEY` | Your Deepgram key, with Member permission. |
-| `SESSION_SIGNING_SECRET` | A new random value of at least 32 characters, e.g. from `python -c "import secrets; print(secrets.token_urlsafe(32))"`. |
-| `VOICE_PUBLIC_API_URL` | Your service URL, e.g. `https://YOUR-SERVICE.onrender.com` (HTTPS, no trailing slash). |
+| `SESSION_SIGNING_SECRET` | A new random value of at least 32 characters, e.g. from `python -c "import secrets; print(secrets.token_urlsafe(32))"`. Use a different value from your local one. |
 
-**Leave `VOICE_MODE` unset by default.**
-- With it unset, text screenings still work and the UI offers voice as unavailable.
-- Set `VOICE_MODE=deepgram` only for a test window you supervise, then remove it.
-- Why: anyone who finds a public backend could start voice sessions and hold Deepgram connections open. Those are billed per minute, and only the browser can close them. The backend allows at most 1 concurrent and 6 screenings per hour per process, but that is not a spending cap.
-- Changing an environment variable on Render restarts the service.
+**After the first deploy, add `VOICE_PUBLIC_API_URL`.**
+- Copy the service URL shown at the top of the Render dashboard, e.g. `https://YOUR-SERVICE.onrender.com` (HTTPS, no trailing slash), and add it as `VOICE_PUBLIC_API_URL`. Render restarts the service.
+- It is the address Deepgram uses to send interviewer turns to *this* backend. It is checked only when `VOICE_MODE` is set, so the first deploy and text screenings work without it.
+- Render's automatic `RENDER_EXTERNAL_URL` is not read by the app; set the variable explicitly.
+
+**`VOICE_MODE`: values.**
+
+| Value | Meaning | Use it |
+| --- | --- | --- |
+| *(unset)* | Voice off. Text screenings still work, and the consent form shows voice as unavailable. | Locally, and on Render whenever voice should be off. |
+| `deepgram` | Real voice calls. Needs `DEEPGRAM_API_KEY`, an HTTPS `VOICE_PUBLIC_API_URL` and `SESSION_SIGNING_SECRET`. | On Render. The portfolio demo keeps it on after the first supervised test (see the decision below). |
+| `mock` | A fake Deepgram token, so the voice consent path can be exercised but no call connects. Needs a `VOICE_PUBLIC_API_URL`; loopback `http://127.0.0.1:8000` is accepted. | Local UI development only. |
+
+**Decision (2026-10-28): voice stays on for the public portfolio demo,** so any visitor can try it. The accepted risk and its safeguards:
+
+- **What ends a call.** At 9 minutes the interviewer wraps up. At 10 minutes it returns a closing line and an `end_screening` signal and stops calling Bedrock. Our page then hangs up after the goodbye, with its own backstop 30 seconds after the limit. Visitors using the site are disconnected at about 10 minutes.
+- **What doesn't.** The audio connection runs browser ↔ Deepgram. A script that takes a token from `POST /screenings` and ignores `end_screening` keeps the connection, and the Deepgram bill (about $0.065 per minute), running. The backend stops answering at 10 minutes and deletes the session at 15, but it cannot close that connection. Deepgram's own idle timeout is unverified, and a script can send silence.
+- **Safeguards (no code):**
+  - Use a dedicated Deepgram project and key for the demo, funded with prepaid credit and no automatic top-up if your plan allows, so the worst case is that credit. Confirm in Deepgram's billing settings how usage behaves when the credit runs out.
+  - Set `VOICE_SESSIONS_PER_HOUR=3` on Render (default 6). Limits apply per process and reset on restart; they cap starts, not call length.
+  - Check Deepgram usage weekly; an hours-long connection stands out.
+- **Planned fix (module 15, needs approval):** a bot check such as Cloudflare Turnstile on screening start. It keeps the demo open to people without a login while stopping scripts from collecting tokens.
+
+Changing an environment variable on Render restarts the service and drops any screening in progress.
+
+**Local `backend/.env`:** don't copy the Render URL into it. Deepgram can't reach a backend on your machine, and screening sessions live in each backend's own memory, so a local session announced at the Render address would not exist there. Locally, leave `VOICE_PUBLIC_API_URL` and `VOICE_MODE` unset, or use the `mock` pair above for UI work.
 
 **Keeping the Free instance awake (UptimeRobot):**
 - Add an HTTP monitor for `https://YOUR-SERVICE.onrender.com/health` every 10 minutes.
@@ -102,17 +123,21 @@ curl -s https://YOUR-SERVICE.onrender.com/screenings/notice
 - `/health` should return `{"status":"ok"}`.
 - `/screenings/notice` should report `text_available: true`, and `voice_available` only while `VOICE_MODE=deepgram`.
 - In the Vercel app: open Jobs, a role and a demo candidate. Run a short text screening on the profile page.
+- Upload a text-based resume PDF to a role. The Render log should show `PDF extracted: … pages, … characters in X ms`.
+  - If the upload fails with "PDF processing took too long" (log: `PDF extraction failed with extraction_timeout`, HTTP 408), check that `RESUME_TIMEOUT_SECONDS=30` is set.
+  - 30 is the highest value the backend accepts; a higher value stops it starting.
+  - If `X` is regularly near 30,000 ms, the Free plan's 0.1 CPU is too slow for PDF parsing, and a paid instance (Starter, 0.5 CPU) is the fix.
 
-## 5. Supervised live voice test
+## 5. First live voice test (supervised)
 
-1. In Render, set `VOICE_MODE=deepgram` and wait for the restart.
-2. Open a demo candidate in Chrome or Safari. Choose Voice, consent, allow the microphone, and talk for 2–3 minutes. Headphones avoid echo. Include one "I don't know" answer and one interruption, then say you need to stop.
+1. In Render, confirm `VOICE_PUBLIC_API_URL` is set, then set `VOICE_MODE=deepgram` and wait for the restart.
+2. Open a demo candidate in Chrome or Safari. Choose Voice, consent, allow the microphone, and talk for 2–3 minutes. Headphones avoid echo. Include one "I don't know" answer, then say you need to stop. Check that the status says you are muted during the greeting and each question, that talking over the interviewer does not cut it off, that "Listening" appears only after its audio finishes, and that the mic glow follows your voice and stays flat while muted.
 3. In the Render logs, look for:
    - `Screening started: voice`
    - `POST /screenings/{session_id}/chat/completions`: the request from Deepgram. If it never appears, Deepgram could not reach the URL or calls a different path.
    - `Interviewer turn: … first text … ms`: per-turn latency.
    - Any `Screening request failed with …` code.
-4. Remove `VOICE_MODE` afterwards.
+4. Keep `VOICE_MODE=deepgram` for the portfolio demo if the test looks good, with the safeguards above; otherwise remove it.
 
 Expected cost: about $0.065 per connected minute on Deepgram plus a few cents of Bedrock.
 

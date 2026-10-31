@@ -32,6 +32,23 @@ const messages: Record<string, string> = {
   validation_error: "The screening request was invalid. Reload the page and try again.",
 };
 
+const voiceErrors: Record<string, string> = {
+  microphone_denied: "Microphone access was blocked. Continue by text, or allow the microphone and start again.",
+  microphone_unavailable: "No usable microphone was found. Continue by text.",
+  connection_failed: "The voice service refused the connection. Continue by text.",
+  connection_lost: "The call disconnected and could not reconnect. Continue by text.",
+};
+
+/**
+ * The message for a voice call that stopped. Provider codes are shown so a failure can be traced;
+ * the voice client only passes short identifiers, never provider text.
+ */
+export function voiceErrorMessage(code?: string): string {
+  if (code && voiceErrors[code]) return voiceErrors[code];
+  const shown = code && /^[A-Za-z0-9_.-]{1,64}$/.test(code) ? ` (code: ${code})` : "";
+  return `The voice service reported a problem${shown}. Continue by text.`;
+}
+
 export class ScreeningError extends Error {
   readonly code: string;
   constructor(code = "unavailable") {
