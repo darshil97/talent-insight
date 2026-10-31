@@ -4,6 +4,7 @@ Browser calls use JSON bodies, so the capability never needs a CORS header. Deep
 the chat-completions route server to server with the capability as a bearer token.
 """
 
+import asyncio
 import logging
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
@@ -19,7 +20,7 @@ from app.api.deps import catalog_session
 from app.api.jobs import JobDetail
 from app.demo_cache import load_cache
 from app.errors import ErrorResponse, error_response
-from app.pipeline.contracts import Assessment
+from app.pipeline.contracts import Assessment, ExtractionFailure
 from app.voice.agent_settings import build_settings, greeting
 from app.voice.context import demo_context, upload_context
 from app.voice.contracts import (
@@ -49,7 +50,8 @@ from app.voice.interviewer import (
     plan_turn,
     record,
 )
-from app.voice.sessions import TranscriptTurn
+from app.voice.report import ScreeningReport, build_report
+from app.voice.sessions import ScreeningSession, TranscriptTurn
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/screenings", tags=["screenings"])
@@ -94,6 +96,16 @@ ERRORS = {
     "voice_provider_throttled": (503, "Deepgram is busy. Try again shortly."),
     "voice_provider_timeout": (504, "Deepgram did not respond in time. Try again."),
     "voice_provider_unavailable": (503, "Deepgram is unavailable. Try again later."),
+    "screening_active": (409, "End the screening before requesting its report."),
+    "report_too_large": (413, "This conversation is too long for a report."),
+    "report_timeout": (504, "Preparing the report took too long. Try again."),
+    "report_unavailable": (503, "The report could not be prepared. Try again."),
+}
+# Report failures come from the shared AI call path; only these safe codes reach the browser.
+_REPORT_ERRORS = {
+    "ai_input_too_large": "report_too_large",
+    "ai_timeout": "report_timeout",
+    "provider_timeout": "report_timeout",
 }
 _RETRY_AFTER = {
     "voice_busy": "30",
@@ -246,9 +258,41 @@ async def end_screening(
     session_id: SessionPath, body: CapabilityRequest, request: Request, response: Response
 ) -> ScreeningState:
     session = request.app.state.voice_sessions.get(session_id, body.capability)
-    session.state = "ended"
+    if session.state != "ended":
+        session.state = "ended"
+        session.end_reason = "ended_early"
     response.headers["Cache-Control"] = "no-store"
     return ScreeningState(session_id=session.id, state=session.state)
+
+
+@router.post("/{session_id}/report", response_model=ScreeningReport, responses=responses)
+async def screening_report(
+    session_id: SessionPath, body: CapabilityRequest, request: Request, response: Response
+) -> ScreeningReport:
+    """The temporary report for an ended screening, built once and shared by repeat requests."""
+    session = request.app.state.voice_sessions.get(session_id, body.capability)
+    if session.state != "ended":
+        raise VoiceFailure("screening_active")
+    if session.report is None:
+        task = session.report_task
+        if task is None:
+            task = asyncio.ensure_future(_produce_report(session, request.app.state.settings))
+            session.report_task = task
+        try:
+            # A disconnected browser does not cancel the shared build.
+            await asyncio.shield(task)
+        except ExtractionFailure as exc:
+            raise VoiceFailure(_REPORT_ERRORS.get(exc.code, "report_unavailable")) from None
+    response.headers["Cache-Control"] = "no-store"
+    return session.report
+
+
+async def _produce_report(session: ScreeningSession, settings) -> None:
+    try:
+        session.report = await build_report(session, settings, session.end_reason or "ended_early")
+    finally:
+        # A failed build can be requested again; a finished one is reused until the session expires.
+        session.report_task = None
 
 
 @router.post("/{session_id}/messages", response_model=MessageReply, responses=responses)

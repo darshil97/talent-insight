@@ -331,8 +331,15 @@ def record(
     if reply:
         turns.append(TranscriptTurn("interviewer", reply))
     session.transcript = turns[-MAX_TRANSCRIPT_TURNS:]
-    if end:
+    if end and session.state != "ended":
         session.state = "ended"
+        session.end_reason = (
+            "time_limit"
+            if reply == CLOSING_TIME_UP
+            else "failure"
+            if reply == CLOSING_FAILURE
+            else "interviewer"
+        )
 
 
 def failure_reply(session: ScreeningSession) -> tuple[str, bool]:

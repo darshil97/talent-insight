@@ -2,15 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import {
-  endScreening, getNotice, reconnectToken, ScreeningError, sendMessage, startScreening, voiceErrorMessage, appendTurn,
-  type ScreeningCandidate, type ScreeningMode, type TranscriptTurn, type ScreeningNotice, type ScreeningStart,
+  endScreening, getNotice, reconnectToken, ScreeningError, sendMessage, startScreening, voiceErrorMessage, appendTurn, requestReport,
+  type ScreeningCandidate, type ScreeningMode, type TranscriptTurn, type ScreeningReport, type ScreeningNotice, type ScreeningStart,
 } from "@/lib/screenings";
 import { MicIcon } from "@/components/mic-icon";
 import { PhoneIcon } from "@/components/phone-icon";
+import { ScreeningReportView } from "@/components/screening-report";
 import { VoiceAgent, type VoiceStatus } from "@/lib/voice-agent";
 import { browserVoiceDeps, requestMicrophonePermission, voiceSupported } from "@/lib/voice-audio";
 
 type Phase = "closed" | "consent" | "starting" | "live" | "ended";
+type ReportState = { state: "idle" | "loading" } | { state: "ready"; report: ScreeningReport } | { state: "error"; message: string };
 
 // The backend enforces the real reconnect limit; this only stops the client asking sooner.
 const MAX_RECONNECTS = 2;
@@ -61,6 +63,7 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
   const [voiceLost, setVoiceLost] = useState(false);
   const [deadline, setDeadline] = useState(0);
   const [now, setNow] = useState(0);
+  const [report, setReport] = useState<ReportState>({ state: "idle" });
   const panel = useRef<HTMLElement>(null);
   const log = useRef<HTMLOListElement>(null);
   // Follow new lines only while the reader is at the bottom, so scrolling back is not undone.
@@ -71,6 +74,8 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
   const backstop = useRef<ReturnType<typeof setTimeout> | null>(null);
   const micButton = useRef<HTMLButtonElement>(null);
   const micLevel = useRef(0);
+  const reportRequest = useRef<AbortController | null>(null);
+  const endedSession = useRef<ScreeningStart | null>(null);
 
   const release = useCallback(() => {
     voice.current?.stop();
@@ -81,14 +86,33 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
     backstop.current = null;
     if (session.current) endScreening(session.current);
     session.current = null;
+    reportRequest.current?.abort();
+    reportRequest.current = null;
   }, []);
 
+  /** The report lives only in this component's state; the backend keeps it in memory until expiry. */
+  const loadReport = useCallback((ended: ScreeningStart) => {
+    reportRequest.current?.abort();
+    const controller = new AbortController();
+    reportRequest.current = controller;
+    setReport({ state: "loading" });
+    requestReport(ended, jobId, controller.signal).then(
+      (loaded) => { if (!controller.signal.aborted) setReport({ state: "ready", report: loaded }); },
+      (failure: unknown) => {
+        if (!controller.signal.aborted) setReport({ state: "error", message: failure instanceof ScreeningError ? failure.message : "The report could not be prepared. Try again." });
+      },
+    );
+  }, [jobId]);
+
   const finish = useCallback((message?: string) => {
+    const ended = session.current;
     release();
     setSending(false);
     if (message) setError(message);
     setPhase("ended");
-  }, [release]);
+    endedSession.current = ended;
+    if (ended) loadReport(ended);
+  }, [release, loadReport]);
 
   const reset = useCallback(() => {
     release();
@@ -101,6 +125,8 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
     setMuted(false);
     setAiConsent(false);
     setAudioConsent(false);
+    setReport({ state: "idle" });
+    endedSession.current = null;
   }, [release]);
 
   // Screening text is temporary: unmount, page hide and back/forward restoration discard it.
@@ -370,7 +396,15 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
         </form>
       )}
 
-      {phase === "ended" && <p role="status" className="mission-review-note">Screening ended. A recruiter will review this conversation; the structured report is a later module. This transcript is temporary and clears when you close it or leave the page.</p>}
+      {phase === "ended" && <p role="status" className="mission-review-note">Screening ended. Nothing from this conversation is stored: the transcript and report are discarded when you close this panel, refresh or leave the page.</p>}
+      {phase === "ended" && report.state === "loading" && <p role="status" className="mission-help">Preparing the screening report… this can take up to a minute.</p>}
+      {phase === "ended" && report.state === "error" && (
+        <div className="mission-screening-controls">
+          <p role="alert" className="mission-error">{report.message}</p>
+          <button type="button" className="mission-outline-button" onClick={() => { if (endedSession.current) loadReport(endedSession.current); }}>Try again</button>
+        </div>
+      )}
+      {phase === "ended" && report.state === "ready" && <ScreeningReportView report={report.report} />}
       {error && <p role="alert" className="mission-error">{error}</p>}
     </section>
   );

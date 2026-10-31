@@ -54,6 +54,11 @@ class ScreeningSession:
     # Set while the active model turn runs; a stale value cannot block the session forever.
     in_flight_since: float | None = None
     transcript: list[TranscriptTurn] = field(default_factory=list, repr=False)
+    # How the screening ended, for the report: interviewer, time_limit, failure or ended_early.
+    end_reason: str | None = None
+    # The temporary report, built once after the screening ends and shared by repeat requests.
+    report: object | None = field(default=None, repr=False)
+    report_task: object | None = field(default=None, repr=False)
 
 
 class SessionStore:
@@ -77,6 +82,7 @@ class SessionStore:
                 >= self.settings.voice_screening_seconds + OVERRUN_GRACE_SECONDS
             ):
                 session.state = "ended"
+                session.end_reason = session.end_reason or "time_limit"
 
     def open_count(self) -> int:
         return sum(session.state != "ended" for session in self._sessions.values())

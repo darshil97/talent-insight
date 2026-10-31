@@ -21,7 +21,8 @@ Deepgram's native Bedrock option needs AWS access keys in the `Settings` message
 | `GET /screenings/notice` | Server-owned consent text, `notice_version`, screening length, `voice_available` and `text_available`. Returns 503 only when no screening is possible: no interviewer or no signing secret. |
 | `POST /screenings` | Starts a session. Body: `{job_id, candidate, consent, mode}`, where `mode` is `voice` (default) or `text`. `candidate` is `{kind: "demo", candidate_id}` or `{kind: "upload", context}`. Returns `201` with `session_id`, `capability`, `mode`, `expires_at`, `greeting`, `screening_seconds` and `max_turns`. Voice also returns `agent_url`, `deepgram_token`, `token_expires_in` and the complete Deepgram `settings`; text returns those as `null` and needs no Deepgram, public URL or audio consent. |
 | `POST /screenings/{id}/token` | `{capability}` → a fresh Deepgram token for a reconnect, at most `max_reconnects` times. |
-| `POST /screenings/{id}/end` | `{capability}` → `state: "ended"`. Idempotent. |
+| `POST /screenings/{id}/end` | `{capability}` → `state: "ended"`. Idempotent; an end while active records `ended_early` for the report. |
+| `POST /screenings/{id}/report` | `{capability}` → the temporary structured report for an ended screening, built once per session. See [screening reports](screening-reports.md). |
 | `POST /screenings/{id}/messages` | Text turns: `{capability, text}` (1–2,000 characters) → `{reply, ended}`. History is the server-held transcript, so a voice screening can continue by text; the same interviewer, time box and limits apply. |
 | `POST /screenings/{id}/chat/completions` | Called by Deepgram with `Authorization: Bearer <capability>`. Accepts `stream: true` (SSE chunks ending in `data: [DONE]`) or `false` (one `chat.completion`). |
 

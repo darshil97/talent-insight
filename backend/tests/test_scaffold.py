@@ -63,6 +63,7 @@ def test_openapi_describes_health_contract(
         "/screenings",
         "/screenings/{session_id}/token",
         "/screenings/{session_id}/end",
+        "/screenings/{session_id}/report",
         "/screenings/{session_id}/messages",
         "/screenings/{session_id}/chat/completions",
     }
@@ -72,7 +73,7 @@ def test_openapi_describes_health_contract(
             {"post"}
             if name in {"/resumes/extract", "/availability", "/screenings"}
             or name.endswith(
-                ("/structure", "/assess", "/token", "/end", "/completions", "/messages")
+                ("/structure", "/assess", "/token", "/end", "/report", "/completions", "/messages")
             )
             else {"get"}
         )

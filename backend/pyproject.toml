@@ -55,3 +55,7 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Screening fixtures are imported from test_screenings and then requested by name.
+"tests/test_reports.py" = ["F811"]
