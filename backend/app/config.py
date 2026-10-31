@@ -3,13 +3,14 @@
 import os
 import re
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 import yaml
 from pydantic import (
     AnyHttpUrl,
     Field,
     SecretStr,
+    StringConstraints,
     TypeAdapter,
     ValidationError,
     ValidationInfo,
@@ -86,6 +87,9 @@ _yaml_fields = {
     "voice.reasoning_effort": "voice_reasoning_effort",
     "voice.turn_timeout_seconds": "voice_turn_timeout_seconds",
     "bot_check.turnstile_site_key": "turnstile_site_key",
+    "usage.recording": "usage_recording",
+    "usage.token_prices": "usage_token_prices",
+    "usage.deepgram_minute_price": "usage_deepgram_minute_price",
     "bot_check.turnstile_secret_key": "turnstile_secret_key",
 }
 _model_name = r"^[a-z0-9][a-z0-9.-]{0,79}$"
@@ -333,6 +337,22 @@ class Settings(BaseSettings):
         default=None, validation_alias="TURNSTILE_SECRET_KEY"
     )
 
+    # Metered usage rows on Neon; recording needs DATABASE_URL as well.
+    usage_recording: bool = Field(default=True, validation_alias="USAGE_RECORDING")
+    # [model ID, USD per million input tokens, USD per million output tokens]; a tuple keeps
+    # Settings hashable for the model-client cache.
+    usage_token_prices: tuple[
+        tuple[
+            Annotated[str, StringConstraints(min_length=1, max_length=256)],
+            Annotated[float, Field(ge=0)],
+            Annotated[float, Field(ge=0)],
+        ],
+        ...,
+    ] = Field(default=(), max_length=20, validation_alias="USAGE_TOKEN_PRICES")
+    usage_deepgram_minute_price: float | None = Field(
+        default=None, ge=0, validation_alias="USAGE_DEEPGRAM_MINUTE_PRICE"
+    )
+
     @model_validator(mode="after")
     def turnstile_keys_are_paired(self):
         if (self.turnstile_site_key is None) != (self.turnstile_secret_key is None):
@@ -472,7 +492,7 @@ def load_settings() -> Settings:
             "CORS_ALLOWED_ORIGINS, LOG_LEVEL, "
             "database URLs, RESUME_*/AI_*/MATCH_*/RANKING_* settings, "
             "AWS/Bedrock settings, VOICE_*/DEEPGRAM_*/SESSION_SIGNING_SECRET settings, "
-            "TURNSTILE_* keys "
+            "TURNSTILE_* keys, USAGE_* settings "
             "and backend/.env; "
             "remove legacy APP_ENV."
         ) from None

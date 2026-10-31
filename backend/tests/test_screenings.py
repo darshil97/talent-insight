@@ -752,6 +752,84 @@ def test_expired_sessions_leave_memory_without_any_request(
     assert "Screening usage: text" in caplog.text
 
 
+# --- usage rows ---
+
+USAGE_DATABASE = "postgresql://user:password@127.0.0.1:5432/talent"
+
+
+def usage_app(make_app, **overrides):
+    return make_app(
+        database_url=USAGE_DATABASE,
+        **{**BEDROCK, "voice_bedrock_model_id": "au.anthropic.claude-haiku-4-5-20251001-v1:0"},
+        **overrides,
+    )
+
+
+def test_interviewer_turns_record_streamed_tokens(make_app, api_request, fake_model):
+    final = FakeChunk([])
+    final.usage_metadata = {"input_tokens": 1200, "output_tokens": 40}
+    final.response_metadata = {"stopReason": "end_turn"}
+    plain = fake_model.astream
+
+    async def with_usage(messages, config=None, **kwargs):
+        async for item in plain(messages, config, **kwargs):
+            yield item
+        yield final
+
+    fake_model.astream = with_usage
+    app = usage_app(make_app)
+    started = start(api_request, app)
+    reply = chat(api_request, app, started, [GREETING, {"role": "user", "content": "Ready."}])
+    assert reply.status_code == 200
+    (row,) = app.state.usage._queue
+    assert (row["category"], row["operation"], row["outcome"]) == (
+        "voice_response",
+        "interviewer_turn",
+        "ok",
+    )
+    assert (row["provider"], row["model_id"], row["region"]) == (
+        "bedrock",
+        "au.anthropic.claude-haiku-4-5-20251001-v1:0",
+        "ap-southeast-2",
+    )
+    assert (row["input_tokens"], row["output_tokens"], row["stop_reason"]) == (1200, 40, "end_turn")
+    assert row["first_output_ms"] is not None
+    assert (row["screening_mode"], row["candidate_kind"], row["job_id"]) == (
+        "voice",
+        "demo",
+        "demo_ds",
+    )
+    assert row["screening_ref"] == stored(app, started).usage_ref
+
+
+def test_failed_interviewer_turns_are_recorded(make_app, api_request, fake_model):
+    fake_model.error = TimeoutError()
+    app = usage_app(make_app)
+    started = start(api_request, app)
+    chat(api_request, app, started, [GREETING, {"role": "user", "content": "Ready."}])
+    (row,) = app.state.usage._queue
+    assert (row["outcome"], row["input_tokens"]) == ("provider_timeout", None)
+
+
+def test_usage_rows_never_hold_text_identities_or_secrets(make_app, api_request, fake_model):
+    app = usage_app(make_app)
+    started = start(api_request, app, mode="text")
+    body = started.json()
+    answer = "I tuned the private churn model in dbt."
+    api_request(
+        app,
+        "POST",
+        f"/screenings/{body['session_id']}/messages",
+        json={"capability": body["capability"], "text": answer},
+    )
+    stored(app, started).expires = 0
+    app.state.voice_sessions.purge()
+    rows = repr(list(app.state.usage._queue))
+    assert "interviewer_turn" in rows
+    for private in (answer, body["session_id"], body["capability"], "Avery", "aws-secret-token"):
+        assert private not in rows
+
+
 # --- interviewer endpoint ---
 
 

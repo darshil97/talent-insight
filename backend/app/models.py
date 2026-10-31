@@ -1,21 +1,28 @@
-"""Curated demo catalog only. Uploaded candidates have no persistence model."""
+"""Curated demo catalog and metered usage. Uploaded candidates have no persistence model."""
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     CheckConstraint,
     Date,
+    DateTime,
     ForeignKey,
+    Identity,
+    Index,
+    Integer,
     MetaData,
     Numeric,
+    SmallInteger,
     String,
     Text,
     UniqueConstraint,
+    func,
     true,
 )
 from sqlalchemy.dialects.postgresql import JSONB
@@ -134,3 +141,49 @@ class JobCandidate(Base):
         ForeignKey(f"{SCHEMA}.demo_candidates.id", ondelete="CASCADE"), primary_key=True, index=True
     )
     demo_scenario: Mapped[str] = mapped_column(String(24))
+
+
+USAGE_CATEGORIES = ("pdf", "voice_response", "response_analysis", "deepgram")
+
+
+class UsageEvent(Base):
+    """One metered event: counts, timings and prices only, never candidate content."""
+
+    __tablename__ = "usage_events"
+    __table_args__ = (
+        CheckConstraint(
+            "category IN ('pdf','voice_response','response_analysis','deepgram')",
+            name="category",
+        ),
+        Index("ix_usage_events_created_at", "created_at"),
+        Index("ix_usage_events_category_created_at", "category", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # render or local: both use the same Neon database.
+    origin: Mapped[str] = mapped_column(String(16))
+    category: Mapped[str] = mapped_column(String(24))
+    operation: Mapped[str] = mapped_column(String(32))
+    # ok, or the safe error code the call ended with.
+    outcome: Mapped[str] = mapped_column(String(48))
+    provider: Mapped[str | None] = mapped_column(String(24))
+    model_id: Mapped[str | None] = mapped_column(String(256))
+    region: Mapped[str | None] = mapped_column(String(32))
+    attempt: Mapped[int | None] = mapped_column(SmallInteger)
+    input_tokens: Mapped[int | None] = mapped_column(Integer)
+    output_tokens: Mapped[int | None] = mapped_column(Integer)
+    latency_ms: Mapped[int | None] = mapped_column(Integer)
+    first_output_ms: Mapped[int | None] = mapped_column(Integer)
+    stop_reason: Mapped[str | None] = mapped_column(String(32))
+    pages: Mapped[int | None] = mapped_column(SmallInteger)
+    characters: Mapped[int | None] = mapped_column(Integer)
+    seconds: Mapped[Decimal | None] = mapped_column(Numeric(10, 1))
+    cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    screening_mode: Mapped[str | None] = mapped_column(String(8))
+    candidate_kind: Mapped[str | None] = mapped_column(String(8))
+    job_id: Mapped[str | None] = mapped_column(String(64))
+    # A random per-screening value that groups its rows; not the session ID or capability.
+    screening_ref: Mapped[str | None] = mapped_column(String(32))
+    request_id: Mapped[str | None] = mapped_column(String(64))
+    details: Mapped[dict[str, Any] | None] = mapped_column(JSONB)

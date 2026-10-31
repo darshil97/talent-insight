@@ -1,6 +1,6 @@
 # Talent Insight — project context
 
-Last updated: 2026-10-31 (Asia/Kolkata). **Module 13 (browser screening panel with voice and text, its 2026-10-31 voice, upload and transcript follow-ups, and the Render/Vercel deployment) was reviewed and approved on 2026-10-31; the user confirmed it is deployed and working. Module 14 (structured screening reports, the recruiter-first report, integrity flags and quote verification) was reviewed and approved on 2026-10-31; the user committed it as `58afd1c` and reported a full run on Render and Vercel on 2026-10-31. Module 15 (hardening) was completed and approved on 2026-10-31, so every roadmap module is done: gates 15a (Cloudflare Turnstile bot check and a daily screening cap) and 15b (a 60-second session purge timer and a counts-only usage line) are approved but uncommitted and not deployed, and the user's deployed run (gate 15c) covered `58afd1c`, before them. Work now happens directly on the user's Git device, so no file transfer is needed.** See the final entries. Earlier: Module 12 was reviewed and approved on 2026-10-28. Earlier: **Module 12 (voice sessions, Deepgram token issuance and the server-side interviewer) was implemented locally.** It was approved after an architecture review: the interviewer runs in FastAPI on Bedrock as a Deepgram custom LLM, uploads use a signed screening context, and screenings are time-boxed to about ten minutes with adaptive topics. It was verified offline, plus two approved live checks on 2026-10-28: a Deepgram token grant succeeded, and one synthetic Bedrock interviewer turn succeeded with its first text after 4.6 s, too slow for voice. No full voice call has run. Earlier the same day: the user-requested catalog performance module is implemented locally, reviewed and approved on 2026-10-27; see the final entry for verification and remaining remote-database latency. Module 11a (recruiter-style matching with a `transferable` level and applied-use rules, verified candidate name/title for uploads, and an availability ranking bonus) is implemented locally and awaits review; the shared Neon catalog is at migration `0002_candidate_availability`. Earlier the same day, a user-requested backend refactor of completed modules 8–11 (Jinja `.md` prompts, an LLM provider registry with an in-process cached Bedrock client, request IDs and key-point logging, and per-item validation salvage with retry hints) is implemented locally and awaits review; a first post-refactor demo refresh was blocked by a stale `AWS_BEARER_TOKEN_BEDROCK` exported in this machine's shell profile, which overrides `backend/.env`; rerun without that variable, the refresh regenerated all 13 synthetic assessments on first attempts. Previously, as of 2026-10-26: Modules 1–10 and the backend YAML configuration follow-up were reviewed and approved. Module 11, the Sci-fi / Mission workflow, the demo cache/upload fix and the four-domain demo catalog are implemented locally and await review. The fixture and shared Neon catalog have four jobs, twelve synthetic candidates and thirteen memberships. The sidebar count reads the jobs API. The user ran the manual Bedrock refresh; after a bounded JSON-format repair and validation, the 13-entry snapshot was generated and all entries reverified locally. Four entries have point scores and nine show uncertainty ranges. Module 12 was later authorized and implemented (see above). Private provider configuration is preserved. Read `AGENTS.md` first.
+Last updated: 2026-10-31 (Asia/Kolkata). **Module 13 (browser screening panel with voice and text, its 2026-10-31 voice, upload and transcript follow-ups, and the Render/Vercel deployment) was reviewed and approved on 2026-10-31; the user confirmed it is deployed and working. Module 14 (structured screening reports, the recruiter-first report, integrity flags and quote verification) was reviewed and approved on 2026-10-31; the user committed it as `58afd1c` and reported a full run on Render and Vercel on 2026-10-31. Module 15 (hardening) was completed and approved on 2026-10-31, so every roadmap module is done. Gates 15a (Cloudflare Turnstile bot check and a daily screening cap) and 15b (a 60-second session purge timer and a counts-only usage line) were committed as `7ab28bc`. On 2026-11-01 the user deployed them to a new Render account and service and reported everything working, including the Cloudflare check on Vercel. A user-requested usage table on Neon (migration `0003_usage_events`, applied 2026-11-01 with approval) now records every model call, PDF parse and voice session; it is uncommitted and not deployed. Work now happens directly on the user's Git device, so no file transfer is needed.** See the final entries. Earlier: Module 12 was reviewed and approved on 2026-10-28. Earlier: **Module 12 (voice sessions, Deepgram token issuance and the server-side interviewer) was implemented locally.** It was approved after an architecture review: the interviewer runs in FastAPI on Bedrock as a Deepgram custom LLM, uploads use a signed screening context, and screenings are time-boxed to about ten minutes with adaptive topics. It was verified offline, plus two approved live checks on 2026-10-28: a Deepgram token grant succeeded, and one synthetic Bedrock interviewer turn succeeded with its first text after 4.6 s, too slow for voice. No full voice call has run. Earlier the same day: the user-requested catalog performance module is implemented locally, reviewed and approved on 2026-10-27; see the final entry for verification and remaining remote-database latency. Module 11a (recruiter-style matching with a `transferable` level and applied-use rules, verified candidate name/title for uploads, and an availability ranking bonus) is implemented locally and awaits review; the shared Neon catalog is at migration `0002_candidate_availability`. Earlier the same day, a user-requested backend refactor of completed modules 8–11 (Jinja `.md` prompts, an LLM provider registry with an in-process cached Bedrock client, request IDs and key-point logging, and per-item validation salvage with retry hints) is implemented locally and awaits review; a first post-refactor demo refresh was blocked by a stale `AWS_BEARER_TOKEN_BEDROCK` exported in this machine's shell profile, which overrides `backend/.env`; rerun without that variable, the refresh regenerated all 13 synthetic assessments on first attempts. Previously, as of 2026-10-26: Modules 1–10 and the backend YAML configuration follow-up were reviewed and approved. Module 11, the Sci-fi / Mission workflow, the demo cache/upload fix and the four-domain demo catalog are implemented locally and await review. The fixture and shared Neon catalog have four jobs, twelve synthetic candidates and thirteen memberships. The sidebar count reads the jobs API. The user ran the manual Bedrock refresh; after a bounded JSON-format repair and validation, the 13-entry snapshot was generated and all entries reverified locally. Four entries have point scores and nine show uncertainty ranges. Module 12 was later authorized and implemented (see above). Private provider configuration is preserved. Read `AGENTS.md` first.
 
 ## 1. Project overview
 
@@ -200,7 +200,7 @@ These are review gates, not authorization to implement every row. Dependencies i
 | 12 | Voice sessions, token issuance and server-side interviewer | Completed, reviewed and approved (2026-10-28) | 11 + architecture review + approval received | FastAPI interviewer as a Deepgram custom LLM; consent, signed upload context, expiry/replay/admission, bounded token route, time-boxed adaptive interviewer; 51 new offline tests, 438 backend tests in total |
 | 13 | Browser voice and text fallback | Completed, reviewed and approved (2026-10-31); deployed on Render and Vercel, live voice working | 12 + approval received | Consent modal, direct audio, live transcript, mute/end/error controls, interruption/disconnect handling, closing the socket on `end_screening`, a text alternative reusing the interviewer; public HTTPS for Deepgram (tunnel or Render); browser scenarios and an approved live test measuring turn latency |
 | 14 | Structured screening reports | Completed, reviewed and approved (2026-10-31); live report and integrity checks ran on synthetic screenings; committed as `58afd1c`, deployed, and covered by the user's full Render/Vercel run (user-reported) | 13 | Validated report, explicit completion, idempotency, incomplete-session behavior; evidence/report schema/duplicate tests |
-| 15 | Hardening and deployment readiness | Completed and approved (2026-10-31): 15a bot check and daily cap, 15b retention and logging review, 15c the user's full Render/Vercel run (user-reported, at `58afd1c`). 15a and 15b are uncommitted and not deployed, so they are verified locally only | 14 | End-to-end demo, abuse/cost controls, retention review, usage logging, Vercel/Render instructions, authorized integration verification |
+| 15 | Hardening and deployment readiness | Completed and approved (2026-10-31): 15a bot check and daily cap, 15b retention and logging review, 15c the user's full Render/Vercel run. Committed as `7ab28bc` and deployed on a new Render service on 2026-11-01; the user reported the Cloudflare check and screenings working | 14 | End-to-end demo, abuse/cost controls, retention review, usage logging, Vercel/Render instructions, authorized integration verification |
 
 Dependencies are installed when needed. Security and tests accompany each module; module 15 consolidates them. Split large modules into smaller review gates if needed. Phase 1 = modules 2–11, Phase 2 = modules 12–14, Phase 3 = module 15.
 
@@ -282,6 +282,7 @@ Examples contain no secrets. See [local setup](docs/local-development.md), [back
 | `VOICE_BEDROCK_MODEL_ID`, `VOICE_AWS_REGION` | Backend | Implemented 2026-10-28: interviewer model and region; unset values reuse `BEDROCK_MODEL_ID` and `AWS_REGION`. Separate cached client; `VOICE_REASONING_EFFORT` is sent only to `gpt-oss`. Selected and set in private `backend/.env`: `au.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | `VOICE_AGENT_URL`, `VOICE_API_URL` | Backend | Implemented Deepgram endpoints; general region by default. Regional grant hosts are unverified |
 | `VOICE_*` limits and models | Backend | Implemented: token TTL 30 s, screening 600 s, wrap-up 540 s, expiry 900 s, context TTL 1800 s, turns 40, reconnects 2, concurrent 1, per hour 6, per day 20 (module 15a), messages 80, history characters 60,000, output tokens 300, reasoning effort low, turn timeout 20 s; listen `flux-general-en`, speak `aura-2-thalia-en` |
+| `USAGE_RECORDING`, `USAGE_TOKEN_PRICES`, `USAGE_DEEPGRAM_MINUTE_PRICE` | Backend | Implemented 2026-11-01: usage rows on Neon whenever `DATABASE_URL` is set (`USAGE_RECORDING=false` stops them). Prices: a tuple of `[model ID, USD per million input tokens, USD per million output tokens]` (a tuple keeps Settings hashable for the model-client cache). `config.yaml` sets gpt-oss-120b at $0.1545/$0.6180 and the Haiku 4.5 `au.` profile at $1.10/$5.50 per million input/output tokens, as provided by the user on 2026-11-01, and Deepgram USD per minute (default 0.065) |
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Backend / Render | Implemented in module 15a: Cloudflare Turnstile bot check before a screening starts; off unless both are set, and one without the other fails startup. The site key is public and reaches the browser through `/screenings/notice`; nothing is set on Vercel. The secret is a SecretStr |
 
 PDF/AI limits are implemented above; the frontend loads PDF limits from GET `/resumes/limits` but does not yet call structured extraction. Provider mode/credentials are server-owned. Scoring weights, distributed/public usage controls and session expiry remain future work. No storage credentials are required. CORS and per-process admission are not authentication or a substitute for a public monetary budget.
@@ -845,4 +846,74 @@ Caveats recorded at completion:
   - recruiter-authored accepted equivalents (module 11a);
   - remove the stale `AWS_BEARER_TOKEN_BEDROCK` export from this machine's shell profile.
 
-**Exact next action:** none on the roadmap. The user decides whether to commit and deploy 15a and 15b, and whether to take up any optional item.
+**Deployment of 15a and 15b (2026-11-01, user-reported):**
+- The user committed 15a and 15b as `7ab28bc`, and Vercel deployed it to `talent-insight-jet.vercel.app`.
+- The Turnstile widget lists that hostname only. Per-deployment and branch URLs were left out; they are not in `CORS_ALLOWED_ORIGINS` either.
+- The backend moved to a **new Render account and service**, set up from [deployment](docs/deployment.md), with both Turnstile keys and a new `SESSION_SIGNING_SECRET`.
+  - Vercel's `NEXT_PUBLIC_API_BASE_URL` and the UptimeRobot monitor were to be pointed at the new service, and the old service suspended.
+  - The new service URL is not recorded here.
+- The user reported the Cloudflare checkbox on Vercel and everything working. This was not observed from here.
+- The Render `Screening usage` line was not separately confirmed. Bedrock invocation logging remains the user's to keep off.
+
+**Usage table on Neon (2026-11-01, user request, implemented locally, uncommitted, not deployed):**
+
+User decisions:
+- Record every model call, PDF parse and voice session in a Neon table, so usage can be aggregated and costed.
+- Deepgram is an **estimate per session**, not a Management API lookup.
+- **Store `cost_usd` from configured prices.** The user provides the Bedrock prices; the Deepgram default is $0.065 per minute (pay as you go, custom LLM, deepgram.com/pricing read 2026-11-01).
+- **Everything on Neon, no local database server.** Recording is therefore on whenever `DATABASE_URL` is set, local runs included, with an `origin` column of `render` (Render's `RENDER` variable) or `local`.
+- The user approved the migration.
+
+Backend:
+- **Model and migration:** `UsageEvent` model and migration `0003_usage_events`: a new `talent_insight.usage_events` table with 25 columns, a category check (`pdf`, `voice_response`, `response_analysis`, `deepgram`) and indexes on `created_at` and on `category, created_at`. It changes no existing table.
+- **`app/usage.py` (`UsageRecorder`):**
+  - a memory queue of at most 1,000 rows, flushed by a lifespan task every 10 seconds and once on shutdown, in one `INSERT` with a 5-second statement timeout in a worker thread;
+  - when Neon is unreachable the rows are kept and retried; other database errors drop the batch with a count-only warning;
+  - cost is computed when the row is added;
+  - a context-variable scope carries the recorder, screening mode, candidate kind, job ID and a random per-screening `usage_ref`.
+- **What records rows:**
+  - **Structured calls** (resume extraction and interpretation, and the report) are captured by a logging handler that reads the existing completion and failure lines of `app.llm.invoke`. That package is part of the demo snapshot fingerprint, so it was not changed, and the snapshot stays valid. That logger is set to INFO, and the app log handler now applies `LOG_LEVEL` itself, so higher levels still hide those lines.
+  - **Interviewer turns:** `model_deltas` adds up streamed `usage_metadata` and the stop reason, and records the outcome (`ok`, an error code, or `stopped` when a newer request or a dropped client closes the stream).
+  - **PDF parses:** `/resumes/*` records pages, characters, latency and the outcome.
+  - **Deepgram:** `SessionStore` writes one estimated row per voice session when it is deleted, in `deepgram` mode only. It covers the seconds from the start to the last request, plus token grants and turns in `details`.
+  - Mock calls are not recorded.
+- Routes bind the scope: upload structure and assessment; screening messages, chat completions and the report (bound before its task starts, which copies the context).
+
+Docs: [data retention](docs/data-retention.md#usage-table-on-neon) (columns, rules, cost, example SQL), [database](docs/database.md), [deployment](docs/deployment.md), and `backend/.env.example` placeholders.
+
+**Verification:**
+- **Backend:** 496 tests passed with warnings as errors, 3 opt-in Neon checks skipped. New tests:
+  - recording switch, costs and the queue cap;
+  - flush batching, the retry on `OperationalError` and the drop on other errors;
+  - capture through the real `invoke_structured` for all three stages, failures, mock exclusion and capture under `LOG_LEVEL=WARNING`;
+  - PDF rows, interviewer tokens and failures, the Deepgram estimate, no text or IDs in rows, and the shutdown flush;
+  - the offline migration SQL.
+- Ruff, `pip check` and offline snapshot validation passed (13 memberships, 0 provider calls; fingerprinted paths unchanged).
+- **One live Haiku turn** (user's earlier permission for small Bedrock checks) produced a row with 27 input and 13 output tokens, `end_turn`, `ok` and 2.3 s to first text. Real Bedrock streaming does report tokens.
+- **Neon, with the user's approval:**
+  - `alembic current` showed `0002`;
+  - `alembic upgrade head` applied `0003_usage_events`;
+  - `alembic check` found no differences;
+  - a read-only query showed 25 columns and 3 indexes;
+  - the opt-in read-only Neon tests passed (3).
+- **End-to-end write:** a local uvicorn (mock AI) parsed a synthetic test PDF. Row 1 (`origin=local`, `pdf_parse`, 1 page, 48 characters, 135 ms, a request ID, no content) was written by the flush task and read back read-only.
+- **Not run:** recording on Render (needs commit and deploy), and a report or Deepgram row against real Neon.
+
+**Bedrock prices (2026-11-01, user-provided):** `config.yaml` now prices both models, per million input/output tokens:
+- `openai.gpt-oss-120b-1:0`: $0.1545 / $0.6180;
+- `au.anthropic.claude-haiku-4-5-20251001-v1:0`: $1.10 / $5.50.
+
+A new test checks the cost of both deployed model IDs (497 backend tests passed). Prices apply to rows written after deployment; the one existing row is a free PDF parse.
+
+**Limits:**
+- Deepgram seconds are a lower bound.
+- Rows still queued at a restart are lost.
+- Structured-call capture depends on the exact `app.llm.invoke` log format strings; tests fail if they change.
+- Concurrent processes would each queue their own rows, which is still correct.
+- Local runs add rows marked `local`.
+
+**Exact next action:**
+1. The user reviews the usage table.
+2. Commit when the user asks, then deploy. No Render setting is needed for recording or prices.
+
+The optional items above remain unapproved.

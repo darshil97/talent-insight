@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from starlette.responses import JSONResponse
 
-from app import catalog
+from app import catalog, usage
 from app.api.admission import ai_slot
 from app.api.deps import JobId, catalog_session
 from app.api.jobs import JobDetail
@@ -118,6 +118,7 @@ responses = {
 async def structure_upload(
     request: Request, response: Response, job: Annotated[ExtractionJob, Depends(job_context)]
 ) -> StructuredResume | JSONResponse:
+    usage.bind(request.app.state.usage, candidate_kind="upload", job_id=job.id)
     async with ai_slot(request):
         extracted = await extract_upload(request, response)
         if isinstance(extracted, JSONResponse):
@@ -150,6 +151,7 @@ def screening_context(assessment: Assessment, settings) -> str | None:
 async def assess_upload(
     request: Request, response: Response, job: Annotated[ExtractionJob, Depends(job_context)]
 ) -> UploadAssessment | JSONResponse:
+    usage.bind(request.app.state.usage, candidate_kind="upload", job_id=job.id)
     async with ai_slot(request):
         extracted = await extract_upload(request, response)
         if isinstance(extracted, JSONResponse):

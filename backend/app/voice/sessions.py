@@ -51,6 +51,8 @@ class ScreeningSession:
     mode: Literal["voice", "text"] = "voice"
     # The latest request that presented this session's capability, for the usage line.
     last_seen: float = 0.0
+    # Groups this screening's usage rows on Neon; unrelated to the ID and capability.
+    usage_ref: str = field(default_factory=lambda: secrets.token_hex(8))
     state: State = "issued"
     started: float | None = None
     reconnects: int = 0
@@ -72,9 +74,10 @@ class ScreeningSession:
 
 
 class SessionStore:
-    def __init__(self, settings, clock: Callable[[], float] = time.monotonic):
+    def __init__(self, settings, clock: Callable[[], float] = time.monotonic, recorder=None):
         self.settings = settings
         self.clock = clock
+        self.recorder = recorder
         self._sessions: dict[str, ScreeningSession] = {}
         self._created: deque[float] = deque()
 
@@ -86,6 +89,7 @@ class SessionStore:
             ):
                 del self._sessions[session_id]
                 log_usage(session)
+                self._record_deepgram(session)
             elif (
                 session.state == "active"
                 and session.started is not None
@@ -144,19 +148,48 @@ class SessionStore:
         # The admission timestamp stays, so failed starts still count towards the hourly limit.
         self._sessions.pop(session_id, None)
 
+    def _record_deepgram(self, session: ScreeningSession) -> None:
+        """Estimate a voice call's Deepgram time; Deepgram bills the connection we never see."""
+        if (
+            self.recorder is None
+            or session.mode != "voice"
+            or self.settings.voice_mode != "deepgram"
+        ):
+            return
+        self.recorder.add(
+            "deepgram",
+            "deepgram_session",
+            outcome=end_outcome(session),
+            provider="deepgram",
+            model_id=f"{self.settings.voice_listen_model}+{self.settings.voice_speak_model}",
+            seconds=round(session.last_seen - session.created, 1),
+            screening_mode=session.mode,
+            candidate_kind=session.context.candidate_kind,
+            job_id=session.context.job_id,
+            screening_ref=session.usage_ref,
+            details={
+                "estimate": "start_to_last_request",
+                "token_grants": 1 + session.reconnects,
+                "interviewer_turns": session.turns,
+            },
+        )
+
     def remaining_seconds(self, session: ScreeningSession) -> float:
         return max(0.0, session.expires - self.clock())
 
 
+def end_outcome(session: ScreeningSession) -> str:
+    return session.end_reason or ("not_started" if session.state == "issued" else "not_ended")
+
+
 def log_usage(session: ScreeningSession) -> None:
     """One counts-only line as a session is deleted, for weekly usage checks: no text or IDs."""
-    outcome = session.end_reason or ("not_started" if session.state == "issued" else "not_ended")
     logger.info(
         "Screening usage: %s, %s candidate, %s, %.0f s to last request, %d answers, "
         "%d interviewer turns, %d turn requests, %d reconnects, report %s",
         session.mode,
         session.context.candidate_kind,
-        outcome,
+        end_outcome(session),
         session.last_seen - session.created,
         sum(turn.role == "candidate" for turn in session.transcript),
         session.turns,

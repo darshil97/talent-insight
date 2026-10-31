@@ -1,16 +1,16 @@
 # Deployment checklist: backend on Render, frontend on Vercel
 
-Prepared in module 13 (2026-10-28). Nothing here has been deployed from this workspace, and no secrets were handled; you create both services in their dashboards. This is a minimal deployment for testing. Production hardening (a runtime-only lock, distributed limits, abuse controls) remains module 15.
+Prepared in module 13 (2026-10-28) and updated through module 15 (2026-11-01). You create both services in their dashboards and enter every secret yourself; nothing here was deployed from this workspace. Module 15 added the Cloudflare bot check, a daily screening cap and the retention review. A runtime-only dependency lock and limits shared across processes remain optional.
 
 There is **one backend**. A single Render web service serves the browser API (`/jobs`, `/assess`, `/screenings`, …) and Deepgram's interviewer calls (`/screenings/{id}/chat/completions`). `VOICE_PUBLIC_API_URL` is that service's own URL. The Vercel frontend calls it from the browser.
 
-## 1. Move the code
+## 1. Push the code
 
-Copy the changed files to the device that has the Git repository, then commit and push there.
+Commit and push on the device that has the Git repository; Render and Vercel deploy from GitHub.
 
 - Never copy `backend/.env` or `frontend/.env.local`; both are private, and `.gitignore` excludes `.env` and `.env.*`.
 - Leave out `node_modules/`, `.next/` and `.run_local/`. `.claude/launch.json` is a local preview helper with no secrets; it is optional.
-- No database migration or seed is needed. Render uses the same Neon catalog, already at `0002_candidate_availability`.
+- No database migration or seed is needed. Render uses the same Neon database, already at `0003_usage_events` (the usage table was added on 2026-11-01).
 
 ## 2. Render backend (Dashboard → New → Web Service → your repository)
 
@@ -42,6 +42,7 @@ Notes on these values:
 | `VOICE_BEDROCK_MODEL_ID` | `au.anthropic.claude-haiku-4-5-20251001-v1:0` (interviewer) |
 | `RESUME_TIMEOUT_SECONDS` | `30` (the maximum). Render Free has 0.1 CPU, and the default 10 s PDF limit timed out on a one-page resume that takes 0.5 s locally. |
 | `CORS_ALLOWED_ORIGINS` | `["https://YOUR-APP.vercel.app","http://127.0.0.1:3000","http://localhost:3000"]` |
+| `USAGE_TOKEN_PRICES` | Not needed: `config.yaml` already prices both models above. Set it only to override them, as `[["MODEL_ID",INPUT_USD,OUTPUT_USD]]` per million tokens. Recording itself needs no setting. |
 
 `CORS_ALLOWED_ORIGINS` notes:
 - Use your exact Vercel production origin, with no wildcard, path or trailing slash.

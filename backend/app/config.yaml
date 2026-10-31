@@ -93,3 +93,16 @@ bot_check:
   # the site key is public and reaches the browser through the screening notice.
   turnstile_site_key: ${TURNSTILE_SITE_KEY}
   turnstile_secret_key: ${TURNSTILE_SECRET_KEY}
+
+usage:
+  # One Neon row per model call, PDF parse and voice session, written in the background.
+  # It needs DATABASE_URL; set USAGE_RECORDING=false to stop recording.
+  recording: true
+  # [model ID, USD per million input tokens, USD per million output tokens] per model;
+  # unlisted models get no cost. Prices provided by the user from AWS on 2026-11-01.
+  token_prices:
+    - ["openai.gpt-oss-120b-1:0", 0.1545, 0.6180]
+    - ["au.anthropic.claude-haiku-4-5-20251001-v1:0", 1.10, 5.50]
+  # USD per connected minute: Deepgram Voice Agent with a custom LLM, pay as you go
+  # (deepgram.com/pricing, read 2026-11-01). Check it against your plan and bills.
+  deepgram_minute_price: 0.065

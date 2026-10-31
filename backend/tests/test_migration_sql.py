@@ -21,3 +21,6 @@ def test_offline_migration_preview_needs_no_credentials() -> None:
     assert "ADD COLUMN notice_days INTEGER" in output
     assert "ck_demo_candidates_notice_fields" in output
     assert "DROP COLUMN" not in output
+    assert "CREATE TABLE talent_insight.usage_events" in output
+    assert "ck_usage_events_category" in output
+    assert "CREATE INDEX ix_usage_events_category_created_at" in output

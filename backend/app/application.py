@@ -23,6 +23,7 @@ from app.core.request_context import HEADER, RequestIdMiddleware
 from app.database import create_database_engine
 from app.errors import SafeErrorsMiddleware, register_error_handlers
 from app.pipeline.contracts import ExtractionFailure
+from app.usage import UsageRecorder, capture_model_calls, flush_periodically
 from app.voice import sessions
 from app.voice.contracts import VoiceFailure
 from app.voice.sessions import SessionStore
@@ -49,12 +50,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if settings.database_url is not None:
             app.state.database_engine = create_database_engine(settings.database_url)
         purger = asyncio.create_task(purge_sessions(app))
+        flusher = asyncio.create_task(flush_periodically(app))
         try:
             yield
         finally:
-            purger.cancel()
-            with suppress(asyncio.CancelledError):
-                await purger
+            for task in (purger, flusher):
+                task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
+            # Queued rows are written once more; sessions still in memory are not recorded.
+            await app.state.usage.flush(app.state.database_engine)
             if app.state.database_engine is not None:
                 app.state.database_engine.dispose()
                 app.state.database_engine = None
@@ -74,7 +79,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.resume_active = 0
     app.state.ai_active = 0
     app.state.ai_requests = deque()
-    app.state.voice_sessions = SessionStore(settings)
+    app.state.usage = UsageRecorder(settings)
+    capture_model_calls()
+    app.state.voice_sessions = SessionStore(settings, recorder=app.state.usage)
     # Tests replace these with httpx mock transports; None uses the network.
     app.state.deepgram_transport = None
     app.state.turnstile_transport = None

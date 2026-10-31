@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from jinja2 import Environment, PackageLoader, StrictUndefined
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from app import usage
 from app.llm.base import get_provider
 from app.llm.factory import MOCK_MODE, get_chat_model
 from app.llm.response import extract_text
@@ -248,6 +249,16 @@ def check_interviewer(settings) -> None:
             raise VoiceFailure("interviewer_not_configured") from None
 
 
+def _add_usage(tokens: dict, metadata: object) -> None:
+    """Bedrock reports token counts on the last streamed chunk; add whatever arrives."""
+    if not isinstance(metadata, dict):
+        return
+    for key in tokens:
+        value = metadata.get(key)
+        if isinstance(value, int):
+            tokens[key] = (tokens[key] or 0) + value
+
+
 async def model_deltas(settings, system: str, history: list[tuple[str, str]]) -> AsyncIterator[str]:
     model_settings = interviewer_settings(settings)
     options: dict = {"max_tokens": settings.voice_max_output_tokens}
@@ -262,27 +273,50 @@ async def model_deltas(settings, system: str, history: list[tuple[str, str]]) ->
         }
     started = time.perf_counter()
     first = None
+    tokens = {"input_tokens": None, "output_tokens": None}
+    stop = None
+    # A newer request or a dropped client can close this stream mid-reply.
+    outcome = "stopped"
     try:
         async with asyncio.timeout(settings.voice_turn_timeout_seconds):
             stream = get_chat_model(model_settings).astream(
                 [("system", system), *history], config={"callbacks": []}, **options
             )
             async for chunk in stream:
+                _add_usage(tokens, getattr(chunk, "usage_metadata", None))
+                stop = (getattr(chunk, "response_metadata", None) or {}).get("stopReason") or stop
                 text = extract_text(getattr(chunk, "content", ""))
                 if text:
                     if first is None:
                         first = time.perf_counter()
                     yield text
-    except VoiceFailure:
+        outcome = "ok"
+    except VoiceFailure as exc:
+        outcome = exc.code
         raise
     except TimeoutError:
+        outcome = "provider_timeout"
         logger.warning("Interviewer turn timed out")
         raise VoiceFailure("provider_timeout") from None
     except Exception as exc:
         code = get_provider(settings.ai_mode).error_code(exc) or "ai_unavailable"
+        outcome = code
         # Exception messages can contain request or credential details; log the class only.
         logger.warning("Interviewer turn failed with %s (%s)", code, type(exc).__name__)
         raise VoiceFailure(code) from None
+    finally:
+        usage.record(
+            "voice_response",
+            "interviewer_turn",
+            outcome=outcome,
+            provider=settings.ai_mode,
+            model_id=model_settings.bedrock_model_id,
+            region=model_settings.aws_region,
+            latency_ms=round((time.perf_counter() - started) * 1000),
+            first_output_ms=None if first is None else round((first - started) * 1000),
+            stop_reason=stop,
+            **tokens,
+        )
     logger.info(
         "Interviewer turn: %s first text %s ms, total %.0f ms",
         model_settings.bedrock_model_id if settings.ai_mode == "bedrock" else settings.ai_mode,

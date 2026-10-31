@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException, Path, Request, Response
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, StreamingResponse
 
-from app import catalog
+from app import catalog, usage
 from app.api.candidates import cached_for_candidate
 from app.api.deps import catalog_session
 from app.api.jobs import JobDetail
@@ -287,6 +287,8 @@ async def screening_report(
     if session.report is None:
         task = session.report_task
         if task is None:
+            # The task copies this context, so its model calls are recorded for this screening.
+            _bind_usage(request, session)
             task = asyncio.ensure_future(_produce_report(session, request.app.state.settings))
             session.report_task = task
         try:
@@ -314,6 +316,7 @@ async def text_message(
     settings = request.app.state.settings
     store = request.app.state.voice_sessions
     session = store.get(session_id, body.capability)
+    _bind_usage(request, session)
     now = store.clock()
     started = session.in_flight_since
     if started is not None and now - started < settings.voice_turn_timeout_seconds + 5:
@@ -330,6 +333,16 @@ async def text_message(
     response.headers["Cache-Control"] = "no-store"
     return MessageReply(
         reply=result["choices"][0]["message"]["content"], ended=session.state == "ended"
+    )
+
+
+def _bind_usage(request: Request, session: ScreeningSession) -> None:
+    usage.bind(
+        request.app.state.usage,
+        screening_mode=session.mode,
+        candidate_kind=session.context.candidate_kind,
+        job_id=session.context.job_id,
+        screening_ref=session.usage_ref,
     )
 
 
@@ -361,6 +374,7 @@ async def chat_completions(session_id: SessionPath, request: Request):
     settings = request.app.state.settings
     store = request.app.state.voice_sessions
     session = store.get(session_id, _bearer(request.headers.get("authorization")))
+    _bind_usage(request, session)
     chat = parse_chat(await _read_limited(request))
     now = store.clock()
     # Deepgram can send the next request before it drops the previous one. Rejecting it made

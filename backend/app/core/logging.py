@@ -21,8 +21,12 @@ def configure_logging(level: str = "INFO") -> None:
     """Configure only the `app` logger; Uvicorn and SDK loggers keep their own settings."""
     logger = logging.getLogger("app")
     logger.setLevel(level)
-    if not any(isinstance(handler, _AppHandler) for handler in logger.handlers):
+    handler = next((item for item in logger.handlers if isinstance(item, _AppHandler)), None)
+    if handler is None:
         handler = _AppHandler()
         handler.setFormatter(logging.Formatter(FORMAT))
         handler.addFilter(RequestIdFilter())
         logger.addHandler(handler)
+    # The handler applies the level too: usage capture lowers one child logger to INFO,
+    # and that must not print extra lines when LOG_LEVEL is higher.
+    handler.setLevel(level)
