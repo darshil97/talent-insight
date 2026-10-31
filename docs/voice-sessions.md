@@ -50,6 +50,7 @@ The flow:
    - **Manual mute:** sends `KeepAlive` instead of audio.
    - **Failures:** a connection refused before `Welcome` fails immediately. A dropped call reconnects at most twice through `/token`, replaying the conversation as `agent.context` history without the greeting. Errors surface as codes only.
 4. **Text.** Text mode, or "Continue by text" after a voice problem, uses `/messages`.
+   - **Transcript display (2026-10-31):** Deepgram reports interviewer speech sentence by sentence, so consecutive lines from one speaker are joined into a single turn (`appendTurn` in `src/lib/screenings.ts`). The panel's own transcript only; the voice client's reconnect history is unchanged. The transcript scrolls to each new line while the reader is at the bottom, and stays put once they scroll up.
 5. **Ending and clean-up.** A countdown shows the remaining time, and a client backstop closes the screening 30 seconds after the limit. End, Close, unmount, `pagehide` and back/forward restoration stop the microphone and socket and call `/end` with `keepalive`. The transcript lives only in React state; nothing is written to browser storage.
 
 ## Server-built `Settings`

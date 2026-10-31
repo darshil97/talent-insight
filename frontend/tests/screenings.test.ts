@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, mock, test } from "node:test";
-import { decodeStart, endScreening, getNotice, reconnectToken, ScreeningError, sendMessage, startScreening, voiceErrorMessage } from "../src/lib/screenings.ts";
+import { decodeStart, endScreening, getNotice, reconnectToken, ScreeningError, sendMessage, startScreening, voiceErrorMessage, appendTurn } from "../src/lib/screenings.ts";
 
 const notice = { notice_version: "2026-10-27", text: "AI screening notice; a human recruiter decides.", screening_minutes: 10, voice_available: true, text_available: true };
 const session = { session_id: "S".repeat(22), capability: "C".repeat(43) };
@@ -88,4 +88,17 @@ test("voice errors name known causes and show provider codes, never other text",
   assert.equal(voiceErrorMessage("FAILED_TO_THINK"), "The voice service reported a problem (code: FAILED_TO_THINK). Continue by text.");
   assert.equal(voiceErrorMessage(undefined), "The voice service reported a problem. Continue by text.");
   assert.equal(voiceErrorMessage("<b>provider text</b>"), "The voice service reported a problem. Continue by text.");
+});
+
+test("consecutive lines from one speaker join into one transcript turn", () => {
+  let turns = appendTurn([], { role: "interviewer", text: "Great!" });
+  turns = appendTurn(turns, { role: "interviewer", text: "Let's get started." });
+  turns = appendTurn(turns, { role: "candidate", text: "Sure." });
+  turns = appendTurn(turns, { role: "candidate", text: "I ran a campaign." });
+  turns = appendTurn(turns, { role: "interviewer", text: "Thanks." });
+  assert.deepEqual(turns, [
+    { role: "interviewer", text: "Great! Let's get started." },
+    { role: "candidate", text: "Sure. I ran a campaign." },
+    { role: "interviewer", text: "Thanks." },
+  ]);
 });

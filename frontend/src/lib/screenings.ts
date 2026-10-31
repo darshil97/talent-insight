@@ -32,6 +32,18 @@ const messages: Record<string, string> = {
   validation_error: "The screening request was invalid. Reload the page and try again.",
 };
 
+export interface TranscriptTurn { role: "candidate" | "interviewer"; text: string }
+
+/**
+ * Adds a transcript line, joining it to the previous one from the same speaker. The voice agent
+ * reports the interviewer sentence by sentence, and a candidate answer can arrive in parts.
+ */
+export function appendTurn(turns: TranscriptTurn[], turn: TranscriptTurn): TranscriptTurn[] {
+  const last = turns.at(-1);
+  if (last?.role !== turn.role) return [...turns, turn];
+  return [...turns.slice(0, -1), { role: turn.role, text: `${last.text} ${turn.text}` }];
+}
+
 const voiceErrors: Record<string, string> = {
   microphone_denied: "Microphone access was blocked. Continue by text, or allow the microphone and start again.",
   microphone_unavailable: "No usable microphone was found. Continue by text.",

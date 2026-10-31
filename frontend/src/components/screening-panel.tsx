@@ -2,15 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import {
-  endScreening, getNotice, reconnectToken, ScreeningError, sendMessage, startScreening, voiceErrorMessage,
-  type ScreeningCandidate, type ScreeningMode, type ScreeningNotice, type ScreeningStart,
+  endScreening, getNotice, reconnectToken, ScreeningError, sendMessage, startScreening, voiceErrorMessage, appendTurn,
+  type ScreeningCandidate, type ScreeningMode, type TranscriptTurn, type ScreeningNotice, type ScreeningStart,
 } from "@/lib/screenings";
 import { MicIcon } from "@/components/mic-icon";
 import { PhoneIcon } from "@/components/phone-icon";
 import { VoiceAgent, type VoiceStatus } from "@/lib/voice-agent";
 import { browserVoiceDeps, requestMicrophonePermission, voiceSupported } from "@/lib/voice-audio";
 
-type Turn = { role: "candidate" | "interviewer"; text: string };
 type Phase = "closed" | "consent" | "starting" | "live" | "ended";
 
 // The backend enforces the real reconnect limit; this only stops the client asking sooner.
@@ -55,7 +54,7 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
   const [channel, setChannel] = useState<ScreeningMode>("text");
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("connecting");
   const [muted, setMuted] = useState(false);
-  const [transcript, setTranscript] = useState<Turn[]>([]);
+  const [transcript, setTranscript] = useState<TranscriptTurn[]>([]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -63,6 +62,9 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
   const [deadline, setDeadline] = useState(0);
   const [now, setNow] = useState(0);
   const panel = useRef<HTMLElement>(null);
+  const log = useRef<HTMLOListElement>(null);
+  // Follow new lines only while the reader is at the bottom, so scrolling back is not undone.
+  const following = useRef(true);
   const session = useRef<ScreeningStart | null>(null);
   const voice = useRef<VoiceAgent | null>(null);
   const requests = useRef<AbortController | null>(null);
@@ -124,6 +126,11 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
     if (phase === "consent" || phase === "live") panel.current?.focus();
   }, [phase]);
 
+  useEffect(() => {
+    const element = log.current;
+    if (element && following.current) element.scrollTop = element.scrollHeight;
+  }, [transcript]);
+
   /** Loads the server notice; state changes happen only in the promise callbacks. */
   const loadNotice = useCallback(() => {
     requests.current?.abort();
@@ -164,8 +171,8 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
     onClose?.();
   }
 
-  function addTurn(turn: Turn) {
-    setTranscript((turns) => [...turns, turn]);
+  function addTurn(turn: TranscriptTurn) {
+    setTranscript((turns) => appendTurn(turns, turn));
   }
 
   async function begin() {
@@ -201,6 +208,7 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
     setDeadline(start + started.screening_seconds * 1000);
     setNow(start);
     setTranscript(mode === "text" ? [{ role: "interviewer", text: started.greeting }] : []);
+    following.current = true;
     setChannel(mode);
     setVoiceLost(false);
     setPhase("live");
@@ -318,7 +326,17 @@ export function ScreeningPanel({ jobId, jobTitle, candidate, unavailableReason, 
       )}
 
       {(live || phase === "ended") && (
-        <ol className="mission-transcript" role="log" aria-live="polite" aria-label="Screening transcript">
+        <ol
+          ref={log}
+          className="mission-transcript"
+          role="log"
+          aria-live="polite"
+          aria-label="Screening transcript"
+          onScroll={(event) => {
+            const element = event.currentTarget;
+            following.current = element.scrollHeight - element.scrollTop - element.clientHeight < 48;
+          }}
+        >
           {transcript.map((turn, index) => (
             <li key={index} className={turn.role === "candidate" ? "mission-turn-candidate" : "mission-turn-interviewer"}>
               <span>{turn.role === "candidate" ? "Candidate" : "Interviewer"}</span>{turn.text}
