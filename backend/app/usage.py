@@ -1,12 +1,13 @@
 """Metered usage rows on Neon: counts, timings and prices only, never candidate content.
 
 Rows wait in memory and a background task writes them in batches, so a slow or failing
-database never delays a request. Rows still queued when the process stops are lost.
+database never delays a request. A clean shutdown writes queued rows once more; a crash loses them.
 """
 
 import asyncio
 import logging
 import os
+import secrets
 from collections import deque
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -126,9 +127,15 @@ class Scope:
     candidate_kind: str | None = None
     job_id: str | None = None
     screening_ref: str | None = None
+    candidate_ref: str | None = None
 
 
 _scope: ContextVar[Scope | None] = ContextVar("usage_scope", default=None)
+
+
+def new_candidate_ref() -> str:
+    """A random reference for one uploaded resume; it carries no identity."""
+    return "up_" + secrets.token_hex(8)
 
 
 def bind(recorder: UsageRecorder, **context) -> None:
@@ -150,6 +157,7 @@ def record(category: str, operation: str, **values) -> None:
         candidate_kind=scope.candidate_kind,
         job_id=scope.job_id,
         screening_ref=scope.screening_ref,
+        candidate_ref=scope.candidate_ref,
         **values,
     )
 

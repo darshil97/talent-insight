@@ -314,6 +314,9 @@ def test_upload_assessment_returns_context_that_starts_a_screening(make_app, api
     context = stored(app, response).context
     assert context.candidate_kind == "upload"
     assert [fact.value for fact in context.facts] == [fact.value for fact in payload.facts]
+    # The signed context carries the upload's usage reference into its screenings.
+    assert payload.ref is not None and payload.ref.startswith("up_")
+    assert stored(app, response).candidate_ref == payload.ref
     wrong_job = start(
         api_request,
         make_app(),
@@ -800,6 +803,36 @@ def test_interviewer_turns_record_streamed_tokens(make_app, api_request, fake_mo
         "demo_ds",
     )
     assert row["screening_ref"] == stored(app, started).usage_ref
+    assert row["candidate_ref"] == "demo_ds_avery"
+
+
+def test_end_or_a_text_turn_marks_when_the_voice_call_stopped(make_app, api_request):
+    for action in ("end", "messages"):
+        app = make_app()
+        started = start(api_request, app)
+        body = {"capability": started.json()["capability"]}
+        if action == "messages":
+            body["text"] = "Let me continue by text."
+        path = f"/screenings/{started.json()['session_id']}/{action}"
+        assert api_request(app, "POST", path, json=body).status_code == 200
+        assert stored(app, started).call_ended is not None
+
+
+def test_upload_screenings_share_the_resume_rows_candidate_ref(make_app, api_request, fake_model):
+    app = usage_app(make_app)
+    assessment = load_cache()[("demo_ds", "demo_ds_avery")].assessment
+    linked = sign_context(assessment, SECRET, 600, "up_0123456789abcdef")
+    started = start(api_request, app, candidate={"kind": "upload", "context": linked})
+    chat(api_request, app, started, [GREETING, {"role": "user", "content": "Ready."}])
+    (row,) = app.state.usage._queue
+    assert (row["candidate_kind"], row["candidate_ref"]) == ("upload", "up_0123456789abcdef")
+    # A context signed before references existed still starts a screening, without one.
+    older = start(
+        api_request,
+        make_app(),
+        candidate={"kind": "upload", "context": sign_context(assessment, SECRET, 600)},
+    )
+    assert older.status_code == 201
 
 
 def test_failed_interviewer_turns_are_recorded(make_app, api_request, fake_model):

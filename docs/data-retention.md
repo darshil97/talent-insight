@@ -1,22 +1,28 @@
 # Data retention and logs
 
-Module 15b reviewed where candidate data lives, when it is deleted and what the logs contain. Uploaded resumes, screening transcripts and reports are temporary: nothing about a real candidate is written to Neon, files or browser storage. Neon holds only the synthetic demo catalog and the counts-only usage table.
+Uploaded resumes, screening transcripts and reports are temporary: nothing about a real candidate is written to Neon, files or browser storage. Neon holds only the synthetic demo catalog and the counts-only usage table.
 
 ## Where data lives
 
-| Data | Where it lives | When it is deleted | Sent to |
+| Data | Where | Deleted | Sent to |
 | --- | --- | --- | --- |
-| Uploaded resume PDF | The request, then the PDF parser child process over stdin. Never written to disk. | When the request ends. | No one. |
-| Extracted resume text, facts and assessment | Returned to the browser and held in page memory. | Refresh, leaving the page or clearing the upload. | Amazon Bedrock, for extraction and assessment. |
-| Signed screening context (uploads) | Browser memory, sent back to start a screening. It holds fact kinds, short values and statuses, never quotes or identity. | Its signature expires after `VOICE_CONTEXT_TTL_SECONDS` (30 minutes). | No one. |
-| Screening session: transcript and report | Backend process memory. | At `VOICE_SESSION_EXPIRY_SECONDS` (15 minutes after the start), removed within 60 seconds by the purge timer, even when no request arrives. An unstarted session goes after 3 minutes. A restart drops everything. | Deepgram (voice audio and speech), Amazon Bedrock (interviewer turns and the report). |
-| Report on the page | React component state. | Close, refresh or leaving the page. | No one. |
-| Bot-check token | Sent once from the browser to the backend, then to Cloudflare. | Single use; valid for 5 minutes. | Cloudflare. The widget itself runs in the visitor's browser and talks to Cloudflare directly. |
-| Demo jobs, candidates and assessments | Neon and the packaged snapshot. | Kept: they are synthetic demo data. | Bedrock only when the snapshot is refreshed by hand. |
+| Uploaded resume PDF | The request, then the PDF parser child process over stdin; never written to disk | When the request ends | No one |
+| Extracted resume text, facts and assessment | The response, then page memory | Refresh, leaving the page or clearing the upload | Amazon Bedrock (extraction and assessment) |
+| Signed screening context (uploads) | Browser memory; fact kinds, short values and statuses, no quotes or identity | Expires after 30 minutes | No one |
+| Screening transcript and report | Backend process memory | 15 minutes after the session is created, within 60 s (purge timer, even with no traffic); an unstarted session after 3 minutes; any restart | Deepgram (voice audio, speech recognition and speech), Amazon Bedrock (interviewer turns and the report) |
+| Transcript and report on the page | React state | Close, refresh or leaving the page | No one |
+| Bot-check token | Browser → backend → Cloudflare | Single use, valid 5 minutes ([Turnstile](provider-research.md#cloudflare-turnstile)) | Cloudflare; the widget also talks to Cloudflare directly |
+| Demo jobs, candidates and assessments | Neon and the packaged snapshot | Kept: synthetic demo data | Bedrock only when the snapshot is refreshed by hand |
+| Usage rows | Neon `talent_insight.usage_events` | Kept until deleted by hand | No one |
+
+Session timers and limits: [screening sessions](voice-sessions.md#sessions-limits-and-timers).
 
 ## Logs
 
-The backend logs codes, counts, timings, model IDs and route templates only, never resume text, transcripts, quotes, names, session capabilities, tokens or secrets. Request lines use the route template (`/screenings/{session_id}/end`), Render runs with `--no-access-log`, and an unhandled error logs only its exception class. Tests check that capabilities, tokens and candidate answers stay out of the app's log records.
+The backend logs codes, counts, timings, model IDs and route templates only; never resume text, transcripts, quotes, names, capabilities, tokens or secrets.
+- Request lines use the route template (`/screenings/{session_id}/end`), and Uvicorn runs with `--no-access-log`.
+- Only the `app` logger is configured, so SDK and `httpx` INFO lines (which include URLs) are not shown at the defaults.
+- An unhandled error logs only its exception class.
 
 **Usage line.** When a screening session is deleted, the backend logs one line of counts:
 
@@ -24,57 +30,33 @@ The backend logs codes, counts, timings, model IDs and route templates only, nev
 Screening usage: voice, demo candidate, interviewer, 547 s to last request, 9 answers, 10 interviewer turns, 11 turn requests, 0 reconnects, report built
 ```
 
-- Mode and candidate kind (`demo` or `upload`).
-- How it ended: `interviewer`, `time_limit`, `failure` or `ended_early`; `not_started` if no interviewer turn ran; `not_ended` if it expired while running.
-- Seconds from the start to the last request that used the session.
-- Candidate answers, finished interviewer turns, all interviewer requests (including replaced ones) and voice reconnects.
-- Whether a report was built.
-
-A restart drops sessions without a usage line, and the seconds are a lower bound for voice: Deepgram bills the connection, which a client can hold open after its last request.
-
-**Weekly check.** In the Render logs, search for `Screening usage` and `Screening report` for the past week. Compare the count of voice lines and their seconds with Deepgram's usage page, and the interviewer turns and reports with Bedrock's cost page. A Deepgram total far above the logged seconds suggests a held connection.
+Fields: mode; candidate kind (`demo` or `upload`); how it ended (`interviewer`, `time_limit`, `failure`, `ended_early`, or `not_started` / `not_ended` if no turn ran or it expired while running); seconds from session creation to the last request that used it; candidate answers; finished interviewer turns; all turn requests including replaced ones; voice reconnects; whether a report was built. A restart drops sessions without a line.
 
 ## Usage table on Neon
 
-`talent_insight.usage_events` gets one row per metered event, written in the background every 10 seconds (added 2026-11-01, migration `0003_usage_events`). Rows hold counts, timings, model IDs and prices only: no resume text, transcript, quotes, names, session IDs, capabilities, tokens or secrets.
+`talent_insight.usage_events` (migrations `0003_usage_events` and `0004_usage_candidate_ref`) gets one row per paid event. Parsing a PDF runs locally and costs nothing, so it gets no row. Rows hold counts, timings, model IDs and prices only: no resume text, transcript, quotes, names, session IDs, capabilities, tokens or secrets.
 
 | `category` | `operation` | One row per | Units |
 | --- | --- | --- | --- |
-| `pdf` | `pdf_parse` | uploaded PDF parse | pages, characters, latency; no model, so no cost |
-| `pdf` | `resume_extraction`, `resume_interpretation` | Bedrock call (each attempt) for an uploaded resume | input and output tokens |
-| `voice_response` | `interviewer_turn` | interviewer reply, voice or text | input and output tokens, time to first text |
-| `response_analysis` | `screening_report` | report call (each attempt) | input and output tokens |
-| `deepgram` | `deepgram_session` | voice screening, when its session is deleted | estimated seconds |
+| `pdf` | `resume_extraction`, `resume_interpretation` | Bedrock call attempt for an uploaded resume | `input_tokens`, `output_tokens` |
+| `voice_response` | `interviewer_turn` | Interviewer model reply, voice or text | tokens, `first_output_ms` |
+| `response_analysis` | `screening_report` | Report call attempt | tokens |
+| `deepgram` | `deepgram_session` | Voice session, when it is deleted (`VOICE_MODE=deepgram` only) | estimated `seconds` |
 
-Other columns:
-- **When and where:** `created_at` (UTC), and `origin`, which is `render` on Render or `local` for a run on another machine, since both use this database.
-- **Which call:** `provider`, `model_id`, `region` and `attempt`.
-- **How it went:** `outcome` is `ok` or a safe error code. A cut-off interviewer stream is `stopped`. Also `stop_reason`, `latency_ms` and `first_output_ms`.
-- **Context:** `screening_mode`, `candidate_kind` and `job_id`.
-- **Grouping:** `screening_ref` is a random value shared by one screening's rows, unrelated to its session ID. `request_id` matches the log lines.
-- **Details:** a small JSON field. For Deepgram it says how the estimate was made and holds the number of token grants and interviewer turns.
+Other columns: `created_at` (UTC); `origin` (`render` when Render's own `RENDER` variable is set, else `local`, since both use this database); `provider`, `model_id`, `region`, `attempt`; `outcome` (`ok`, a safe error code, or `stopped` for an interviewer stream closed by a newer request or a dropped client), `stop_reason`, `latency_ms`; `screening_mode`, `candidate_kind`, `job_id`; `screening_ref` (a random value shared by one screening's rows, unrelated to its session ID); `candidate_ref` (links one candidate's rows, below); `request_id` (matches the log lines, and is shared by an upload's extraction and interpretation rows, which run in one `/assess` request); `details` (JSON; for Deepgram the estimate method, token grants and interviewer turns); `cost_usd`.
 
-Recording rules:
-- Mock calls are not recorded.
-- Recording needs `DATABASE_URL` and is on by default. `USAGE_RECORDING=false` turns it off.
-- Rows are kept until you delete them.
-- If Neon is unreachable, rows are kept in memory and retried, up to 1,000. Other write errors drop the batch with a log line. Rows still queued when the process stops are lost.
+**Recording** needs `DATABASE_URL` and is on by default; `USAGE_RECORDING=false` turns it off ([configuration](configuration.md)). Mock model calls are not recorded, and neither is the paid snapshot refresh (`refresh_demo --run`). Rows queue in memory (at most 1,000) and are written every 10 s and once more on a clean shutdown. If Neon is unreachable they are kept and retried; other write errors drop the batch with a count-only warning. A crash loses queued rows, and sessions still in memory at shutdown get no Deepgram row.
 
-**Cost.** `cost_usd` is calculated when the row is written, at the configured prices:
-- **Bedrock:** per million tokens, set with `usage.token_prices` in `app/config.yaml` or `USAGE_TOKEN_PRICES`. Each entry is `[model ID, input USD, output USD]`. Current prices, provided by the user from AWS on 2026-11-01:
+**Cost.** `cost_usd` is calculated when the row is created, from `usage.token_prices` (USD per million input and output tokens, per model ID) and `usage.deepgram_minute_price` in `backend/app/config.yaml`. Current values and their sources: [provider research](provider-research.md#prices). A model ID that is not listed exactly gets tokens but no cost. A price change affects new rows only.
 
-  | Model ID | Input, per 1M tokens | Output, per 1M tokens |
-  | --- | --- | --- |
-  | `openai.gpt-oss-120b-1:0` (resume assessment, report) | $0.1545 | $0.6180 |
-  | `au.anthropic.claude-haiku-4-5-20251001-v1:0` (interviewer) | $1.10 | $5.50 |
+**Linking one candidate's costs.** `candidate_ref` joins a candidate's resume, interview and report rows:
+- **Uploaded resume:** `/assess` creates a random `up_…` value, tags its extraction and interpretation rows, and puts the value inside the signed screening context it returns. Every screening started from that context carries it into its interviewer, report and Deepgram rows. Uploading the same PDF again gives a new value.
+- **Demo candidate:** the synthetic candidate ID, such as `demo_ds_avery`, so all of that candidate's screenings add up. Demo resume assessments come from the saved snapshot and cost nothing at runtime.
+- `screening_ref` still separates individual screenings of the same candidate.
 
-  The IDs must match `BEDROCK_MODEL_ID` and `VOICE_BEDROCK_MODEL_ID` exactly, or rows have tokens but no cost.
-- **Deepgram:** per minute, set with `usage.deepgram_minute_price`, default $0.065. That is Deepgram's pay-as-you-go Voice Agent rate with your own LLM, read from deepgram.com/pricing on 2026-11-01. Check it against your plan.
-- Changing a price affects new rows only.
+**Deepgram rows are an estimate.** Deepgram bills the browser's connection time, which the backend never sees directly. `seconds` runs from session creation to the browser's hang-up: its first `/end`, or its first text turn after leaving voice (`details.estimate = start_to_hang_up`). If no hang-up arrives, it runs to the session's last request instead (`start_to_last_request`), which misses any time a client holds the connection open. For exact minutes, use Deepgram's usage page.
 
-**Deepgram is an estimate.** Deepgram bills the browser's connection time, which the backend never sees. The row's seconds run from the screening's start to its last request, a lower bound. For exact minutes, use Deepgram's usage page.
-
-**Example queries** (run in the Neon SQL editor):
+**Example queries** (Neon SQL editor):
 
 ```sql
 -- Cost and volume by category and day
@@ -93,22 +75,34 @@ FROM talent_insight.usage_events
 WHERE provider = 'bedrock'
 GROUP BY 1, 2 ORDER BY 3 DESC;
 
+-- Total cost per candidate: resume, interview (model and Deepgram) and report
+SELECT candidate_ref, candidate_kind,
+       sum(cost_usd) FILTER (WHERE category = 'pdf') AS resume_cost,
+       sum(cost_usd) FILTER (WHERE category IN ('voice_response', 'deepgram')) AS call_cost,
+       sum(cost_usd) FILTER (WHERE category = 'response_analysis') AS report_cost,
+       sum(cost_usd) AS total_cost
+FROM talent_insight.usage_events
+WHERE candidate_ref IS NOT NULL
+GROUP BY 1, 2 ORDER BY max(created_at) DESC;
+
 -- Everything one screening used
-SELECT screening_ref, category, count(*) AS events, sum(cost_usd) AS cost_usd
+SELECT screening_ref, candidate_ref, category, count(*) AS events, sum(cost_usd) AS cost_usd
 FROM talent_insight.usage_events
 WHERE screening_ref IS NOT NULL
-GROUP BY 1, 2 ORDER BY 1;
+GROUP BY 1, 2, 3 ORDER BY 1;
 ```
+
+**Weekly check.** Compare the `deepgram` minutes with Deepgram's usage page, and the Bedrock rows with AWS's cost page. A Deepgram total far above the estimate suggests a connection held open.
 
 ## Provider settings
 
-- **Deepgram:** the agent settings send `mip_opt_out: true`, which opts out of Deepgram's Model Improvement Program.
-- **Amazon Bedrock:** the app requests no tracing or prompt caching. Check one account setting yourself: in the Bedrock console, **Settings → Model invocation logging** must stay off. If it is on, AWS stores every prompt, including resume text and transcripts, in CloudWatch or S3.
-- **LangChain and LangSmith:** tracing is forced off in the Bedrock client.
+- **Deepgram:** the agent settings send `mip_opt_out: true`, opting out of Deepgram's Model Improvement Program.
+- **Amazon Bedrock:** the app requests no tracing or prompt caching. In the Bedrock console, **Settings → Model invocation logging** must stay off; if it is on, AWS stores every prompt, including resume text and transcripts, in CloudWatch or S3. This is an account setting the owner must check.
+- **LangChain / LangSmith:** tracing is forced off whenever a Bedrock client is built.
 - **Cloudflare Turnstile:** the backend sends only the secret key and the token, not the visitor's IP address.
 
-## Limits
+## Limitations
 
-- Session state and limits live in one process's memory. Several processes would each keep their own sessions and limits.
-- Render keeps its logs according to its own plan; the app does not control that retention.
+- Sessions and limits live in one process's memory; several processes would each keep their own.
+- Render keeps its logs according to its plan; the app does not control that.
 - Provider-side retention is governed by each provider's terms, not by this app.

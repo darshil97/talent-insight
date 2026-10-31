@@ -1,50 +1,36 @@
 # Talent Insight
 
-An AI recruiting and candidate pipeline assistant for technical recruiters and small recruitment agencies.
+An AI recruiting assistant for technical recruiters and small agencies, built as a portfolio demo. The workflow: pick a job, review its synthetic candidates, upload a resume for an evidence-backed match, run an optional AI screening (voice or text), and read a structured report. **A recruiter makes every decision.**
 
-Planned workflow: select a curated job, review synthetic candidates, upload a temporary resume, inspect evidence-backed matching, conduct an optional AI voice screening, and review a structured report. A recruiter makes the hiring decision.
+- **Matching:** each requirement is judged only from quotes found in the resume. Missing evidence is "unknown", not a gap, and gives a score range instead of a false point score.
+- **Screening:** a ten-minute, consent-based conversation with an AI interviewer, by voice (Deepgram) or text. The report verifies every quote it uses and flags attempts to game the AI.
+- **Privacy:** uploaded resumes, transcripts and reports are temporary; nothing about a real candidate is stored. The demo catalog (four jobs, twelve synthetic candidates) lives in Neon.
 
-**Current status: the Sci-fi / Mission layout and job-scoped candidate table are implemented for review.** The fixture and shared Neon catalog define four roles across data science, backend engineering, HR operations and marketing operations, with twelve synthetic candidates and thirteen memberships. The sidebar count comes from the same jobs API as the role list. Choosing a PDF automatically produces a temporary assessment. Synthetic candidates display a validated precomputed assessment from the 13-entry snapshot; unresolved criteria produce a range rather than a point score. Available point scores sort highest first. The UI shows source evidence, requirement judgments, uncertainty and follow-up questions for human review. The selected Bedrock model completed the synthetic refresh with bounded output and resumable local checkpoints; interpretation accuracy still requires human review. Candidates now show one match estimate with a confidence label and sort by it plus availability. Module 11a adds a `transferable` level for comparable experience, verified name/title for uploads and an availability column with a small ranking bonus (not provided is never penalized). The 2026-10-27 backend refactor (Jinja prompts, LLM provider registry, request IDs, resilient output validation) changed the snapshot fingerprint; the snapshot was regenerated on 2026-10-27 and all 13 entries revalidated. On this machine, a stale `AWS_BEARER_TOKEN_BEDROCK` exported in the shell overrides the valid key in `backend/.env`; remove it or run Bedrock commands with `env -u AWS_BEARER_TOKEN_BEDROCK`. Module 12 adds the voice screening backend, verified offline only: consent, short-lived Deepgram tokens, server-built Deepgram settings and a FastAPI interviewer. The interviewer calls Bedrock server-side, lasts about ten minutes and adapts its topics. Module 13 adds the screening panel on candidate profiles and uploaded-candidate details, with voice or text, consent and a live transcript, plus a Render and Vercel deployment checklist. Live voice is not yet verified.
+**Stack:** Next.js on Vercel · FastAPI on Render · Neon Postgres · Amazon Bedrock (gpt-oss-120b, Claude Haiku 4.5) · Deepgram Voice Agent · Cloudflare Turnstile.
 
-Use the dedicated Anaconda environment:
+## Run locally
 
-```sh
+```bash
 conda env create -f environment.yml
-conda activate talent-insight
-export PATH="$CONDA_PREFIX/bin:$PATH"
 ```
 
-Skip environment creation if `talent-insight` already exists. Follow [local development instructions](docs/local-development.md) to install the locked dependencies, run both projects and execute checks. No provider credentials are required for this scaffold.
+```bash
+conda activate talent-insight && export PATH="$CONDA_PREFIX/bin:$PATH"
+```
 
-With dependencies installed, start both local servers from the repository root:
-
-```sh
+```bash
 ./run_local.sh start
-./run_local.sh status
-./run_local.sh stop
 ```
 
-The launcher activates the existing Conda environment, uses loopback HTTP, and also supports `restart` and `logs`. It never installs packages, migrates, seeds or kills arbitrary processes by port. Job browsing requires the configured shared Neon database; health and the overview do not.
+Skip the first command if the `talent-insight` environment already exists. Install dependencies and set `backend/.env` first (see [local development](docs/local-development.md) and [configuration](docs/configuration.md)). The app runs at http://localhost:3000 and the API at http://localhost:8000 (`/health`, `/docs`). `./run_local.sh` also accepts `status`, `logs`, `restart` and `stop`.
 
-The backend's [health endpoint](http://localhost:8000/health) returns `{"status":"ok"}` once running. API docs are at [localhost:8000/docs](http://localhost:8000/docs), controlled by `DOCS_ENABLED`. Backend defaults live in [config.yaml](backend/app/config.yaml); secrets and optional overrides use `backend/.env` or process variables. There is one application configuration, without development/test/production modes. See the [backend contract](docs/backend-foundation.md) for settings, CORS and errors.
+## Documentation
 
-- [Project context and module roadmap](PROJECT_CONTEXT.md): current state, architecture, configuration and next action.
-- [Development rules](AGENTS.md): module review gates and repository-wide safeguards.
-- [Provider research](docs/provider-research.md): official documentation findings and unresolved integration constraints.
-- [Local development](docs/local-development.md): Conda setup, environment boundaries, run commands and verification.
-- [Backend foundation](docs/backend-foundation.md): health, settings, CORS and error contracts.
-- [Database setup](docs/database.md): verified Neon target, private configuration, schema, seeds and read-only integration checks.
-- [Frontend layout](docs/frontend-layout.md): routes, accessibility behavior and module 5 browser checks.
-- [Jobs and editable JSON](docs/jobs.md): API contracts, job-file editing, validation and module 6 checks.
-- [Candidate pools and profiles](docs/candidates.md): membership boundaries, source provenance and module 7 checks.
-- [Temporary resume PDFs](docs/resumes.md): upload API, limits, privacy, parser behavior and module 8 checks.
-- [Structured extraction](docs/structured-extraction.md): module 9 APIs, explicit providers, AWS configuration, evidence validation and limits.
-- [Matching and scoring](docs/scoring.md): module 10 assessment APIs, statuses, weights, unknown handling and limitations.
-- [Assessment UI](docs/assessment-ui.md): module 11 flows, temporary data, evidence display and verification limits.
-- [Voice sessions](docs/voice-sessions.md): voice architecture, endpoints, browser client, text alternative, interviewer rules and trust boundaries.
-- [Deployment](docs/deployment.md): Render backend and Vercel frontend dashboard checklist, voice on/off procedure and post-deploy checks.
-- [Data retention and logs](docs/data-retention.md): where candidate data lives, when it is deleted, what is logged and the weekly usage check.
-
-The planned stack is Next.js/React/TypeScript/Tailwind on Vercel, FastAPI/Pydantic on Render, Neon Postgres, AWS Bedrock via LangChain, and Deepgram for browser voice. Uploaded personal data will not become permanent demo records.
-
-Work proceeds one module at a time with review between modules. The demo snapshot contains thirteen validated synthetic assessments; future fixture changes need a separately approved Neon seed and a manual provider refresh. Current module status, verification results and the next task are kept in [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md).
+- [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md): current state, decisions and the repository map; the starting point for coding work.
+- [AGENTS.md](AGENTS.md): working rules for contributors and coding assistants.
+- [Configuration](docs/configuration.md): every environment variable, local vs Render vs Vercel.
+- [Deployment](docs/deployment.md): Render, Vercel, Cloudflare Turnstile, post-deploy checks and cost safeguards.
+- [Local development](docs/local-development.md): setup, commands and checks.
+- [Data retention and logs](docs/data-retention.md): what is stored where, logging rules and the usage table.
+- Feature reference: [jobs](docs/jobs.md), [candidates](docs/candidates.md), [resumes](docs/resumes.md), [structured extraction](docs/structured-extraction.md), [scoring](docs/scoring.md), [assessment UI](docs/assessment-ui.md), [voice sessions](docs/voice-sessions.md), [screening reports](docs/screening-reports.md).
+- Platform: [backend foundation](docs/backend-foundation.md), [database](docs/database.md), [frontend layout](docs/frontend-layout.md), [provider research](docs/provider-research.md).

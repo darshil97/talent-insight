@@ -29,6 +29,8 @@ class EnvelopePayload(BaseModel):
     exp: int
     facts: list[ContextFact] = Field(max_length=40)
     judgments: list[ContextJudgment] = Field(max_length=100)
+    # The upload's usage reference, so its screenings' costs join its resume costs.
+    ref: str | None = Field(default=None, pattern=r"^up_[0-9a-f]{16}$")
 
 
 def _encode(data: bytes) -> str:
@@ -44,7 +46,9 @@ def _signature(secret: str, body: str) -> str:
     return _encode(digest.digest())
 
 
-def sign_context(assessment: Assessment, secret: str, ttl_seconds: int) -> str | None:
+def sign_context(
+    assessment: Assessment, secret: str, ttl_seconds: int, ref: str | None = None
+) -> str | None:
     """Sign only short fact phrases and requirement statuses; no quotes, pages or identity."""
     now = int(time.time())
     payload = EnvelopePayload(
@@ -59,6 +63,7 @@ def sign_context(assessment: Assessment, secret: str, ttl_seconds: int) -> str |
             ContextJudgment(requirement_id=item.requirement_id, status=item.status)
             for item in assessment.judgments
         ],
+        ref=ref,
     )
     body = _encode(payload.model_dump_json().encode())
     token = f"{body}.{_signature(secret, body)}"

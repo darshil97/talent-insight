@@ -126,7 +126,9 @@ def test_flush_writes_one_batch_and_keeps_rows_only_while_neon_is_unreachable(ca
 def bound(**values) -> UsageRecorder:
     usage.capture_model_calls()  # create_app installs this; these tests build no app
     scoped = recorder(**values)
-    usage.bind(scoped, candidate_kind="upload", job_id="demo_ds")
+    usage.bind(
+        scoped, candidate_kind="upload", job_id="demo_ds", candidate_ref="up_0123456789abcdef"
+    )
     return scoped
 
 
@@ -173,6 +175,7 @@ def test_structured_model_calls_are_read_from_the_invoke_lines(monkeypatch):
         Decimal("0.000060"),
     )
     assert (first["candidate_kind"], first["job_id"]) == ("upload", "demo_ds")
+    assert {row["candidate_ref"] for row in rows} == {"up_0123456789abcdef"}
 
 
 def test_failed_calls_are_recorded_and_mock_calls_are_not(monkeypatch):
@@ -222,25 +225,18 @@ def test_capture_works_when_log_level_hides_info(caplog):
         configure_logging("INFO")
 
 
-def test_pdf_parses_are_recorded_without_content(api_request):
+def test_pdf_parses_record_no_row(api_request):
+    # Parsing runs locally and costs nothing, so only the model calls that follow are recorded.
     app = create_app(bedrock_settings(database_url=DATABASE))
-    for body in (pdf(("Page one text " * 20, "Page two text " * 20)), b"%PDF-1.7 broken"):
-        api_request(
-            app,
-            "POST",
-            "/resumes/extract",
-            content=body,
-            headers={"Content-Type": "application/pdf"},
-        )
-    parsed, failed = app.state.usage._queue
-    assert (parsed["category"], parsed["operation"], parsed["provider"]) == (
-        "pdf",
-        "pdf_parse",
-        "local",
+    response = api_request(
+        app,
+        "POST",
+        "/resumes/extract",
+        content=pdf(("Page one text " * 20,)),
+        headers={"Content-Type": "application/pdf"},
     )
-    assert (parsed["pages"], parsed["outcome"]) == (2, "ok")
-    assert parsed["characters"] > 0 and parsed["latency_ms"] >= 0
-    assert failed["outcome"] != "ok" and failed["pages"] is None
+    assert response.status_code == 200
+    assert not app.state.usage._queue
 
 
 CONTEXT = InterviewContext(
@@ -263,7 +259,7 @@ def test_voice_sessions_record_an_estimated_deepgram_row_when_deleted():
     )
     now = [1000.0]
     store = SessionStore(settings, clock=lambda: now[0], recorder=UsageRecorder(settings))
-    voice, voice_capability = store.create(CONTEXT, "voice")
+    voice, voice_capability = store.create(CONTEXT, "voice", "demo_ds_avery")
     voice.started, voice.state = now[0], "active"
     now[0] += 120
     store.get(voice.id, voice_capability)
@@ -282,6 +278,7 @@ def test_voice_sessions_record_an_estimated_deepgram_row_when_deleted():
     assert (row["seconds"], row["cost_usd"]) == (120.0, Decimal("0.130000"))
     assert row["model_id"] == "flux-general-en+aura-2-thalia-en"
     assert row["screening_ref"] == voice.usage_ref != voice.id
+    assert row["candidate_ref"] == "demo_ds_avery"
     assert row["details"] == {
         "estimate": "start_to_last_request",
         "token_grants": 2,
@@ -309,3 +306,23 @@ def test_lifespan_writes_queued_rows_on_shutdown(monkeypatch):
 
     asyncio.run(run())
     assert written == [1]
+
+
+def test_deepgram_time_runs_to_the_hang_up_when_the_browser_reports_it():
+    settings = voice_settings(
+        voice_mode="deepgram",
+        deepgram_api_key="dg-key",
+        voice_public_api_url="https://api.example.test",
+        database_url=DATABASE,
+        usage_deepgram_minute_price=0.065,
+    )
+    now = [1000.0]
+    store = SessionStore(settings, clock=lambda: now[0], recorder=UsageRecorder(settings))
+    voice, capability = store.create(CONTEXT, "voice")
+    voice.state, voice.end_reason, voice.call_ended = "ended", "interviewer", 1090.0
+    now[0] = 1300.0
+    store.get(voice.id, capability)  # a later report request, after the call
+    now[0] = 1000.0 + settings.voice_session_expiry_seconds
+    store.purge()
+    (row,) = store.recorder._queue
+    assert (row["seconds"], row["details"]["estimate"]) == (90.0, "start_to_hang_up")

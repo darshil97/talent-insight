@@ -24,3 +24,4 @@ def test_offline_migration_preview_needs_no_credentials() -> None:
     assert "CREATE TABLE talent_insight.usage_events" in output
     assert "ck_usage_events_category" in output
     assert "CREATE INDEX ix_usage_events_category_created_at" in output
+    assert "ALTER TABLE talent_insight.usage_events ADD COLUMN candidate_ref VARCHAR(64)" in output

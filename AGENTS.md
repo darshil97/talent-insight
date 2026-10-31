@@ -30,4 +30,4 @@
 
 ## Documentation ownership
 
-Keep stable rules here. Maintain evolving decisions, implementation status, verification, configuration names and the exact next task in `PROJECT_CONTEXT.md`. Keep provider research and its limitations in `docs/provider-research.md`. Do not duplicate the full product brief.
+Keep stable rules here. Keep `PROJECT_CONTEXT.md` short enough to read at the start of every task: current status, decisions to respect, open items and the next task. Record history in Git, not there. Keep environment variables in `docs/configuration.md`, provider research and its limitations in `docs/provider-research.md`, and feature behaviour in the matching `docs/*.md` file, current state only. Do not duplicate the full product brief.

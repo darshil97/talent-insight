@@ -185,5 +185,8 @@ class UsageEvent(Base):
     job_id: Mapped[str | None] = mapped_column(String(64))
     # A random per-screening value that groups its rows; not the session ID or capability.
     screening_ref: Mapped[str | None] = mapped_column(String(32))
+    # Groups one candidate's resume, screening and report rows: a random value per uploaded
+    # resume, carried into its screenings by the signed context, or the synthetic demo ID.
+    candidate_ref: Mapped[str | None] = mapped_column(String(64))
     request_id: Mapped[str | None] = mapped_column(String(64))
     details: Mapped[dict[str, Any] | None] = mapped_column(JSONB)

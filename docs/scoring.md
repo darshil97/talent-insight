@@ -1,36 +1,78 @@
-# Matching and deterministic scoring — module 10
+# Interpretation and scoring
 
-Module 10 adds backend assessment endpoints; module 11 adds the [evidence view and resume-to-job UI](assessment-ui.md). These scores summarize **resume evidence interpreted against a job**, not likely performance, suitability or a hiring decision. A recruiter must inspect source text and resolve ambiguities.
+This page covers how verified facts become requirement judgments, how the backend scores them, and how availability affects ranking. A score summarizes resume evidence against one job. It is not a performance prediction or a hiring decision.
 
-## Request and provenance
+## Assess route
 
-| Endpoint | Request | Server-owned inputs |
-| --- | --- | --- |
-| `POST /jobs/{job_id}/resumes/assess` | Raw `application/pdf` | Current job requirements and locally parsed PDF pages |
-| `GET /jobs/{job_id}/candidates/{candidate_id}` | No body | Current job, actual membership and any validated precomputed synthetic assessment |
+`POST /jobs/{job_id}/resumes/assess` takes a raw PDF and runs [extraction](structured-extraction.md), interpretation and scoring. It stores nothing and is `no-store`. It returns `structured`, `judgments` (in job order), `scoring`, `notice` and `screening_context` (signed for a [screening](voice-sessions.md), or `null` when not configured).
 
-The upload route uses module 9's read-only catalog snapshot, PDF checks, verified extraction, explicit `AI_MODE`, admission limits and safe errors. The catalog transaction closes before provider work. Uploaded results remain in the response and process memory only; no uploaded candidate, resume, interpretation or score is stored in Neon, the filesystem, routine logs or browser storage. Synthetic assessments are generated only by the manual refresh command and read from versioned JSON on candidate GET routes. Responses and errors are `no-store`. The caller cannot submit requirements, facts, judgments or scores as authoritative data.
+Callers cannot submit facts, judgments or scores. Demo candidates get the same shape from the [snapshot](candidates.md#demo-assessment-snapshot).
 
-The response separates `structured` source text and verified fact excerpts, `judgments` as model interpretation, and `scoring` as backend arithmetic. A non-unknown judgment cites zero-based `fact_indices` into `structured.facts`. The backend rechecks every quote and offset and computes all scores itself. Model judgments are normalized per requirement before scoring (`app/pipeline/interpretation.py::salvage_judgments`): out-of-range or duplicate citations are removed; a resolved judgment left without a valid citation, a missing judgment and conflicting duplicates become `unknown` with a fixed review reason; judgments for foreign requirement IDs and extra fields are ignored; overlong reasons are shortened. This can only widen the score range; it never creates a match. The interpretation is retried with server-written hints only when the response is unusable or more than half of the requirements had to be forced to unknown, and the better attempt is kept. The normalized interpretation must then pass strict validation: exactly one judgment for each current requirement, in job order, with valid references. A citation verifies text location only. It does **not** prove relevance, accurate interpretation, truth, ability or complete extraction. The model's short reason is interpretation, not a source quotation. Human review of ambiguous or negative wording remains necessary.
+## Judgments
 
-`AI_MODE=mock` safely marks every requirement `unknown`: literal keyword extraction does not establish criterion satisfaction. Bedrock mode requests a separate structured judgment after extraction, with the same fixed configured model/method and stage deadline. Missing evidence must be `unknown`; `not_met` is reserved for explicit contrary evidence and `partial` for narrower, transferable or below-threshold evidence. These semantic instructions cannot be fully machine-verified. The model is told not to invent years or aggregate overlapping periods; no external accuracy evaluation of this new interpretation prompt has run. Provider failures and unusable responses stop the assessment and never turn into a zero or perfect match.
+Each judgment is `{requirement_id, status, fact_indices, reason}`:
 
-## Rubric
+- **Citations:** a resolved status cites 1–10 indices into `structured.facts`; `unknown` cites none.
+- **Reason:** up to 300 characters of model interpretation, not a quote.
 
-Each requirement has one status: `met` = 1 credit, `transferable` = 0.75, `partial` = 0.5, `not_met` = 0, `unknown` = unresolved. The middle credits are backend settings (`MATCH_CREDIT_TRANSFERABLE`, `MATCH_CREDIT_PARTIAL`, `matching.credits.*` in `config.yaml`), validated as `0 < partial < transferable < 1`, and are part of the demo snapshot fingerprint. The interpretation prompt judges like a recruiter: `met` needs applied use in a role or project, or same-field evidence for an "or equivalent" requirement; `transferable` is applied use of a comparable tool, language, platform or method, or closely adjacent work (for example GCP for AWS, Go services for Python services), and its reason must name the substitution; `partial` covers narrower scope, below-threshold experience, weaker related evidence or a skill that is only listed. Named credentials and legal requirements are never transferable. `mandatory_met` counts only `met`. For an experience threshold, the judgment must consider the *relevant* documented work and the required years; unspecified dates remain unknown. These are model interpretations that require review, while the subsequent arithmetic is deterministic.
+| Status | Meaning (from the prompt) |
+| --- | --- |
+| `met` | Applied use in a role or project clearly satisfies it. Same-field evidence satisfies "or equivalent". |
+| `transferable` | Applied use of a comparable tool, platform or method, or closely adjacent work (for example GCP for AWS). The reason names the substitution. Credentials and legal requirements are never transferable. |
+| `partial` | Narrower scope, below a year threshold, weaker evidence, or only listed. |
+| `not_met` | Explicit contrary evidence only. |
+| `unknown` | Everything else. Missing evidence is unknown, not a missing skill. |
 
-Default category weights in `backend/app/config.yaml` are mandatory 50%, experience 25%, preferred 15%, qualification 10%. Set the four backend-only `MATCH_WEIGHT_MANDATORY`, `MATCH_WEIGHT_EXPERIENCE`, `MATCH_WEIGHT_PREFERRED`, `MATCH_WEIGHT_QUALIFICATION` integer percentages to override them. Each is 0–100 and they must sum to 100. These initial weights are illustrative and unvalidated for hiring decisions. A category's credit is the arithmetic mean of **all** its requirements. Present categories divide by the sum of their configured weights, redistributing the weight of absent categories. If present categories have zero total weight, the score is unavailable. Within a category, requirements are equally weighted; there is no bonus for extra facts.
+- **Experience thresholds:** only relevant documented work counts against `minimum_years`. The model is told not to invent years or add overlapping periods.
+- **Mock mode:** every requirement is `unknown`.
+- **New evidence:** the judging step may add `new_evidence`, resume quotes that no fact covers. Each one is verified like an extracted fact before it is appended to `structured.facts` and cited. Anything else is discarded.
 
-Unknown requirements stay in the denominator. `lower` treats each unknown as zero credit and `upper` treats it as full credit. Neither endpoint claims the unknown is truly failed or met. A single `score` is returned only if all requirements are resolved and an active weight exists. With all unknowns, the range is 0–100 and `score` is null. With no requirements, or no positive weight in present categories, all score values are null. Output values are rounded to one decimal place after exact decimal calculation. `mandatory_met` and `mandatory_total`, resolved/unknown counts, per-category effective weights and bounds are reported independently. Even a complete score needs source review; the endpoints do not rank candidates or recommend a decision.
+**Normalization** (`salvage_judgments`):
 
-## Estimate and confidence (2026-10-27)
+- Judgments for unknown requirement IDs and extra fields are ignored; bad or duplicate citations are dropped; long reasons are shortened.
+- **Forced to `unknown`:**
+  - missing judgments;
+  - conflicting judgments;
+  - resolved judgments left without a valid citation;
+  - `not_met` judgments whose quotes only say information is "not stated / described / provided / specified / documented / mentioned / listed".
+- **Retry:** if over half the requirements were forced to `unknown`, the stage [retries](structured-extraction.md#attempts-limits-and-admission).
+- **Strict check:** exactly one judgment per requirement, valid references, and every quote re-verified. Failure returns 502 `invalid_interpretation`.
 
-Every available assessment also carries `estimate` and `confidence`, so the UI can show one number instead of a range. `estimate` is the range midpoint, which counts each unknown requirement at half credit; with nothing unknown it equals the point score. `confidence` measures how much of the score is still open, `upper − lower` (the weight of unknown requirements, so an unknown mandatory requirement matters more than an unknown preferred one): `very_high` when nothing is unknown, `high` up to 15 points, `medium` up to 35, `low` above. The bands are constants in `app/pipeline/scoring.py`. `score` keeps its meaning (present only when everything is resolved), and `lower`/`upper` remain in the response and the details view. Candidates are ranked by `estimate` plus the availability bonus. The half credit for unknowns is a neutral placeholder, not evidence; a low-confidence estimate near 50 mostly reflects missing information.
+Normalization only moves toward `unknown`. Provider failures stop the assessment and never become a score of 0 or 100.
 
-To leave fewer requirements unknown because of pipeline misses, the judging step may add `new_evidence` when the resume pages contain relevant evidence that no extracted fact covers. Each item is verified exactly like an extracted fact (exact source span, value inside its quote) and is then appended to `structured.facts` and cited; anything not found verbatim is discarded and the judgment can fall back to unknown. A deterministic guard turns a `not_met` judgment into `unknown` when every cited quote only says information is missing ("not stated", "not described", "not provided", "not specified", "not documented", "not mentioned", "not listed"), because missing information is not contrary evidence.
+## Score
 
-## Local verification and limits
+- **Credits:** `met` 1, `transferable` 0.75, `partial` 0.5, `not_met` 0; `unknown` stays unresolved.
+- **Default category weights:** mandatory 50%, experience 25%, preferred 15%, qualification 10%.
 
-Default tests use offline synthetic fixtures and AWS Stubber; they do not call Neon or Bedrock. They cover exact arithmetic, partial and unknown handling, absent categories, configurable weights, zero/no-criterion behavior, forged references, repeatability, all six synthetic scenario types, cache refresh logic, uploaded API behavior and native Bedrock request serialization. Mock assessments intentionally yield an unavailable point score. The full results and remaining limitations are recorded in `PROJECT_CONTEXT.md`.
+Weights (integers summing to 100) and middle credits (0 < partial < transferable < 1) are configurable ([configuration](configuration.md)). The defaults are unvalidated.
 
-One explicitly authorized real-resume assessment completed, but there is no formal semantic accuracy evaluation. The synthetic 13-membership Bedrock refresh completed and all stored source citations and scores passed backend revalidation. For the cross-domain Backend Engineer in the Data Scientist pool, the score is unresolved with an 18.3–66.7 evidence range; missing data science evidence remains unknown rather than being assigned zero. The assessment call can consume up to two extraction and two interpretation attempts, each under its own configured `AI_TIMEOUT_SECONDS` deadline; a PDF parse deadline precedes them. The existing process-local concurrency and minute limits count one assessment request, not each provider attempt. They are not a distributed cost budget. Uploaded text sent in Bedrock mode remains subject to the provider privacy and retention questions in [structured extraction](structured-extraction.md). Do not use this unvalidated rubric as an automatic hiring filter.
+- **Category credit:** the mean over all its requirements.
+- **Absent categories:** their weight is shared proportionally among the present ones.
+- **Range:** `lower` counts `unknown` as 0 and `upper` counts it as 1, on a 0–100 scale.
+- **`score`:** equals `lower` only when nothing is unknown; otherwise `null`.
+- **`estimate`:** the range midpoint, so each unknown counts at half credit. This is a placeholder, not evidence.
+- **`confidence`:** from `upper − lower` (the weight still unknown): `very_high` at 0, `high` up to 15, `medium` up to 35, else `low` (constants in `app/pipeline/scoring.py`).
+- **No score:** with no requirements or zero present weight, every score field is `null`.
+- **Rounding:** exact decimals, rounded half-up to one place.
+- **Also reported:** resolved and unknown counts, `mandatory_met` (only `met`), `mandatory_total`, and per-category counts, effective weights and bounds.
+
+**Example:** with three mandatory requirements and one each of experience, preferred and qualification, all `met` except an `unknown` experience requirement, the result is a range of 75–100, an estimate of 87.5, `medium` confidence and no point score. A mock upload has every requirement unknown, giving a range of 0–100, an estimate of 50 and `low` confidence.
+
+## Availability and ranking
+
+Availability never changes the score, range, estimate or snapshot.
+
+- **Input:** `status` is `immediate`, `serving_notice` (with `last_working_day`), `not_serving` (with `notice_days`, 0–365) or `null`. The fields must match the status.
+- **`days_to_join`:** 0 for `immediate`; days until the last working day (never below 0); the notice days; or `null`.
+- **Bonus:** ≤15 days +5, ≤30 +4, ≤45 +3, ≤60 +2, ≤90 +1, otherwise 0. Not provided gets 0, never a penalty. The tiers are configurable.
+- **`ranking_score`:** `estimate + bonus`, rounded to one place; `null` without an estimate. The pool sorts by it.
+- **Demo candidates:** computed on each read from stored availability, so no refresh is needed.
+- **Uploads:** `POST /availability` with `{"availability": {...}, "match_estimate": number | null}` returns `{"availability": {..., "days_to_join", "bonus"}, "ranking_score"}`. It is stateless, unlogged and `no-store`, and returns 422 for mismatched fields.
+
+## Limits
+
+- Weights, credits, confidence bands and bonus tiers are unvalidated. Do not use them as an automatic filter.
+- Status semantics cannot be fully machine-verified; a citation proves location only.
+- The interpretation has had no formal accuracy evaluation. Ambiguous or negated wording needs human review.
+- A low-confidence estimate near 50 mostly reflects missing information.

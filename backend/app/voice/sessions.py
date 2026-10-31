@@ -53,6 +53,11 @@ class ScreeningSession:
     last_seen: float = 0.0
     # Groups this screening's usage rows on Neon; unrelated to the ID and capability.
     usage_ref: str = field(default_factory=lambda: secrets.token_hex(8))
+    # The upload's random reference or the demo candidate ID, shared with its resume rows.
+    candidate_ref: str | None = None
+    # When the browser's call ended: its first /end, or the first text turn of a voice
+    # screening. Deepgram bills that connection, which the backend never sees directly.
+    call_ended: float | None = None
     state: State = "issued"
     started: float | None = None
     reconnects: int = 0
@@ -103,7 +108,10 @@ class SessionStore:
         return sum(session.state != "ended" for session in self._sessions.values())
 
     def create(
-        self, context: InterviewContext, mode: Literal["voice", "text"] = "voice"
+        self,
+        context: InterviewContext,
+        mode: Literal["voice", "text"] = "voice",
+        candidate_ref: str | None = None,
     ) -> tuple[ScreeningSession, str]:
         self.purge()
         now = self.clock()
@@ -130,6 +138,7 @@ class SessionStore:
             expires=now + self.settings.voice_session_expiry_seconds,
             mode=mode,
             last_seen=now,
+            candidate_ref=candidate_ref,
         )
         self._sessions[session.id] = session
         self._created.append(now)
@@ -162,13 +171,16 @@ class SessionStore:
             outcome=end_outcome(session),
             provider="deepgram",
             model_id=f"{self.settings.voice_listen_model}+{self.settings.voice_speak_model}",
-            seconds=round(session.last_seen - session.created, 1),
+            seconds=round((session.call_ended or session.last_seen) - session.created, 1),
             screening_mode=session.mode,
             candidate_kind=session.context.candidate_kind,
             job_id=session.context.job_id,
             screening_ref=session.usage_ref,
+            candidate_ref=session.candidate_ref,
             details={
-                "estimate": "start_to_last_request",
+                "estimate": "start_to_hang_up"
+                if session.call_ended is not None
+                else "start_to_last_request",
                 "token_grants": 1 + session.reconnects,
                 "interviewer_turns": session.turns,
             },

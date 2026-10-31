@@ -1,94 +1,98 @@
-# Curated catalog on Neon — modules 4–7
+# Database
 
-## One shared database
+The Neon project `talent-insight` is the only database, for local and hosted runs. There is no local PostgreSQL server and no per-environment branch.
 
-The application uses the existing Neon project **`talent-insight`** for both local backend runs and hosted deployment. There is no local PostgreSQL server and no separate database environment.
+| Item | Value |
+| --- | --- |
+| Neon project | `talent-insight` (`<NEON_PROJECT_ID>`) |
+| Branch | `production` (`<NEON_BRANCH_ID>`), the single shared branch |
+| Database | `neondb`, PostgreSQL 18, AWS us-east-2 |
+| Schema | `talent_insight` |
+| Migration head | `0004_usage_candidate_ref` |
 
-Verified target on 2026-10-24:
+## Connection
 
-- Project: `<NEON_PROJECT_ID>` (`talent-insight`).
-- Existing branch: `<NEON_BRANCH_ID>`, named `production` by Neon; it is the single shared branch, not an application environment selector.
-- Database: `neondb`, PostgreSQL 18.6, AWS us-east-2.
-- App schema: `talent_insight`.
-- Migration revision: `0003_usage_events` (applied 2026-11-01 with the user's approval; `0002_candidate_availability` on 2026-10-27, `0001_demo_catalog` before).
+- `DATABASE_URL` (pooled) is used by the app and seeding; `DIRECT_DATABASE_URL` (non-`-pooler`) by Alembic. Both are secrets in `backend/.env` or the Render environment, never in the frontend. See [configuration](configuration.md).
+- URLs must be PostgreSQL with host, user and database; remote hosts need `sslmode=require`, `verify-ca` or `verify-full`.
+- App engine: created lazily, pool of 5 with no overflow, pre-ping, hidden SQL parameters, 10-second connect timeout. Alembic uses `NullPool`.
 
-The earlier OAuth-lock issue is resolved. The database was inspected before initialization: no application tables or app schema existed. The reviewed migration and seed have now been applied. No project, branch or additional database was created. The existing public helper function was left in place.
+## Reads and writes
 
-## Private configuration
+- Catalog routes read in a read-only transaction with a 5-second statement timeout. Runtime reads use Neon, never the JSON fixtures.
+- The app writes only `usage_events`: counts, timings, model IDs and prices, never candidate content. Rows queue in memory and are inserted every 10 seconds; a clean shutdown writes them once more, and a crash loses them. Recording needs `DATABASE_URL` and stops with `USAGE_RECORDING=false`. Columns and queries are in [data retention](data-retention.md).
+- Uploaded candidates, resumes, transcripts, reports and scores are never stored.
 
-The ignored `backend/.env` is configured locally with owner-only permissions. It contains:
+## Schema
 
-- `DATABASE_URL`: the pooled Neon endpoint for runtime catalog access.
-- `DIRECT_DATABASE_URL`: the direct endpoint for Alembic operations on the same database.
-
-Connection strings are intentionally omitted from documentation and output. Copy those same values into the hosted backend's secret environment settings when deploying. There is no server deployment yet, and no database URL belongs in frontend configuration. Do not paste credentials into chat.
-
-The backend validates PostgreSQL URLs and requires TLS for remote connections. Credentials use redacted `SecretStr` settings. SQLAlchemy maintains a lazy pool of five connections with zero overflow, health checks, hidden SQL parameters and a ten-second connection timeout. Alembic uses the direct endpoint and `NullPool`. Neither application startup nor `/health` migrates, seeds or checks external readiness. No local-database fallback exists.
-
-See [Neon's pooling guidance](https://neon.com/docs/connect/connection-pooling), [SQLAlchemy's psycopg dialect](https://docs.sqlalchemy.org/en/20/dialects/postgresql.html#psycopg) and [Alembic's migration workflow](https://alembic.sqlalchemy.org/en/latest/tutorial.html).
-
-## Schema and seed
-
-| Table | Contents | Current verified rows |
+| Table | Contents | Rows |
 | --- | --- | --- |
-| `talent_insight.jobs` | Synthetic roles/clients, descriptions, skills, screening criteria and questions | 4 |
-| `talent_insight.job_requirements` | Categorized requirements, experience thresholds and ordering | 24 |
-| `talent_insight.demo_candidates` | Synthetic profiles, resume text, traceable evidence claims and optional self-reported availability (`notice_status`, `last_working_day`, `notice_days`) | 12 |
-| `talent_insight.job_candidates` | Fixed job-specific pools and internal synthetic scenario labels | 13 |
+| `jobs` | Synthetic roles, skills, screening criteria, questions | 4 |
+| `job_requirements` | Requirements by category (`mandatory`, `experience`, `preferred`, `qualification`), year thresholds, order | 24 |
+| `demo_candidates` | Synthetic profiles, resume text, evidence claims, optional availability | 12 |
+| `job_candidates` | Job memberships with an internal scenario label | 13 |
+| `usage_events` | Metered events, insert-only | grows |
 
-`public.talent_insight_alembic_version` tracks the migration. Foreign keys, uniqueness and check constraints protect relationships and basic demo-data integrity. The initial migration refuses to adopt an unknown existing app schema. It does not replace unrelated public tables.
+- Constraints enforce demo-only rows, non-empty text, JSON shapes, categories and valid availability combinations. Alembic's revision is in `public.talent_insight_alembic_version`.
+- Scenario labels (`strong`, `partial`, `weak`, `transferable`, `ambiguous`, `incomplete`) are fixture metadata, not scores.
+- `0001_demo_catalog` creates the schema and catalog tables, failing if `talent_insight` already exists.
+- `0002_candidate_availability` adds nullable `notice_status`, `last_working_day` and `notice_days` (0–365) to `demo_candidates`; all null means not provided. See [candidates](candidates.md).
+- `0003_usage_events` adds `usage_events`, indexed on `created_at` and `(category, created_at)`.
+- `0004_usage_candidate_ref` adds the nullable `usage_events.candidate_ref`.
 
-The versioned sources are one `backend/app/fixtures/jobs/<job_id>.json` per job and `backend/app/fixtures/candidates.json` for synthetic candidates with job links nested in each candidate entry. The loader derives the existing database membership rows from those links. See [editing jobs](jobs.md) and [adding candidates](candidates.md). The fixture and Neon catalog have four roles, twelve profiles and thirteen memberships. The complete candidate set covers strong, partial, weak, transferable, ambiguous and incomplete evidence. Scenario labels are internal fixture metadata, not calculated match scores or hiring recommendations. Claims include original quotes and exact character offsets; this validates provenance, not independent truth. No uploaded candidates, transcripts, reports or match scores are stored in Neon; the usage table below holds counts and prices only.
+## Fixtures and seeding
 
-Seeding validates the entire fixture and upserts only its stable IDs atomically. Repeated runs do not duplicate rows; both the initial seed and a repeat have been verified on Neon. Other rows are preserved; there is no automatic delete, truncate or pruning. The four-domain upsert therefore left `demo_mle` and `demo_ai` visible. After explicit user approval, the exact-ID [retirement SQL](four-domain-catalog-transition.sql) removed those two jobs, their dependent requirements and memberships, and six now-unused candidate rows in one guarded transaction. A read-only Neon check confirmed four jobs, 24 requirements, 12 candidates and 13 memberships afterward. Future removals still require individual review; normal seeding does not prune.
+- Sources: `backend/app/fixtures/jobs/<job_id>.json` (filename must match the ID) and `backend/app/fixtures/candidates.json`, where each candidate lists its job memberships. See [jobs](jobs.md) and [candidates](candidates.md).
+- Evidence claims store the original quote and exact character offsets: provenance, not proof of truth.
+- `python -m app.seed` validates all fixtures, then upserts by stable ID in one transaction. It never deletes; removals need separate reviewed SQL, such as the already executed [`four-domain-catalog-transition.sql`](four-domain-catalog-transition.sql).
 
-Revision `0002_candidate_availability` adds three nullable columns to `demo_candidates`: `notice_status` (`immediate`, `serving_notice` or `not_serving`), `last_working_day` (date) and `notice_days` (0–365), with check constraints that allow only matching combinations. All three null means not provided. The migration is additive; existing rows stayed valid until the reseed filled them from `candidates.json`. Availability is a ranking aid only; see [candidates](candidates.md).
+## Commands
 
-Revision `0003_usage_events` adds one table, `usage_events`, with a category check and two indexes (`created_at`, and `category, created_at`). It changes no existing table. The app writes it in the background; see [data retention](data-retention.md#usage-table-on-neon) for its columns, privacy rules and example queries.
+From the repository root with the Conda environment active. Preview migration SQL without connecting:
 
-Read-only helpers in `app/catalog.py` list jobs, load ordered requirements, list candidate pools and fetch candidates through actual job membership. Module 6 exposes jobs listing/details; module 7 adds job-scoped candidate pool/profile views with validated resume provenance. No schema or fixture changes were needed for module 7. Runtime queries read Neon, not JSON; edits take effect only after an explicitly approved seed. Startup never seeds or syncs files.
-
-## Explicit administration
-
-Activate the Conda environment following [local setup](local-development.md). From the repository root:
-
-```sh
-# Preview SQL without connecting.
+```bash
 python -m alembic -c backend/alembic.ini upgrade head --sql
+```
 
-# Validate all editable JSON without loading dotenv or connecting.
+Validate fixtures without settings or a connection:
+
+```bash
 python -m app.seed --validate-only
+```
 
-# Inspect the shared database without modifying its catalog.
+Inspect Neon read-only:
+
+```bash
 python -m alembic -c backend/alembic.ini current
+```
+
+```bash
 python -m alembic -c backend/alembic.ini check
 ```
 
-The following commands have already initialized this project and are not startup requirements:
+These modify the shared database and need explicit user approval each time:
 
-```sh
+```bash
 python -m alembic -c backend/alembic.ini upgrade head
+```
+
+```bash
 python -m app.seed
 ```
 
-Future migrations/seeding require approval appropriate to the change. Never point destructive tests or reset/downgrade/drop commands at the shared Neon catalog. The existing downgrade function is not invoked by the test suite.
+Never run downgrade, reset, drop or destructive fixtures against Neon.
 
 ## Verification
 
-From `backend/` in the same Conda environment:
+From `backend/`. The default suite never connects; it validates fixtures and previews migration SQL:
 
-```sh
-# Credential-free unit, schema-preview and ASGI checks; Neon checks are skipped.
+```bash
 python -m pytest -W error
-
-# Explicitly include shared Neon checks, all in read-only transactions.
-python -m pytest --neon -W error
-
-python -m ruff check .
-python -m ruff format --check .
-python -m pip check
 ```
 
-There is no local server fixture or PostgreSQL installation requirement. Default checks isolate application settings and make no database connections. The opt-in Neon tests validate migration revision, schema/model parity, catalog membership and exact source evidence, using `SET TRANSACTION READ ONLY`. They never migrate, seed, alter, reset or delete shared data.
+Opt-in Neon checks run in `SET TRANSACTION READ ONLY` and cover the revision, model/schema parity, memberships and evidence quotes against source resumes:
 
-Earlier disposable PostgreSQL regression checks passed before the Neon-only instruction. Those fixtures have been removed rather than redirected to Neon; destructive rollback/constraint-mutation scenarios are not run on the shared database. Current live verification uses actual Neon PostgreSQL 18.6. UI features and AI/provider integrations remain unimplemented or unverified as recorded in the project context.
+```bash
+python -m pytest --neon -W error
+```
+
+Destructive migration paths (downgrade, rollback) are untested because the only database is shared.

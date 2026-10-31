@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import time
 
 from fastapi import APIRouter, Request, Response
 from starlette.responses import JSONResponse
@@ -90,33 +89,13 @@ async def extract_upload(request: Request, response: Response) -> ExtractedResum
                 "invalid_pdf_signature",
                 "The file content is not a PDF. Export a PDF and try again.",
             )
-        started = time.perf_counter()
         try:
             result = await extract_pdf(bytes(data), settings)
         except ResumeFailure as exc:
-            _record_parse(request, started, exc.code)
             status, message = FAILURES[exc.code]
             return error_response(status, exc.code, message)
-        _record_parse(request, started, "ok", result.page_count, result.character_count)
         response.headers["Cache-Control"] = "no-store"
         response.headers["X-Content-Type-Options"] = "nosniff"
         return result
     finally:
         request.app.state.resume_active -= 1
-
-
-def _record_parse(
-    request: Request, started: float, outcome: str, pages=None, characters=None
-) -> None:
-    """A usage row for the local PDF parser: no model, so no price."""
-    request.app.state.usage.add(
-        "pdf",
-        "pdf_parse",
-        outcome=outcome,
-        provider="local",
-        latency_ms=round((time.perf_counter() - started) * 1000),
-        pages=pages,
-        characters=characters,
-        candidate_kind="upload",
-        job_id=request.path_params.get("job_id"),
-    )

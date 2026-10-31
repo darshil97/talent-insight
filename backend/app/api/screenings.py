@@ -204,13 +204,16 @@ async def start_screening(
         )
         job, _ = await run_in_threadpool(load_screening_job, request, body.job_id, None)
         context = upload_context(job, payload)
+        candidate_ref = payload.ref
     else:
         job, assessment = await run_in_threadpool(
             load_screening_job, request, body.job_id, body.candidate.candidate_id
         )
         context = demo_context(job, assessment)
+        # Demo IDs are synthetic, so every screening of one demo candidate groups together.
+        candidate_ref = body.candidate.candidate_id
     store = request.app.state.voice_sessions
-    session, capability = store.create(context, body.mode)
+    session, capability = store.create(context, body.mode, candidate_ref)
     opening = greeting(context.job_title, settings.voice_screening_seconds // 60)
     grant = None
     if voice:
@@ -268,7 +271,10 @@ async def reconnect_token(
 async def end_screening(
     session_id: SessionPath, body: CapabilityRequest, request: Request, response: Response
 ) -> ScreeningState:
-    session = request.app.state.voice_sessions.get(session_id, body.capability)
+    store = request.app.state.voice_sessions
+    session = store.get(session_id, body.capability)
+    if session.call_ended is None:
+        session.call_ended = store.clock()
     if session.state != "ended":
         session.state = "ended"
         session.end_reason = "ended_early"
@@ -318,6 +324,9 @@ async def text_message(
     session = store.get(session_id, body.capability)
     _bind_usage(request, session)
     now = store.clock()
+    if session.mode == "voice" and session.call_ended is None:
+        # Continuing by text means the voice call has stopped.
+        session.call_ended = now
     started = session.in_flight_since
     if started is not None and now - started < settings.voice_turn_timeout_seconds + 5:
         raise VoiceFailure("turn_in_progress")
@@ -343,6 +352,7 @@ def _bind_usage(request: Request, session: ScreeningSession) -> None:
         candidate_kind=session.context.candidate_kind,
         job_id=session.context.job_id,
         screening_ref=session.usage_ref,
+        candidate_ref=session.candidate_ref,
     )
 
 

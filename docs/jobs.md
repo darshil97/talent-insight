@@ -1,65 +1,65 @@
-# Jobs listing and details — module 6
+# Jobs
 
-Module 6 is approved. The browser reads the shared Neon catalog through FastAPI. The frontend contains presentation and request-state handling; validation and database access stay in the backend. Module 7 adds [candidate APIs/views](candidates.md), and module 8 adds [temporary PDF text review](resumes.md) to job details. Scoring and provider integration remain pending.
+The job catalog is read-only: four synthetic demo roles in Neon, served by FastAPI and shown in the Next.js app.
 
-## Editable job definitions
+## Job definitions
 
-Each job has its own versioned JSON file under `backend/app/fixtures/jobs/`:
+Each role is one JSON file in `backend/app/fixtures/jobs/`: `demo_ds` (Senior Data Scientist), `demo_backend` (Backend Engineer), `demo_hr_ops` (HR and Operations Specialist) and `demo_marketing_ops` (Marketing Operations Specialist).
 
-- `demo_ds.json`: Senior Data Scientist.
-- `demo_backend.json`: Backend Engineer.
-- `demo_hr_ops.json`: HR and Operations Specialist.
-- `demo_marketing_ops.json`: Marketing Operations Specialist.
+- **Fields:** `id`, `title`, `client`, `description`, `skills`, `screening_criteria`, `questions` (`id`, `text`, `requirement_ids`), `requirements` (`id`, `category`, `description`, `minimum_years`) and `is_demo: true`.
+- **Categories:** `mandatory`, `experience`, `preferred` and `qualification`. Only `experience` requirements may set `minimum_years` (0–99).
+- **Order:** the order of the requirements is their display order.
+- **Provenance:** descriptions are original summaries informed by public [Airbnb](https://careers.airbnb.com/positions/7662244?gh_jid=7662244), [Stripe](https://stripe.com/careers/listing/backend-engineer-developer-end-user-experience-platform/7476555), [ShopBack](https://jobs.lever.co/shopback-2/0d1daa50-91c1-49b7-93d0-42fe23570001) and [Stripe](https://stripe.com/careers/listing/marketing-technology-program-manager/8257939) postings. Client names are invented.
+- **Candidates:** they and their job links are in [`candidates.json`](candidates.md).
 
-These files contain synthetic role/client descriptions, skills, screening criteria, questions and categorized requirements. Candidate profiles and their job links stay together in `backend/app/fixtures/candidates.json`; the loader converts those links into the existing database membership rows. All files are included in the backend wheel.
+To edit or add a role:
 
-The job descriptions are original demo summaries informed by current employer descriptions: [Airbnb Senior Data Scientist](https://careers.airbnb.com/positions/7662244?gh_jid=7662244) for experiments, causal analysis and Python/SQL; [Stripe Backend Engineer](https://stripe.com/careers/listing/backend-engineer-developer-end-user-experience-platform/7476555) for API and service ownership; [ShopBack HR Operations Specialist](https://jobs.lever.co/shopback-2/0d1daa50-91c1-49b7-93d0-42fe23570001) for onboarding, HRIS and payroll coordination; and [Stripe Marketing Technology Program Manager](https://stripe.com/careers/listing/marketing-technology-program-manager/8257939) for CRM, lead handoff and campaign measurement. Demo client names and requirements are synthesized, not copied job postings or claims that these employers use this catalog.
+1. Edit the JSON and keep existing IDs stable. A new role gets a unique `demo_...` ID (lowercase letters, digits and underscores, at most 64 characters) in a file named `<id>.json`.
+2. Keep requirement and question IDs unique across all jobs, and point each question's `requirement_ids` at requirements in the same job.
+3. Never add real candidate data.
+4. Validate offline from `backend/` with `python -m app.seed --validate-only`. This checks IDs, references, quotes and pool sizes without dotenv or a database.
+5. Publish with an approved `python -m app.seed`, an atomic upsert (see [database](database.md)). Startup never seeds.
+6. Refresh the [demo snapshot](candidates.md#demo-assessment-snapshot); job changes invalidate it.
 
-To edit a role, change its JSON. To add one, copy an existing job file, choose a unique stable `demo_...` ID and name the file `<id>.json`. Use new, globally unique requirement/question IDs and update each question's `requirement_ids` to point to requirements in that job. Preserve IDs when editing existing records. Keep `is_demo: true`; files are only for curated synthetic demo records. A new job may have no candidates. Do not copy real candidate data into these files.
+The app reads only Neon; the JSON is not a runtime fallback. Deleting a file does not delete its rows, so retiring a role needs a separate, reviewed data change.
 
-Requirement categories are `mandatory`, `experience`, `preferred` and `qualification`. Only experience requirements may specify `minimum_years` (0–99); other requirements use `null`. The order of the JSON requirements determines their display order. No weights or match scores are introduced here.
+## API
 
-Validate from the repository root in the existing Conda environment:
-
-```sh
-python -m app.seed --validate-only
-```
-
-This reads and validates every job file, uniqueness, question references, candidate evidence and memberships. It does not load dotenv, connect or write to a database. A missing/invalid job file fails validation rather than silently using stale hardcoded data.
-
-JSON is an authoring source, not a runtime fallback. Runtime reads continue to use the existing shared Neon project. Publishing edits to that catalog requires review and explicit approval for `python -m app.seed`; neither app startup nor the launcher runs it. The seed is atomic and preserves unrelated rows. Removing a file does not delete database rows: after the four-domain upsert, the prior `demo_mle` and `demo_ai` roles remained visible until the user approved their targeted retirement. The shared catalog now has exactly the four current fixture roles. No admin UI or auto-sync was added.
-
-## HTTP contracts
-
-| FastAPI route | Success | Other expected responses |
+| Route | Success | Errors |
 | --- | --- | --- |
-| `GET /jobs` | `{"jobs": [...]}` sorted by title; empty catalog is `{"jobs": []}` | 503 if catalog access is unavailable |
-| `GET /jobs/{job_id}` | One job with ordered requirements, screening criteria and questions | 404 for a missing valid ID; 422 for invalid ID syntax; 503 if catalog access is unavailable |
+| `GET /jobs` | `{"jobs": [...]}` sorted by title (empty list when none) | 503 |
+| `GET /jobs/{job_id}` | One job | 404 missing, 422 invalid ID, 503 |
 
-List fields are `id`, `title`, `client`, `description`, `skills`, `is_demo` and nonnegative `candidate_count`. Counts come from job memberships in the same query, including zero for an empty role. Details expose the summary fields without `candidate_count`, plus `requirements` (`id`, `category`, `description`, `minimum_years`, `sort_order`), `screening_criteria`, and `questions` (`id`, `text`, `requirement_ids`). There are no candidate records, scenario labels or match scores in these responses. Paths accept stable `demo_...` IDs, at most 64 characters.
+- **List items:** `id`, `title`, `client`, `description`, `skills`, `is_demo` and `candidate_count`, counted from memberships.
+- **Details:** the same without the count, plus:
+  - `requirements` (`id`, `category`, `description`, `minimum_years`, `sort_order`);
+  - `screening_criteria`;
+  - `questions` (`id`, `text`, `requirement_ids`).
+- **IDs:** must match `^demo_[a-z0-9_]+$`, at most 64 characters.
+- Responses contain no candidates or scores and are `no-store`.
+- **Errors:** the [standard envelope](backend-foundation.md). Database failures return a sanitized 503 and invalid stored data a safe 500.
+- **Transactions:** every catalog request, including candidate routes, runs in a read-only transaction with a 5-second statement timeout.
 
-Successes and safe errors use `Cache-Control: no-store`. Errors retain the [foundation envelope](backend-foundation.md). Database errors return sanitized 503 responses; invalid stored response data fails with a safe 500. Catalog requests use read-only transactions with a five-second SQL statement timeout. Engine creation is lazy at app lifespan and does not connect; shutdown disposes the pool. Health still makes no database calls.
+## Frontend
 
-## Frontend behavior
+- **`/jobs`:** role cards showing the number of synthetic candidates.
+- **`/jobs/<id>`:**
+  - description, requirements by category (with minimum years), skills, screening focus and questions;
+  - **Job details** and **Candidates** tabs.
+- **States:** loading, empty (refresh), unavailable (retry) and not found are separate.
+- **Missing jobs:** an invalid ID shows the not-found view without a request. Pages fetch in the browser, so `/jobs/<missing>` returns HTTP 200 before showing not found; the API returns 404.
 
-`/jobs` lists roles with synthetic labels and links to `/jobs/<id>`. Details show the description, skills, requirements grouped by category, screening focus and prepared questions. The Jobs navigation link remains active on details and nested candidate routes. Module 7 adds a **Review demo candidates** link from details. No inactive upload buttons are shown.
+**API client and cache** (all catalog pages):
 
-The typed client validates response shapes, demo markers, categories and question references before rendering. It validates `NEXT_PUBLIC_API_BASE_URL` as a credential-free origin (HTTPS remotely, HTTP only on loopback); absent configuration defaults to `http://127.0.0.1:8000`. HTTP requests omit browser credentials and HTTP caching, reject redirects and time out after 20 seconds. Synthetic catalog reads share in-flight requests and validated responses in a bounded module-memory cache (64 paths, 60-second freshness on reuse). A full reload clears this cache; retry bypasses a saved result. Cancelling one reader leaves other readers active; cancelling the last reader aborts transport after immediate development-effect resubscriptions. Hovering or focusing a role, candidate tab or candidate link starts a speculative catalog read. Errors are not cached. Uploads, availability and resume limits bypass the cache; temporary uploaded results still clear on navigation/refresh and never enter shared memory or browser storage. There is no fixture fallback.
+- `NEXT_PUBLIC_API_BASE_URL` must be a bare origin, HTTPS or loopback HTTP, and defaults to `http://127.0.0.1:8000`. See [configuration](configuration.md).
+- Requests send no credentials, skip HTTP caching, reject redirects and time out after 20 seconds.
+- Responses are shape-checked before rendering. There is no fixture fallback.
+- Catalog GETs for jobs, pools and profiles share in-flight requests and keep validated responses in module memory: 60 seconds, 64 paths.
+  - Hovering or focusing a role card, tab or candidate link prefetches.
+  - Errors are not cached, **Try again** bypasses the cache, and a reload clears it.
+- Uploads, resume limits and availability calls never use this cache.
 
-Loading has a status announcement. Empty, unavailable and missing-job states are distinct; empty/error views offer refresh/retry. A missing API job returns HTTP 404; because fetching occurs in the browser, the frontend route itself initially returns its normal HTML with HTTP 200 before showing the missing-job view. Unknown frontend routes outside these route patterns still return HTTP 404. The UI is not intended as an indexed public job board.
+## Limits
 
-Use [the local launcher](local-development.md) or configure CORS/API origin when running the apps directly. CORS is not authentication. Production public settings must be supplied before the frontend build.
-
-## Verification
-
-Module 6 checks in the dedicated Conda environment:
-
-- Backend: 77 passed, three opt-in Neon tests skipped; Ruff lint/format and pip dependency checks passed. Tests cover typed success, empty catalog, IDs/404, safe 503/CORS, read-only SQL setup, engine lifecycle and invalid stored data. Job-file authoring tests cover edits, an added role without candidates, invalid filenames, missing/malformed files and duplicate references.
-- Frontend: six Node tests passed for API shape validation, public URL validation, request options, error distinctions and cancellation. ESLint, TypeScript and the Webpack production build passed without installing dependencies.
-- Packaging: the built backend wheel contains all four job files and the candidate fixture; a comparison with the previous combined fixture confirmed identical job/candidate/membership values.
-- Browser: the real local API read all four existing Neon jobs and Data Scientist details. Production-browser edge cases used a temporary mock API with no database configuration, checking loading, empty, error, keyboard retry/recovery, navigation away during loading and missing-job recovery. Listing/details fit 320/375/768/1024/1280 CSS-pixel widths without horizontal scrolling; screenshots and active navigation were inspected.
-- Launcher: Bash syntax and four ownership/configuration unit tests passed. Local start, duplicate-start detection, stop, restart/status/log following and refusal to terminate unmanaged test servers were exercised. Logs/PID records remain private and ignored.
-
-No migration, seed, external infrastructure change, AI/voice call, deployment or commit occurred. The opt-in Neon regression suite was not repeated; live verification here was limited to the read-only application jobs path. Browser checks are manual, not an automated browser suite or screen-reader audit. Hosted deployment, other browser engines and cross-platform launcher behavior remain unverified.
-
-Modules 1–10 are reviewed and approved. Module 11 adds the [assessment UI](assessment-ui.md) to job and candidate pages and awaits review. PDF extraction details remain in [PDF extraction](resumes.md).
+- No admin UI and no automatic sync from JSON to Neon.
+- Cached reads can be up to 60 seconds old.

@@ -1,168 +1,211 @@
 # Local development
 
-Modules 2–11 provide the frontend, read-only job/candidate APIs, Neon demo catalog, temporary PDF extraction, backend structured extraction and assessment APIs, and the assessment UI. Module 11 browser checks remain unconfirmed. Health/plain PDF parsing need no credentials; catalog browsing uses the existing Neon database. Structured extraction and assessment require an explicit provider choice; Bedrock mode uses private backend AWS settings. Local and hosted catalog runs share the same Neon database; no local PostgreSQL server is used.
+The backend (FastAPI) and frontend (Next.js) run on `127.0.0.1` against the shared Neon database. There is no local PostgreSQL server and no environment-mode switch. Variable details are in [configuration](configuration.md).
 
-## 1. Create and activate the Conda environment
+## Conda environment
 
-From the repository root, once per machine:
+Use the dedicated `talent-insight` environment for both Python and Node. Do not install project packages into Conda base or create a virtual environment.
 
-```sh
+Create it once per machine, from the repository root:
+
+```bash
 conda env create -f environment.yml
 ```
 
-The environment already exists on the original development machine; skip creation there. Activate it in each terminal:
+Activate it in each terminal:
 
-```sh
+```bash
 conda activate talent-insight
-export PATH="$CONDA_PREFIX/bin:$PATH"
-python --version
-node --version
 ```
 
-Use Python 3.12 and Node 24. The PATH line ensures the environment's Node takes precedence if a shell configuration puts Homebrew first. It affects only the current shell. If activation reports that the shell is not initialized, follow your existing Anaconda shell setup, reopen the terminal and retry.
+If a shell profile puts Homebrew's Node first, prepend the environment's runtime for the current shell:
 
-`environment.yml` selects compatible runtime families, allowing patch updates. `.python-version`, `.nvmrc` and frontend `engines` record the same runtime families. Application dependencies are version-locked separately. The verified environment uses Python 3.12.15, Node 24.13.0 and npm 11.6.2 on macOS arm64; Linux/Render and Vercel builds have not been tested.
+```bash
+export PATH="$CONDA_PREFIX/bin:$PATH"
+```
 
-The Conda manifest requires Python, Node and pip. PostgreSQL server tools are not required. Default checks run without a database; optional integration checks read the shared Neon catalog.
+- `environment.yml` pins Python 3.12 and Node 24 (patch updates allowed). `.python-version`, `.nvmrc` and the frontend `engines` field record the same versions.
+- PostgreSQL server tools are not needed.
 
-## 2. Install dependencies
+## Install dependencies
 
-From the repository root with Conda active:
+From the repository root, with the environment active:
 
-```sh
+```bash
 python -m pip install -r backend/requirements-dev.lock
+```
+
+```bash
 python -m pip install --no-build-isolation --no-deps -e backend
-cd frontend
+```
+
+Then, from `frontend/`:
+
+```bash
 npm ci
 ```
 
-The backend lock contains exact runtime, test and build dependency versions. The editable installation makes `app` importable without manipulating `PYTHONPATH`; its build dependency is included in the lock. `pyproject.toml` declares direct runtime and optional development dependencies. The npm lockfile captures the frontend dependency tree. Use `npm ci` after cloning; use `npm install` only for deliberate dependency updates.
+- `backend/requirements-dev.lock` pins exact runtime, test and build versions; the editable install makes `app` importable.
+- Use `npm ci` after cloning. Use `npm install` only for deliberate dependency updates, and change manifest and lock together.
 
-Dependency updates should change the manifest and lock together, run all checks below, and be reviewed. Do not freeze an unrelated Conda environment into this project's lock. The backend lock was verified on macOS arm64 and is not yet a tested cross-platform or production lock.
+## Local configuration
 
-## 3. Local configuration
+Optionally copy the examples (they contain placeholders only, and `-n` never overwrites):
 
-From the repository root, optionally create local files without overwriting existing ones:
-
-```sh
-cp -n frontend/.env.example frontend/.env.local
+```bash
 cp -n backend/.env.example backend/.env
 ```
 
-The examples contain no secrets. Both projects run without copying them; without a backend `.env` or process settings, API docs are enabled and cross-origin browser access is disabled. There is one application configuration and no environment-mode selection.
+```bash
+cp -n frontend/.env.example frontend/.env.local
+```
 
-| Example | Setting | Current behavior |
-| --- | --- | --- |
-| `frontend/.env.example` | `NEXT_PUBLIC_API_BASE_URL` | FastAPI origin used by the browser jobs client; defaults to `http://127.0.0.1:8000` when absent |
-| `backend/app/config.yaml` | Nested API, resume, AI and matching settings | Committed non-secret defaults loaded and validated at app creation |
-| `backend/.env.example` | Optional `DOCS_ENABLED`, `CORS_ALLOWED_ORIGINS` | Private local overrides for docs visibility and permitted frontend origins |
-| `backend/.env.example` | `DATABASE_URL`, `DIRECT_DATABASE_URL` | Placeholder examples for the same Neon database; the ignored local `backend/.env` is already configured privately on this machine; see [database setup](database.md) |
-| `backend/.env.example` | `AI_MODE`, `AWS_REGION`, `BEDROCK_MODEL_ID`, `AWS_BEARER_TOKEN_BEDROCK` | Explicit mock/Bedrock provider selection and private credentials; [structured extraction](structured-extraction.md) documents the verified local model and limits |
-| `backend/.env.example` | `VOICE_MODE`, `VOICE_PUBLIC_API_URL`, `SESSION_SIGNING_SECRET`, `DEEPGRAM_API_KEY` | Module 12 voice screening; disabled unless `VOICE_MODE` and `AI_MODE` are set. `mock` needs no Deepgram key; see [voice sessions](voice-sessions.md) |
-| `backend/.env.example` | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Cloudflare bot check before a screening starts (module 15a); off unless both are set. Locally, leave them unset, or use Cloudflare's published always-pass test pair, site key `1x00000000000000000000AA` and secret `1x0000000000000000000000000000000AA`, which work on `localhost` and call Cloudflare's real verify endpoint at no cost. See [deployment](deployment.md) |
-| `backend/app/config.yaml` | `LOG_LEVEL`, `AI_TEMPERATURE`, `BEDROCK_REASONING_EFFORT` | `app` logger level (default `INFO`); model temperature (default 0); optional Bedrock reasoning effort, unset by default so nothing is sent |
-| `backend/app/config.yaml` | Matching weights | Backend-only integer category weights totaling 100; see [scoring](scoring.md) |
+- Committed defaults live in `backend/app/config.yaml`; secrets go only in the ignored `backend/.env`.
+- Precedence, highest first: process variables, `backend/.env`, `config.yaml`. Empty values fall through.
+- Unknown keys in `backend/.env` or `config.yaml` (including the retired `APP_ENV`) and invalid values stop startup with a message that never echoes values. Restart after any change.
+- The catalog needs `DATABASE_URL`; uploads and screenings need `AI_MODE`. See [configuration](configuration.md).
+- This machine's shell profile may export a stale `AWS_BEARER_TOKEN_BEDROCK`, which overrides `backend/.env`. Prefix local Bedrock commands (including `./run_local.sh start`) with `env -u AWS_BEARER_TOKEN_BEDROCK`.
 
-Next.js loads `.env.local` automatically. The jobs client validates the API setting as an origin with no credentials, path, query or fragment; remote origins require HTTPS and loopback may use HTTP. Invalid settings show the safe unavailable state. Public settings are bundled into production builds, so rebuild after changing them. The backend loads packaged `app/config.yaml` and private `backend/.env` independently of the current directory. Explicit settings override process variables, which override dotenv, which overrides YAML. Empty values fall through; `${NAME}` and `${NAME:-fallback}` placeholders in YAML read exported variables. Restart the backend after changes. Unknown YAML or `.env` keys and malformed settings fail startup with a safe diagnostic. The CORS list accepts exact origins, not URL paths or wildcards. The launcher supplies both `http://localhost:3000` and `http://127.0.0.1:3000`, which are distinct browser origins. See [the configuration contract](backend-foundation.md).
+## Start and stop both apps
 
-Remove `APP_ENV` from older local files. Set `DOCS_ENABLED=false` if you want to hide API docs. Remote frontend origins require HTTPS consistently; HTTP is supported only for loopback origins. Secrets belong only in backend-local environment configuration or a deployment secret store. Configure the hosted backend with the same two Neon URL values when deploying. Never prefix provider keys with `NEXT_PUBLIC_`.
+From the repository root:
 
-## 4. Start and stop both apps
-
-From the repository root, after installing dependencies once:
-
-```sh
+```bash
 ./run_local.sh start
+```
+
+```bash
 ./run_local.sh status
-./run_local.sh restart
+```
+
+```bash
 ./run_local.sh logs
+```
+
+```bash
+./run_local.sh restart
+```
+
+```bash
 ./run_local.sh stop
 ```
 
-The Bash wrapper activates the existing `talent-insight` environment using the current Conda installation or this machine's `/opt/anaconda3` installation. It prepends that environment's runtime directory and verifies Python 3.12/Node 24. It fails if dependencies are missing; it does not install them. On another machine, activate the same named environment first if Conda cannot be found.
+- The wrapper activates `talent-insight` (from the current Conda install or `/opt/anaconda3`) and checks Python 3.12, Node 24 and installed dependencies. It never installs anything.
+- Backend: `uvicorn app.main:app --reload --no-access-log` on port 8000. Frontend: `npm run dev` on port 3000. Override with `BACKEND_PORT` and `FRONTEND_PORT` (stop the servers first).
+- For that run it sets `NEXT_PUBLIC_API_BASE_URL`, `CORS_ALLOWED_ORIGINS` (both `localhost` and `127.0.0.1` frontend origins) and `NEXT_TELEMETRY_DISABLED=1`, unless already exported in the shell. Because process variables win, these replace any value in `backend/.env` or `frontend/.env.local`. To point the frontend elsewhere, export the variable before `start`.
+- Readiness checks `/health` and the frontend `/` only; they do not test the database.
+- PID records and logs live in the ignored `.run_local/` (owner-only permissions). `logs` follows both logs; Ctrl+C leaves the servers running.
+- `stop` signals only processes whose recorded identity still matches. It never kills by port, refuses to start on an occupied port, and leaves unverifiable processes for you to stop manually.
+- Verified on macOS only.
 
-The Python process manager starts Uvicorn with reload and access logging disabled, and uses the existing `npm run dev` Webpack command. Both bind to `127.0.0.1` using HTTP. It sets process defaults for the public API origin and the two local CORS origins; explicitly exported settings take precedence. It does not modify either dotenv file or any database/provider configuration. No authentication, shared API keys, certificates or HTTPS bypass instructions from the reference script were carried over.
+## Run each app directly
 
-Ports default to backend 8000/frontend 3000. To override them, export `BACKEND_PORT` and `FRONTEND_PORT` before `start` (stop existing managed servers first). The corresponding API/CORS process defaults follow those ports. No application environment modes or new databases are introduced.
+Backend, from `backend/`:
 
-Readiness checks request `/health` and the frontend overview only; they do not assert database readiness. Private PID records and logs are stored in ignored `.run_local/` (directory mode 0700, files 0600). The launcher verifies process start identity and a dedicated process group before stopping that server and its children. It refuses occupied unmanaged ports and never kills by port. If ownership cannot be verified after an abnormal exit or changed PID, it leaves that process alone; inspect and stop it manually. Start failures clean up only servers launched during that attempt.
-
-Use Ctrl+C to exit log following. It leaves servers running. `stop` retains logs for inspection. These commands are verified on macOS; Linux process supervision and Windows are unverified. Direct run commands remain available below.
-
-## 5. Run the frontend directly
-
-In a terminal with Conda active:
-
-```sh
-cd frontend
-npm run dev
-```
-
-Open [the local frontend](http://127.0.0.1:3000). The overview (`/`) and guide (`/guide`) need no backend; jobs (`/jobs`), job details and nested candidate pools/profiles require FastAPI, matching CORS origins and the existing Neon configuration. Open a job's **Candidates** tab to view the table. Choosing a text-based PDF there immediately requests a temporary assessment; the new row appears after completion and can open its evidence detail. Synthetic profiles display the current precomputed snapshot without a provider call. Uploaded PDFs use the backend's configured `AI_MODE`; the saved local value is Bedrock and makes provider calls. Set `AI_MODE=mock` explicitly in the backend process for no-cost upload workflow checks. See [assessment UI](assessment-ui.md), [jobs](jobs.md), [candidate checks](candidates.md) and [upload limits/privacy](resumes.md). Unknown routes show a recovery link. Press Ctrl+C to stop.
-
-To build and serve the production bundle locally:
-
-```sh
-cd frontend
-npm run build
-npm start
-```
-
-Run these from the repository root or omit `cd frontend` if already there. Development and production servers use the same port, so stop one before starting the other. Both bind to loopback for local development. No external font download is required during the build. Set `NEXT_TELEMETRY_DISABLED=1` in your shell to opt out of Next.js telemetry.
-
-The scripts explicitly use Webpack, a [supported Next.js CLI option](https://nextjs.org/docs/app/api-reference/cli/next). Turbopack could not bind its internal worker socket in this development environment, including on an approved retry outside the sandbox. The Webpack production build passed. Reconsider the bundler only after reproducing a successful Turbopack build; this does not change the application stack.
-
-## 6. Run the backend directly
-
-In another terminal, activate Conda and prepend its bin directory as above, then from the repository root:
-
-```sh
-cd backend
+```bash
 python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --no-access-log
 ```
 
-The ASGI server runs at [localhost:8000](http://localhost:8000). [GET /health](http://localhost:8000/health) returns `{"status":"ok"}` with `Cache-Control: no-store`. It reports process liveness, not database/provider readiness. [GET /jobs](http://127.0.0.1:8000/jobs) and `/jobs/{job_id}` read the shared catalog. Missing/unavailable database configuration returns safe 503 responses. [API docs](http://localhost:8000/docs) and `/openapi.json` are controlled by `DOCS_ENABLED`; `/redoc` is disabled. `/` remains a structured 404. Press Ctrl+C to stop.
+Frontend development server, from `frontend/`:
 
-The factory can also be started as `python -m uvicorn app.application:create_app --factory --host 127.0.0.1 --port 8000 --no-access-log`. Both entry points validate settings before serving. Access logging is disabled in these commands to avoid recording request URLs; startup logs and sanitized application exception logs remain available.
+```bash
+npm run dev
+```
 
-Application logs go to stderr as `time | request_id | level | logger | message`. Every response carries an `X-Request-ID` header; send your own (1–64 characters of letters, digits, `.`, `_`, `-`) to correlate a client call with its log lines. Logs contain route templates, counts and error codes only; see [backend foundation](backend-foundation.md#request-ids-and-application-logs).
+Frontend production build and server, from `frontend/` (same port as `dev`, so stop one first):
 
-## 7. Verify the application
-
-With Conda active, from `frontend/`:
-
-```sh
-npm run lint
-npm run typecheck
-npm test
+```bash
 npm run build
 ```
 
-From `backend/`:
+```bash
+npm start
+```
 
-```sh
+- Keep `--no-access-log`; access logs would record request URLs.
+- Run this way, nothing sets CORS for you: put the frontend origins in `CORS_ALLOWED_ORIGINS` in `backend/.env`.
+- The frontend's `/` and `/guide` need no backend. `/jobs` pages need the backend, matching CORS origins and `DATABASE_URL`.
+- Synthetic candidates show a saved assessment snapshot with no provider call. PDF uploads use `AI_MODE`: `bedrock` makes paid calls, `mock` is free. Uploads and results are temporary; see [resumes](resumes.md) and [assessment UI](assessment-ui.md).
+- Text screenings need `AI_MODE` and a `SESSION_SIGNING_SECRET` of 32+ characters. `VOICE_MODE=mock` (with `VOICE_PUBLIC_API_URL=http://127.0.0.1:8000`) exercises the consent flow but cannot open a real call. Live voice needs a public HTTPS backend that Deepgram can reach, such as the Render service. See [voice sessions](voice-sessions.md) and [deployment](deployment.md).
+- Backend log format and request IDs are in [backend foundation](backend-foundation.md#request-ids-and-application-logs).
+
+## Checks
+
+Backend, from `backend/`:
+
+```bash
 python -m pytest -W error
+```
+
+```bash
 python -m ruff check .
+```
+
+```bash
 python -m ruff format --check .
+```
+
+```bash
 python -m pip check
+```
+
+```bash
 python -m app.seed --validate-only
+```
+
+```bash
 python -m app.refresh_demo
 ```
 
-From the repository root, also run `bash -n run_local.sh`, `python -m unittest discover -s scripts -p 'test_*.py'`, `python -m ruff check scripts` and `python -m ruff format --check scripts`. Launcher unit tests mock process ownership and ports; they do not start servers. Frontend `npm test` uses Node 24's built-in test runner for job/candidate API contracts, public URL validation, evidence/Unicode validation and failure/cancellation behavior, without network calls or additional dependencies.
+- The default test suite needs no database, provider or server: it isolates real configuration, uses in-process ASGI requests, mock AI mode and stubbed AWS calls, and previews migration SQL offline.
+- `app.seed --validate-only` validates the catalog JSON without loading settings or connecting.
+- `app.refresh_demo` without `--run` only checks that each demo job has 3–5 memberships; it makes no provider call and does not touch the snapshot. `--run` regenerates the snapshot with paid Bedrock calls and needs approval.
+- The demo snapshot is guarded by `tests/test_candidates.py::test_versioned_snapshot_is_served_for_every_demo_member`, which fails when code under `app/pipeline`, `app/llm`, `app/prompts` or `refresh_demo.py` changes.
+- Optional read-only Neon checks: `python -m pytest --neon -W error`. See [database](database.md#verification).
 
-Configuration and HTTP tests exercise settings, health/docs, CORS and errors through HTTPX's in-process ASGI transport. They require no database, provider or HTTP server and isolate real dotenv/AWS configuration. Structured-extraction tests use synthetic PDFs, explicit mock mode and AWS SDK Stubber; they never invoke paid Bedrock. The transitive LangSmith pytest plugin is disabled to keep test tracing off. Frontend type generation runs before TypeScript checks, so a fresh checkout does not depend on stale generated route types. Next.js build does not replace the separate lint command.
+Frontend, from `frontend/`:
 
-The default suite also validates seed evidence and previews migration SQL without connecting. To include the shared Neon catalog checks, explicitly run `python -m pytest --neon -W error`. These checks use read-only transactions for migration revision, schema/model parity, membership and source evidence. They never migrate, seed or reset shared data. No local database fixture is started. See [database verification](database.md) for details.
+```bash
+npm run lint
+```
 
-Known tooling constraint: ESLint 9 is deprecated by its maintainer, but the installed Next.js React/accessibility plugins declare ESLint support through version 9. It is pinned to the latest 9.x release compatible with that dependency tree. Revisit when those plugins support ESLint 10; do not bypass peer checks with `--force` or `--legacy-peer-deps`.
+```bash
+npm run typecheck
+```
 
-## Deployment boundary
+```bash
+npm test
+```
 
-The Neon catalog is initialized. Module 13 added a dashboard checklist for one Render backend (Singapore, Free) and the Vercel frontend; see [deployment](deployment.md). Nothing is deployed from this workspace, and Render needs a full `PYTHON_VERSION` such as `3.12.16`.
+```bash
+npm run build
+```
 
-Screenings run locally without any tunnel:
-- **Requirements:** set `AI_MODE` (`mock` for no provider calls) and `SESSION_SIGNING_SECRET` (32+ characters) in `backend/.env` or the process.
-- **Text screenings and the UI** then work on `127.0.0.1`.
-- **Voice:** `VOICE_MODE=mock` exercises the consent flow, but a mock token cannot open a real Deepgram call. Live voice needs a public HTTPS backend that Deepgram can reach; the Render backend is the tested route.
-- **Pointing a local frontend at Render:** set `NEXT_PUBLIC_API_BASE_URL=https://YOUR-SERVICE.onrender.com` in `frontend/.env.local`, then restart `npm run dev`.
+- `typecheck` runs `next typegen` before `tsc`, so a fresh checkout needs no stale generated types.
+- `npm test` runs Node's built-in test runner on `tests/*.test.ts` (API decoding, URL validation, ordering, caching, screening and voice helpers) with no network calls.
+
+Launcher, from the repository root:
+
+```bash
+bash -n run_local.sh
+```
+
+```bash
+python -m unittest discover -s scripts -p 'test_*.py'
+```
+
+```bash
+python -m ruff check scripts
+```
+
+```bash
+python -m ruff format --check scripts
+```
+
+The launcher tests mock processes and ports; they start no servers.
+
+## Limitations
+
+- Frontend scripts use Webpack (`--webpack`). Turbopack could not bind its worker socket in this environment.
+- ESLint is pinned to 9.x because the Next.js React and accessibility plugins declare support only up to 9. Do not bypass peer checks with `--force` or `--legacy-peer-deps`.
+- The backend lock and launcher are verified on macOS arm64. Hosted builds are covered in [deployment](deployment.md); Windows is untested.

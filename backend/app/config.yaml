@@ -95,7 +95,7 @@ bot_check:
   turnstile_secret_key: ${TURNSTILE_SECRET_KEY}
 
 usage:
-  # One Neon row per model call, PDF parse and voice session, written in the background.
+  # One Neon row per Bedrock call and voice session, written in the background.
   # It needs DATABASE_URL; set USAGE_RECORDING=false to stop recording.
   recording: true
   # [model ID, USD per million input tokens, USD per million output tokens] per model;

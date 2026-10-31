@@ -118,7 +118,12 @@ responses = {
 async def structure_upload(
     request: Request, response: Response, job: Annotated[ExtractionJob, Depends(job_context)]
 ) -> StructuredResume | JSONResponse:
-    usage.bind(request.app.state.usage, candidate_kind="upload", job_id=job.id)
+    usage.bind(
+        request.app.state.usage,
+        candidate_kind="upload",
+        job_id=job.id,
+        candidate_ref=usage.new_candidate_ref(),
+    )
     async with ai_slot(request):
         extracted = await extract_upload(request, response)
         if isinstance(extracted, JSONResponse):
@@ -129,12 +134,14 @@ async def structure_upload(
         return result
 
 
-def screening_context(assessment: Assessment, settings) -> str | None:
+def screening_context(assessment: Assessment, settings, ref: str | None = None) -> str | None:
     """Signed facts and statuses for a later screening; absent when screening is not set up."""
     secret = settings.session_signing_secret
     if settings.ai_mode is None or secret is None or len(secret.get_secret_value()) < 32:
         return None
-    return sign_context(assessment, secret.get_secret_value(), settings.voice_context_ttl_seconds)
+    return sign_context(
+        assessment, secret.get_secret_value(), settings.voice_context_ttl_seconds, ref
+    )
 
 
 @router.post(
@@ -151,7 +158,9 @@ def screening_context(assessment: Assessment, settings) -> str | None:
 async def assess_upload(
     request: Request, response: Response, job: Annotated[ExtractionJob, Depends(job_context)]
 ) -> UploadAssessment | JSONResponse:
-    usage.bind(request.app.state.usage, candidate_kind="upload", job_id=job.id)
+    # One reference for this upload's model calls and every screening started from it.
+    ref = usage.new_candidate_ref()
+    usage.bind(request.app.state.usage, candidate_kind="upload", job_id=job.id, candidate_ref=ref)
     async with ai_slot(request):
         extracted = await extract_upload(request, response)
         if isinstance(extracted, JSONResponse):
@@ -162,5 +171,5 @@ async def assess_upload(
         result = await assess_resume(structured, settings)
         response.headers["Cache-Control"] = "no-store"
         return UploadAssessment(
-            **dict(result), screening_context=screening_context(result, settings)
+            **dict(result), screening_context=screening_context(result, settings, ref)
         )
