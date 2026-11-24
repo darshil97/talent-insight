@@ -4,12 +4,13 @@ Extraction turns resume text into job-related text mentions ("facts") with verif
 
 ## Route and response
 
-`POST /jobs/{job_id}/resumes/structure` takes a raw PDF and runs four steps:
+`POST /jobs/{job_id}/resumes/structure` takes a raw PDF and runs five steps:
 
 1. Load the job context; the read-only transaction closes before AI work.
-2. AI admission.
-3. [PDF parse](resumes.md).
-4. Extraction.
+2. [Bot check](resumes.md#bot-check-and-daily-limit) when Turnstile is configured.
+3. AI admission.
+4. [PDF parse](resumes.md).
+5. Extraction.
 
 The UI uses `POST /jobs/{job_id}/resumes/assess`, which adds interpretation. Clients cannot supply criteria, prompts or provider settings. Demo resumes are extracted only by the [snapshot refresh](candidates.md#refreshing).
 
@@ -92,7 +93,8 @@ Variables are listed in [configuration](configuration.md).
 - **SDK settings:** 3 s connect timeout, a read timeout of up to 60 s, and one SDK attempt. A call already in flight runs until its read timeout even after the request gives up.
 - **Admission:** checked per process before the upload is read. One request counts once, whatever its attempts. Counters reset on restart and are not a cost budget.
   - 1 concurrent request (`ai_busy`);
-  - 5 per rolling minute (`ai_rate_limited`).
+  - 5 per rolling minute (`ai_rate_limited`);
+  - 100 per rolling 24 hours (`ai_daily_limit`, `AI_ASSESSMENTS_PER_DAY`). Only requests that passed the bot check and were admitted count.
 - **Cost:** an upload assessment makes two to four Bedrock calls.
 - **JSON capture** (`app/llm/response.py`):
   - Drops reasoning blocks.
@@ -103,10 +105,11 @@ Variables are listed in [configuration](configuration.md).
 
 | Status | Codes |
 | --- | --- |
+| 403 | `bot_check_failed` |
 | 413 | `ai_input_too_large` |
-| 429 | `ai_rate_limited` (`Retry-After: 60`) |
+| 429 | `ai_rate_limited` (`Retry-After: 60`), `ai_daily_limit` (`Retry-After: 3600`) |
 | 502 | `invalid_model_output`, `invalid_evidence`, `invalid_interpretation` |
-| 503 | `ai_not_configured`, `provider_configuration_error`, `provider_access_denied`, `unsupported_model_capability`, `ai_unavailable`, `provider_throttled`, `ai_busy` (the last two with `Retry-After: 5`) |
+| 503 | `ai_not_configured`, `provider_configuration_error`, `provider_access_denied`, `unsupported_model_capability`, `ai_unavailable`, `provider_throttled`, `ai_busy` (the last two with `Retry-After: 5`), `bot_check_unavailable` (`Retry-After: 30`) |
 | 504 | `provider_timeout`, `ai_timeout` |
 
 Messages never include credentials, resume text or provider payloads. A failure never becomes an empty profile or a zero or perfect match. [PDF errors](resumes.md#errors) and 404 can also occur.

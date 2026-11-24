@@ -225,3 +225,11 @@ def test_missing_yaml_fails_safely(monkeypatch: pytest.MonkeyPatch, tmp_path: Pa
     monkeypatch.setattr(config, "BACKEND_CONFIG_FILE", tmp_path / "missing.yaml")
     with pytest.raises(RuntimeError, match="Invalid backend configuration"):
         load_settings()
+
+
+def test_daily_assessment_limit_defaults_and_bounds() -> None:
+    assert Settings().ai_assessments_per_day == 100
+    assert Settings(ai_assessments_per_day=1).ai_assessments_per_day == 1
+    for value in (0, 5001):
+        with pytest.raises(ValidationError):
+            Settings(ai_assessments_per_day=value)

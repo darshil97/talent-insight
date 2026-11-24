@@ -8,6 +8,7 @@ import { ScreeningPanel } from "@/components/screening-panel";
 import { AvailabilityFields, completeAvailability } from "@/components/availability-fields";
 import { CatalogLoading, CatalogNotFound, CatalogUnavailable, useCatalog } from "@/components/catalog-resource";
 import { JobTabs } from "@/components/job-tabs";
+import { TurnstileWidget } from "@/components/turnstile-widget";
 import { assessUpload, AssessmentError, type Assessment } from "@/lib/assessments";
 import { AvailabilityError, availabilityLabel, notProvided, requestAvailability, type Availability, type AvailabilityInput } from "@/lib/availability";
 import { sortForReview } from "@/lib/candidate-order";
@@ -17,6 +18,9 @@ import { prefetchCatalog } from "@/lib/catalog-cache";
 import { confidenceLabels, type Confidence } from "@/lib/estimate";
 import { decodeResumeLimits, ResumeError, type ResumeLimits } from "@/lib/resumes";
 import type { ScreeningCandidate } from "@/lib/screenings";
+
+// Must match RESUME_ACTION in backend/app/voice/turnstile.py.
+const BOT_CHECK_ACTION = "resume_assess";
 
 type DemoRow = { kind: "demo"; name: string; rank: number | null; candidate: CandidateTableSummary };
 type UploadRow = {
@@ -41,6 +45,9 @@ function CandidateWorkspace({ job, candidates }: { job: JobDetail; candidates: C
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState<AvailabilityInput>(notProvided);
   const [processing, setProcessing] = useState(false);
+  // Turnstile tokens work once; a new widget key mints a fresh one after every attempt.
+  const [botToken, setBotToken] = useState<string | null>(null);
+  const [botAttempt, setBotAttempt] = useState(0);
   const [error, setError] = useState("");
   const [showDetails, setShowDetails] = useState(false);
   const [screening, setScreening] = useState<ScreeningTarget | null>(null);
@@ -78,6 +85,7 @@ function CandidateWorkspace({ job, candidates }: { job: JobDetail; candidates: C
   function clear() {
     request.current?.abort(); availabilityRequest.current?.abort();
     setUpload(null); setProcessing(false); setShowDetails(false); setError(""); setAdding(false); setDraft(notProvided);
+    setBotToken(null); setBotAttempt((value) => value + 1);
     setScreening((current) => current?.key === "upload" ? null : current);
     if (input.current) input.current.value = "";
   }
@@ -117,9 +125,11 @@ function CandidateWorkspace({ job, candidates }: { job: JobDetail; candidates: C
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
+    const token = botToken;
+    setBotToken(null); setBotAttempt((value) => value + 1);
     setUpload(null); setShowDetails(false); setError(""); setProcessing(true);
     try {
-      const assessment = await assessUpload(file, limits, job, controller.signal);
+      const assessment = await assessUpload(file, limits, job, controller.signal, token);
       const identity = assessment.structured.identity;
       const row: UploadRow = {
         kind: "upload", name: identity?.name?.value ?? "", title: identity?.current_title?.value ?? "",
@@ -158,7 +168,7 @@ function CandidateWorkspace({ job, candidates }: { job: JobDetail; candidates: C
       </div>}
       <AvailabilityFields id="upload-availability" value={upload ? upload.availabilityInput : draft} onChange={(value) => upload ? setUpload({ ...upload, availabilityInput: value }) : setDraft(value)} />
       {upload ? <button type="button" className="mission-outline-button" onClick={updateAvailability}>Update availability</button>
-        : <><button type="button" className="mission-button" disabled={!limits || processing} onClick={() => input.current?.click()}>Choose PDF</button> <button type="button" className="mission-outline-button" disabled={processing} onClick={clear}>Cancel</button></>}
+        : <>{limits?.bot_check_site_key && !processing && <TurnstileWidget key={botAttempt} siteKey={limits.bot_check_site_key} action={BOT_CHECK_ACTION} onToken={setBotToken} help="Cloudflare checks that you're a person before the resume is assessed." />}<button type="button" className="mission-button" disabled={!limits || processing || (!!limits.bot_check_site_key && !botToken)} onClick={() => input.current?.click()}>Choose PDF</button> <button type="button" className="mission-outline-button" disabled={processing} onClick={clear}>Cancel</button></>}
     </section>}
     <p id="candidate-upload-help" className="mission-help">Choose a text-based PDF you have permission to process. Selection immediately sends it to the backend’s configured AI provider when Bedrock mode is active. Results need human review and clear on refresh. Scanned and password-protected PDFs are unsupported.</p>
     <p className="mission-upload-state" role="status">{processing ? <>Assessing the selected PDF… <button type="button" onClick={clear}>Cancel</button></> : upload ? <>New candidate added for this session. <button type="button" onClick={clear}>Clear upload</button></> : limits ? `PDF limit: ${(limits.max_bytes / (1024 * 1024)).toFixed(1)} MiB · ${limits.max_pages} pages` : <>Loading PDF limits… <button type="button" onClick={() => { setError(""); setLimitsAttempt((value) => value + 1); }}>Retry</button></>}</p>

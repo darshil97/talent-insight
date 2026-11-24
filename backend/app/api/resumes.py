@@ -21,6 +21,7 @@ async def limits(request: Request, response: Response) -> ResumeLimits:
         max_bytes=settings.resume_max_bytes,
         max_pages=settings.resume_max_pages,
         max_characters=settings.resume_max_characters,
+        bot_check_site_key=settings.turnstile_site_key,
     )
 
 

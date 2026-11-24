@@ -9,8 +9,11 @@ const file = new File(["%PDF-1.7 synthetic only"], "private-filename.pdf", { typ
 afterEach(() => mock.restoreAll());
 
 test("validates configured limits and rejects unsafe contracts", () => {
-  assert.deepEqual(decodeResumeLimits(limits), limits);
-  for (const value of [null, { ...limits, max_bytes: 0 }, { ...limits, max_pages: 51 }, { ...limits, max_characters: 200_001 }]) assert.throws(() => decodeResumeLimits(value), ResumeError);
+  assert.deepEqual(decodeResumeLimits(limits), { ...limits, bot_check_site_key: null });
+  assert.deepEqual(decodeResumeLimits({ ...limits, bot_check_site_key: null }), { ...limits, bot_check_site_key: null });
+  assert.equal(decodeResumeLimits({ ...limits, bot_check_site_key: "0x4AAAAAAAsitekey" }).bot_check_site_key, "0x4AAAAAAAsitekey");
+  for (const value of [null, { ...limits, max_bytes: 0 }, { ...limits, max_pages: 51 }, { ...limits, max_characters: 200_001 },
+    { ...limits, bot_check_site_key: "<script>" }, { ...limits, bot_check_site_key: 42 }, { ...limits, bot_check_site_key: "" }]) assert.throws(() => decodeResumeLimits(value), ResumeError);
 });
 
 test("keeps literal text, page numbers, blank pages and Unicode character counts", () => {

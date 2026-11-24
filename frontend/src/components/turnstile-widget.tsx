@@ -7,7 +7,7 @@ import { loadTurnstile, type TurnstileApi } from "@/lib/turnstile";
  * Cloudflare's bot check. Reports each new token, or null when one expires or the check fails.
  * A token works once, so give the widget a new `key` after it has been spent.
  */
-export function TurnstileWidget({ siteKey, action, onToken }: { siteKey: string; action: string; onToken: (token: string | null) => void }) {
+export function TurnstileWidget({ siteKey, action, onToken, help = "Cloudflare checks that you're a person before the screening starts." }: { siteKey: string; action: string; onToken: (token: string | null) => void; help?: string }) {
   const container = useRef<HTMLDivElement>(null);
   const report = useRef(onToken);
   const [failed, setFailed] = useState(false);
@@ -44,7 +44,7 @@ export function TurnstileWidget({ siteKey, action, onToken }: { siteKey: string;
       <div ref={container} />
       {failed
         ? <p role="alert" className="mission-help">The bot check could not load. Allow challenges.cloudflare.com in your browser, or try another browser.</p>
-        : <p className="mission-help">Cloudflare checks that you&apos;re a person before the screening starts.</p>}
+        : <p className="mission-help">{help}</p>}
     </div>
   );
 }

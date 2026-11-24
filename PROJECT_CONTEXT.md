@@ -8,6 +8,7 @@ The starting brief for a coding assistant. Read [AGENTS.md](AGENTS.md) first: it
 - Commit `fe87961` added the Neon usage table and prices. Render is recording: one upload's extraction and interpretation rows, sharing a `request_id`, were seen on 2026-11-01.
 - **Uncommitted:** `candidate_ref` linking, no more PDF-parse rows, and Deepgram time measured to the hang-up. Neon already has migration `0004`, and the one PDF-parse row was deleted. Render needs this code deployed.
 - Neon is at migration `0004_usage_candidate_ref`.
+- **Uncommitted (2026-11-24):** Turnstile and a daily cap on `/resumes/assess` and `/structure`, with the widget in the upload panel. Tested locally with stubbed Cloudflare and mock AI; not deployed. Render and Vercel must deploy together.
 - There is no pending module. Wait for the user's task, then propose a plan per AGENTS.md before editing.
 
 ## Product
@@ -26,10 +27,10 @@ A recruiting assistant for technical recruiters and small agencies, built as a p
 | Database | Neon project `talent-insight`, schema `talent_insight`. The catalog is read-only at runtime; the only runtime write is `usage_events` | Neon (one database for local and hosted runs) |
 | AI | Bedrock in `ap-southeast-2`: `openai.gpt-oss-120b-1:0` for resume assessment and reports, `au.anthropic.claude-haiku-4-5-20251001-v1:0` for the interviewer | AWS |
 | Voice | Deepgram Voice Agent (`flux-general-en` STT, `aura-2-thalia-en` TTS). Audio goes browser ↔ Deepgram; Deepgram calls the backend as a custom LLM | Deepgram |
-| Bot check | Cloudflare Turnstile before a screening starts | Cloudflare |
+| Bot check | Cloudflare Turnstile before a screening starts or an upload is assessed | Cloudflare |
 
 **Flows:**
-- **Upload:** a PDF is parsed in a child process (stdin, no files). Bedrock then extracts facts that must quote the resume exactly, and judges each requirement citing those facts. The backend computes the score deterministically and returns the result to the browser only.
+- **Upload:** Turnstile (action `resume_assess`, token in `X-Bot-Check-Token`) and a 100-per-day cap run first. A PDF is then parsed in a child process (stdin, no files). Bedrock then extracts facts that must quote the resume exactly, and judges each requirement citing those facts. The backend computes the score deterministically and returns the result to the browser only.
 - **Screening:**
   1. The candidate consents, then Turnstile runs.
   2. `POST /screenings` creates an in-memory session and returns a capability. Voice also gets a 30-second Deepgram token and the agent Settings.
@@ -67,11 +68,12 @@ A recruiting assistant for technical recruiters and small agencies, built as a p
 - Limits:
   - Screenings last 10 minutes, with wrap-up at 9 and a 40-turn cap.
   - Limits are per process: 1 concurrent, 6 per hour (3 on Render) and 20 per day.
+  - Upload assessments: 1 concurrent, 5 per minute and 100 per rolling day, counted only after the bot check passes.
   - Uploads carry an HMAC-signed `screening_context` that lasts 30 minutes.
 - Reports use the dimensions relevance, specificity, ownership and explanation, plus graded correctness.
   - Every judgment needs a verified candidate quote.
   - Integrity flags (instruction override, score request, answer request, prompt probe) come from rules plus the model, and force human review.
-- The Turnstile check fails closed if Cloudflare is down. The site key reaches the browser through `/screenings/notice`.
+- The Turnstile check fails closed if Cloudflare is down. The site key reaches the browser through `/screenings/notice` and `/resumes/limits`. Each guarded route has its own action.
 
 **Code and tooling**
 - Frontend: presentation only. Backend: validation, provider calls and deterministic scoring. Use typed contracts and validate model output server-side.
@@ -140,6 +142,7 @@ cd frontend && npm run lint && npm run typecheck && npm test && npm run build
   - recruiter-authored accepted equivalents per requirement;
   - a runtime-only Render lock without test tools;
   - removing the stale shell export.
+- **Unguarded parse route:** `/resumes/extract` (parse only, no AI, no UI caller) has no bot check.
 - **Unused code:** the `ResumeUpload` component and `uploadResume()` are imported nowhere, and `/resumes/extract` and `/jobs/{id}/resumes/structure` have no UI caller. The UI uses `/assess`, which parses the PDF itself.
 - **Snapshot refresh cost:** the paid `refresh_demo --run` is not recorded in `usage_events`.
 - Make no legal-compliance or hiring-outcome claims.

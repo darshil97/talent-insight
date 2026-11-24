@@ -45,6 +45,7 @@ _yaml_fields = {
     "ai.max_attempts": "ai_max_attempts",
     "ai.max_concurrent": "ai_max_concurrent",
     "ai.requests_per_minute": "ai_requests_per_minute",
+    "ai.assessments_per_day": "ai_assessments_per_day",
     "ai.bedrock.region": "aws_region",
     "ai.bedrock.model_id": "bedrock_model_id",
     "ai.bedrock.bearer_token": "aws_bearer_token_bedrock",
@@ -232,6 +233,10 @@ class Settings(BaseSettings):
     ai_requests_per_minute: int = Field(
         default=5, ge=1, le=20, validation_alias="AI_REQUESTS_PER_MINUTE"
     )
+    # Upload assessments admitted per process in a rolling 24 hours.
+    ai_assessments_per_day: int = Field(
+        default=100, ge=1, le=5000, validation_alias="AI_ASSESSMENTS_PER_DAY"
+    )
     match_weight_mandatory: int = Field(
         default=50, ge=0, le=100, validation_alias="MATCH_WEIGHT_MANDATORY"
     )
@@ -329,7 +334,7 @@ class Settings(BaseSettings):
     voice_turn_timeout_seconds: float = Field(
         default=20, ge=5, le=60, validation_alias="VOICE_TURN_TIMEOUT_SECONDS"
     )
-    # Cloudflare Turnstile before a screening starts; off unless both keys are set.
+    # Cloudflare Turnstile before a screening or upload assessment; off unless both keys are set.
     turnstile_site_key: str | None = Field(
         default=None, pattern=r"^[A-Za-z0-9_-]{1,64}$", validation_alias="TURNSTILE_SITE_KEY"
     )

@@ -5,6 +5,8 @@ export interface ResumeLimits {
   max_bytes: number;
   max_pages: number;
   max_characters: number;
+  /** Public Cloudflare Turnstile key when an upload must pass a bot check before assessment. */
+  bot_check_site_key?: string | null;
 }
 
 export interface ExtractedResume {
@@ -43,7 +45,9 @@ const integer = (v: unknown, min: number, max: number): v is number => Number.is
 export function decodeResumeLimits(value: unknown): ResumeLimits {
   if (!object(value) || !integer(value.max_bytes, 1024, 10 * 1024 * 1024) ||
       !integer(value.max_pages, 1, 50) || !integer(value.max_characters, 100, 200_000)) throw new ResumeError();
-  return { max_bytes: value.max_bytes, max_pages: value.max_pages, max_characters: value.max_characters };
+  const siteKey = value.bot_check_site_key ?? null;
+  if (siteKey !== null && !(typeof siteKey === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(siteKey))) throw new ResumeError();
+  return { max_bytes: value.max_bytes, max_pages: value.max_pages, max_characters: value.max_characters, bot_check_site_key: siteKey };
 }
 
 export function decodeResume(value: unknown, limits: ResumeLimits): ExtractedResume {

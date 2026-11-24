@@ -22,6 +22,8 @@ class ResumeLimits(BaseModel):
     max_bytes: int
     max_pages: int
     max_characters: int
+    # Public Turnstile site key when uploads need a bot check before assessment.
+    bot_check_site_key: str | None = None
 
 
 class ResumePage(BaseModel):

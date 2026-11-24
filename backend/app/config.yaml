@@ -30,6 +30,9 @@ ai:
   max_attempts: 2
   max_concurrent: 1
   requests_per_minute: 5
+  # Upload assessments per rolling 24 hours, counted only after the bot check passes.
+  # Per process; resets on restart.
+  assessments_per_day: 100
   bedrock:
     region: ${AWS_REGION}
     model_id: ${BEDROCK_MODEL_ID}
@@ -89,8 +92,9 @@ voice:
   turn_timeout_seconds: 20
 
 bot_check:
-  # Cloudflare Turnstile before a screening starts. Off unless both keys are set;
-  # the site key is public and reaches the browser through the screening notice.
+  # Cloudflare Turnstile before a screening starts or an upload is assessed. Off unless
+  # both keys are set; the site key is public and reaches the browser through the
+  # screening notice and the resume limits.
   turnstile_site_key: ${TURNSTILE_SITE_KEY}
   turnstile_secret_key: ${TURNSTILE_SECRET_KEY}
 

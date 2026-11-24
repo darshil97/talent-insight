@@ -1,4 +1,4 @@
-"""Cloudflare Turnstile check before a screening starts; the secret key never leaves the backend."""
+"""Cloudflare Turnstile check before a screening or upload assessment; the secret stays here."""
 
 import logging
 import re
@@ -10,8 +10,9 @@ from app.voice.contracts import VoiceFailure
 
 logger = logging.getLogger(__name__)
 VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
-# The widget sends this action; a token minted for anything else is refused.
+# Each widget sends its own action; a token minted for another action is refused.
 ACTION = "screening_start"
+RESUME_ACTION = "resume_assess"
 _VERIFY_TIMEOUT_SECONDS = 10
 # Cloudflare error codes are short identifiers; anything else is not logged.
 _ERROR_CODE = re.compile(r"^[a-z-]{1,40}$")
@@ -24,7 +25,10 @@ def bot_check_enabled(settings) -> bool:
 
 
 async def verify_bot_check(
-    settings, token: str | None, transport: httpx.AsyncBaseTransport | None = None
+    settings,
+    token: str | None,
+    transport: httpx.AsyncBaseTransport | None = None,
+    action: str = ACTION,
 ) -> None:
     """Return when the check is off or passed; otherwise fail closed with a safe code."""
     if not bot_check_enabled(settings):
@@ -63,7 +67,7 @@ async def verify_bot_check(
     # result, because production secrets reject test tokens.
     metadata = body.get("metadata")
     testing = isinstance(metadata, dict) and metadata.get("result_with_testing_key") is True
-    if body["success"] and (body.get("action") == ACTION or testing):
+    if body["success"] and (body.get("action") == action or testing):
         logger.info(
             "Bot check passed%s in %.0f ms",
             " with Cloudflare test keys" if testing else "",

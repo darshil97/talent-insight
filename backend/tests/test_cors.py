@@ -50,6 +50,24 @@ def test_allows_get_preflight_with_content_type(api_request: Callable[..., httpx
     assert response.headers["access-control-allow-methods"] == "GET, POST"
 
 
+def test_allows_upload_preflight_with_bot_check_header(
+    api_request: Callable[..., httpx.Response],
+) -> None:
+    app = create_app(Settings(cors_allowed_origins=("http://localhost:3000",)))
+    response = api_request(
+        app,
+        "OPTIONS",
+        "/jobs/demo_ds/resumes/assess",
+        headers={
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "Content-Type, X-Bot-Check-Token",
+        },
+    )
+    assert response.status_code == 200
+    assert "x-bot-check-token" in response.headers["access-control-allow-headers"].lower()
+
+
 @pytest.mark.parametrize(
     "overrides",
     [

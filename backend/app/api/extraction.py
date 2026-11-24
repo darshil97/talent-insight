@@ -1,6 +1,7 @@
 """Canonical catalog context, bounded temporary extraction, no scoring or persistence."""
 
 import logging
+import re
 from contextlib import contextmanager
 from typing import Annotated
 
@@ -13,6 +14,7 @@ from app.api.deps import JobId, catalog_session
 from app.api.jobs import JobDetail
 from app.api.resumes import extract_upload
 from app.errors import ErrorResponse, error_response
+from app.llm.factory import ensure_ai_configured
 from app.pipeline.assessment import assess_resume
 from app.pipeline.contracts import (
     Assessment,
@@ -22,11 +24,15 @@ from app.pipeline.contracts import (
     StructuredResume,
 )
 from app.pipeline.extraction import structure_resume
-from app.voice.contracts import UploadAssessment
+from app.voice.contracts import UploadAssessment, VoiceFailure
 from app.voice.envelope import sign_context
+from app.voice.turnstile import RESUME_ACTION, verify_bot_check
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["structured extraction"])
+# The upload body is the PDF itself, so the Turnstile token travels in a header.
+BOT_CHECK_HEADER = "X-Bot-Check-Token"
+_TOKEN = re.compile(r"^[\x21-\x7e]{1,2048}$")
 ERRORS = {
     "ai_not_configured": (
         503,
@@ -56,6 +62,9 @@ ERRORS = {
         429,
         "The extraction request limit was reached. Wait a minute and try again.",
     ),
+    "ai_daily_limit": (429, "The daily assessment limit was reached. Try again later."),
+    "bot_check_failed": (403, "The bot check did not pass or has expired. Complete it again."),
+    "bot_check_unavailable": (503, "The bot check is unavailable. Try again shortly."),
     "ai_input_too_large": (
         413,
         "The resume and job exceed the AI text limit. Use a shorter resume; no text was truncated.",
@@ -74,6 +83,13 @@ ERRORS = {
         "The requirement interpretation could not be verified. No assessment was produced.",
     ),
 }
+_RETRY_AFTER = {
+    "ai_busy": "5",
+    "provider_throttled": "5",
+    "ai_rate_limited": "60",
+    "ai_daily_limit": "3600",
+    "bot_check_unavailable": "30",
+}
 
 
 async def extraction_error_handler(_request: Request, exc: ExtractionFailure) -> JSONResponse:
@@ -81,9 +97,25 @@ async def extraction_error_handler(_request: Request, exc: ExtractionFailure) ->
     status, message = ERRORS[code]
     logger.warning("AI request failed with %s (HTTP %d)", code, status)
     result = error_response(status, code, message)
-    if code in {"ai_busy", "provider_throttled", "ai_rate_limited"}:
-        result.headers["Retry-After"] = "60" if code == "ai_rate_limited" else "5"
+    if code in _RETRY_AFTER:
+        result.headers["Retry-After"] = _RETRY_AFTER[code]
     return result
+
+
+async def check_bot(request: Request) -> None:
+    """Fail closed before admission, the PDF and Bedrock, so failures use no limits."""
+    settings = request.app.state.settings
+    ensure_ai_configured(settings)  # An unconfigured backend never spends a token.
+    token = request.headers.get(BOT_CHECK_HEADER)
+    try:
+        await verify_bot_check(
+            settings,
+            token if token and _TOKEN.match(token) else None,
+            request.app.state.turnstile_transport,
+            action=RESUME_ACTION,
+        )
+    except VoiceFailure as exc:
+        raise ExtractionFailure(exc.code) from None
 
 
 def load_context(request: Request, job_id: str) -> ExtractionJob:
@@ -100,7 +132,8 @@ def job_context(request: Request, job_id: JobId) -> ExtractionJob:
 
 
 responses = {
-    status: {"model": ErrorResponse} for status in (404, 408, 413, 415, 422, 429, 502, 503, 504)
+    status: {"model": ErrorResponse}
+    for status in (403, 404, 408, 413, 415, 422, 429, 502, 503, 504)
 }
 
 
@@ -124,6 +157,7 @@ async def structure_upload(
         job_id=job.id,
         candidate_ref=usage.new_candidate_ref(),
     )
+    await check_bot(request)
     async with ai_slot(request):
         extracted = await extract_upload(request, response)
         if isinstance(extracted, JSONResponse):
@@ -161,6 +195,7 @@ async def assess_upload(
     # One reference for this upload's model calls and every screening started from it.
     ref = usage.new_candidate_ref()
     usage.bind(request.app.state.usage, candidate_kind="upload", job_id=job.id, candidate_ref=ref)
+    await check_bot(request)
     async with ai_slot(request):
         extracted = await extract_upload(request, response)
         if isinstance(extracted, JSONResponse):

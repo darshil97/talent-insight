@@ -48,3 +48,6 @@ backend/app/fixtures/.extractions-progress.json
 
 # Private notes: real deployment IDs kept out of the public repo
 .private/
+
+# Locally generated architecture and content docs
+docs/content-creation/

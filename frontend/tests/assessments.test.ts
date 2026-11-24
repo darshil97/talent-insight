@@ -87,6 +87,25 @@ test("upload sends only raw PDF bytes", async () => {
   assert.equal(fetch.mock.callCount(), 1);
 });
 
+test("upload sends the bot check token in a header only when one is given", async () => {
+  const fetch = mock.method(globalThis, "fetch", async (_url: unknown, options?: RequestInit) => {
+    assert.deepEqual(options?.headers, { "Content-Type": "application/pdf", "X-Bot-Check-Token": "cf.token-1" });
+    assert.equal(options?.body, file);
+    return Response.json(result);
+  });
+  assert.deepEqual(await assessUpload(file, limits, job, new AbortController().signal, "cf.token-1"), result);
+  assert.equal(fetch.mock.callCount(), 1);
+});
+
+test("bot check and daily limit codes have their own messages", async () => {
+  const cases: [string, number, RegExp][] = [["bot_check_failed", 403, /bot check did not pass/], ["bot_check_unavailable", 503, /bot check is unavailable/], ["ai_daily_limit", 429, /daily assessment limit/]];
+  const fetch = mock.method(globalThis, "fetch", async () => new Response());
+  for (const [code, status, message] of cases) {
+    fetch.mock.mockImplementation(async () => Response.json({ error: { code, message: "private-secret" } }, { status }));
+    await assert.rejects(assessUpload(file, limits, job, new AbortController().signal, "cf.token"), (error: unknown) => error instanceof AssessmentError && message.test(error.message) && !error.message.includes("private-secret"));
+  }
+});
+
 test("safe errors and cancellation do not expose server text", async () => {
   const fetch = mock.method(globalThis, "fetch", async () => Response.json({ error: { code: "provider_throttled", message: "private-secret" } }, { status: 503 }));
   await assert.rejects(assessUpload(file, limits, job, new AbortController().signal), (error: unknown) => error instanceof AssessmentError && /busy/.test(error.message) && !error.message.includes("private-secret"));

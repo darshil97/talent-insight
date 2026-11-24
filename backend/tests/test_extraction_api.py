@@ -12,6 +12,7 @@ from app.config import Settings
 from app.models import DemoCandidate, Job, JobRequirement
 from app.pipeline.contracts import ExtractionFailure
 from app.seed import load_seed
+from app.voice.turnstile import RESUME_ACTION
 
 
 @pytest.fixture
@@ -255,3 +256,146 @@ def test_errors_are_safe_no_store_and_cors_wrapped(
     assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:3000"
     assert load_seed().candidates[0].resume_text not in response.text + caplog.text
     assert extraction_app.state.ai_active == 0
+
+
+# --- bot check and daily assessment limit ---
+
+TURNSTILE = {"turnstile_site_key": "0x4AAAAAAAsitekey", "turnstile_secret_key": "ts-secret-key"}
+PASSED = {"success": True, "action": RESUME_ACTION, "error-codes": []}
+ASSESS = "/jobs/demo_ds/resumes/assess"
+
+
+def guarded(extraction_app, monkeypatch, handler, **overrides):
+    """Turnstile on, Cloudflare stubbed, and spies on the PDF parser and the provider."""
+    extraction_app.state.settings = Settings(ai_mode="mock", **TURNSTILE, **overrides)
+    extraction_app.state.turnstile_transport = httpx.MockTransport(handler)
+    calls = []
+    parse, provider = extraction.extract_upload, extraction.structure_resume
+
+    async def parse_spy(*args):
+        calls.append("parse")
+        return await parse(*args)
+
+    async def provider_spy(*args):
+        calls.append("provider")
+        return await provider(*args)
+
+    monkeypatch.setattr(extraction, "extract_upload", parse_spy)
+    monkeypatch.setattr(extraction, "structure_resume", provider_spy)
+    return calls
+
+
+def upload(api_request, app, token=None, path=ASSESS):
+    headers = {"Content-Type": "application/pdf"}
+    if token is not None:
+        headers["X-Bot-Check-Token"] = token
+    return api_request(
+        app,
+        "POST",
+        path,
+        content=pdf(("SYNTHETIC RESUME\nUsed Python.",)),
+        headers=headers,
+    )
+
+
+@pytest.mark.parametrize("path", [ASSESS, "/jobs/demo_ds/resumes/structure"])
+@pytest.mark.parametrize("token", [None, "", "bad token with spaces"])
+def test_missing_or_malformed_token_is_refused_before_any_work(
+    extraction_app, api_request, monkeypatch, path, token
+):
+    seen = []
+    calls = guarded(
+        extraction_app, monkeypatch, lambda r: seen.append(r) or httpx.Response(200, json=PASSED)
+    )
+    response = upload(api_request, extraction_app, token, path)
+    assert (response.status_code, response.json()["error"]["code"]) == (403, "bot_check_failed")
+    assert response.headers["cache-control"] == "no-store"
+    assert seen == calls == []
+    assert not extraction_app.state.ai_requests and not extraction_app.state.ai_days
+
+
+@pytest.mark.parametrize(
+    "result,code,status",
+    [
+        (
+            httpx.Response(200, json={"success": False, "error-codes": ["invalid-input-response"]}),
+            "bot_check_failed",
+            403,
+        ),
+        (
+            httpx.Response(200, json={**PASSED, "action": "screening_start"}),
+            "bot_check_failed",
+            403,
+        ),
+        (httpx.Response(500), "bot_check_unavailable", 503),
+        (httpx.ConnectError("refused"), "bot_check_unavailable", 503),
+    ],
+)
+def test_failed_bot_check_fails_closed_without_using_the_limits(
+    extraction_app, api_request, monkeypatch, result, code, status
+):
+    def handler(request):
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    calls = guarded(extraction_app, monkeypatch, handler, ai_assessments_per_day=1)
+    for _ in range(2):
+        response = upload(api_request, extraction_app, "cf.token")
+        assert (response.status_code, response.json()["error"]["code"]) == (status, code)
+        assert response.headers.get("retry-after") == ("30" if status == 503 else None)
+    assert calls == []
+    assert not extraction_app.state.ai_requests and not extraction_app.state.ai_days
+
+
+def test_passed_bot_check_assesses_and_sends_the_resume_action(
+    extraction_app, api_request, monkeypatch, caplog
+):
+    seen = []
+    calls = guarded(
+        extraction_app, monkeypatch, lambda r: seen.append(r) or httpx.Response(200, json=PASSED)
+    )
+    response = upload(api_request, extraction_app, "cf.token-1")
+    assert response.status_code == 200
+    assert response.json()["structured"]["source"]["kind"] == "uploaded_pdf"
+    assert calls == ["parse", "provider"]
+    assert httpx.QueryParams(seen[0].content.decode()) == httpx.QueryParams(
+        {"secret": "ts-secret-key", "response": "cf.token-1"}
+    )
+    assert len(extraction_app.state.ai_days) == 1
+    for secret in ("ts-secret-key", "cf.token-1"):
+        assert secret not in response.text + caplog.text
+
+
+def test_daily_assessment_limit_is_rolling_and_checked_before_the_pdf(
+    extraction_app, api_request, monkeypatch
+):
+    calls = guarded(
+        extraction_app,
+        monkeypatch,
+        lambda r: httpx.Response(200, json=PASSED),
+        ai_assessments_per_day=2,
+    )
+    now = [1000.0]
+    monkeypatch.setattr(admission.time, "monotonic", lambda: now[0])
+    for _ in range(2):
+        assert upload(api_request, extraction_app, "cf.token").status_code == 200
+        now[0] += 61  # Clear the per-minute window between uploads.
+    calls.clear()
+    blocked = upload(api_request, extraction_app, "cf.token")
+    assert (blocked.status_code, blocked.json()["error"]["code"]) == (429, "ai_daily_limit")
+    assert blocked.headers["retry-after"] == "3600"
+    assert calls == []
+    now[0] = 1000.0 + 86_400
+    assert upload(api_request, extraction_app, "cf.token").status_code == 200
+
+
+def test_bot_check_is_off_without_keys_and_unconfigured_ai_spends_no_token(
+    extraction_app, api_request, monkeypatch
+):
+    assert upload(api_request, extraction_app).status_code == 200
+    seen = []
+    guarded(extraction_app, monkeypatch, lambda r: seen.append(r))
+    extraction_app.state.settings = Settings(**TURNSTILE)
+    response = upload(api_request, extraction_app, "cf.token")
+    assert response.json()["error"]["code"] == "ai_not_configured" and seen == []

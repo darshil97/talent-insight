@@ -36,6 +36,9 @@ const messages: Record<string, string> = {
   ai_timeout: "Assessment took too long. Try a shorter resume later.",
   ai_busy: "Assessment is busy. Try again shortly.",
   ai_rate_limited: "The assessment request limit was reached. Try again in a minute.",
+  ai_daily_limit: "The daily assessment limit was reached. Try again later.",
+  bot_check_failed: "The bot check did not pass or has expired. Complete it again, then choose the PDF.",
+  bot_check_unavailable: "The bot check is unavailable right now. Try again shortly.",
   ai_input_too_large: "The resume and job exceed the assessment text limit.",
   invalid_model_output: "The model response could not be validated. No assessment was produced.",
   invalid_evidence: "The model evidence could not be verified. No assessment was produced.",
@@ -131,9 +134,11 @@ export function decodeAssessment(value: unknown, job: JobDetail, kind: "uploaded
   return value as unknown as Assessment;
 }
 
-async function postAssessment(path: string, job: JobDetail, kind: "uploaded_pdf" | "synthetic_demo", candidateId: string | null, signal: AbortSignal, file?: File): Promise<Assessment> {
+async function postAssessment(path: string, job: JobDetail, kind: "uploaded_pdf" | "synthetic_demo", candidateId: string | null, signal: AbortSignal, file?: File, botCheckToken: string | null = null): Promise<Assessment> {
+  // The body is the PDF itself, so the single-use Turnstile token travels in a header.
+  const headers = { "Content-Type": "application/pdf", ...(botCheckToken ? { "X-Bot-Check-Token": botCheckToken } : {}) };
   const response = await fetch(`${apiBaseUrl()}${path}`, {
-    method: "POST", ...(file ? { headers: { "Content-Type": "application/pdf" }, body: file } : {}),
+    method: "POST", ...(file ? { headers, body: file } : {}),
     cache: "no-store", credentials: "omit", redirect: "error",
     signal: AbortSignal.any([signal, AbortSignal.timeout(360_000)]),
   });
@@ -147,7 +152,7 @@ async function postAssessment(path: string, job: JobDetail, kind: "uploaded_pdf"
   return decodeAssessment(await response.json(), job, kind, candidateId);
 }
 
-export function assessUpload(file: File, limits: ResumeLimits, job: JobDetail, signal: AbortSignal): Promise<Assessment> {
+export function assessUpload(file: File, limits: ResumeLimits, job: JobDetail, signal: AbortSignal, botCheckToken: string | null = null): Promise<Assessment> {
   validateResumeFile(file, limits);
-  return postAssessment(`/jobs/${encodeURIComponent(job.id)}/resumes/assess`, job, "uploaded_pdf", null, signal, file);
+  return postAssessment(`/jobs/${encodeURIComponent(job.id)}/resumes/assess`, job, "uploaded_pdf", null, signal, file, botCheckToken);
 }

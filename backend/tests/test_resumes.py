@@ -291,8 +291,13 @@ def test_limits_endpoint_no_database_and_no_cache(api_request):
         "max_bytes": 5 * 1024 * 1024,
         "max_pages": 3,
         "max_characters": 100_000,
+        "bot_check_site_key": None,
     }
     assert response.headers["cache-control"] == "no-store"
+    keys = {"turnstile_site_key": "0x4AAAAAAAsitekey", "turnstile_secret_key": "ts-secret"}
+    response = api_request(create_app(Settings(**keys)), "GET", "/resumes/limits")
+    assert response.json()["bot_check_site_key"] == "0x4AAAAAAAsitekey"
+    assert "ts-secret" not in response.text
 
 
 def test_timeout_and_cancellation_kill_and_reap_real_child(monkeypatch):

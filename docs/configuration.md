@@ -36,6 +36,7 @@ Every backend setting has a default in [`backend/app/config.yaml`](../backend/ap
 | `VOICE_AWS_REGION` | Optional | Optional | Interviewer region; unset reuses `AWS_REGION`. |
 | `BEDROCK_STRUCTURED_METHOD` | Optional | Optional | `json_schema` (default) or `function_calling`. |
 | `BEDROCK_REASONING_EFFORT` | Optional | Optional | `low`, `medium` or `high` for assessment calls. Unset sends nothing. |
+| `AI_ASSESSMENTS_PER_DAY` | Optional | Optional | Upload assessments per process per rolling 24 hours, 1–5000, default 100. Counted only after the bot check passes. |
 
 On this Mac the shell profile exports an old `AWS_BEARER_TOKEN_BEDROCK`, which overrides `backend/.env`. Prefix local Bedrock commands with `env -u AWS_BEARER_TOKEN_BEDROCK`, or remove the export.
 
@@ -49,7 +50,7 @@ On this Mac the shell profile exports an old `AWS_BEARER_TOKEN_BEDROCK`, which o
 | `VOICE_PUBLIC_API_URL` | Unset (or `http://127.0.0.1:8000` with `mock`) | Required with voice | The backend's own public HTTPS URL, which Deepgram calls for interviewer turns, e.g. `https://YOUR-SERVICE.onrender.com`. Deepgram cannot reach a local backend. |
 | `VOICE_SESSIONS_PER_HOUR` | Optional | `3` | Screening starts per process per rolling hour, 1–60, default 6. |
 | `VOICE_SESSIONS_PER_DAY` | Optional | Optional | Screening starts per process per rolling 24 hours, 1–500, default 20. |
-| `TURNSTILE_SITE_KEY` | Unset | Required | Cloudflare Turnstile site key (public). The backend sends it to the page. |
+| `TURNSTILE_SITE_KEY` | Unset | Required | Cloudflare Turnstile site key (public). The backend sends it to the page through `/screenings/notice` and `/resumes/limits`. With both keys set, screenings and upload assessments need a passed check. |
 | `TURNSTILE_SECRET_KEY` | Unset | Secret | Turnstile secret. Set both keys or neither, otherwise startup fails. Locally, Cloudflare's always-pass test pair (`1x00000000000000000000AA` / `1x0000000000000000000000000000000AA`) works on `localhost`. |
 
 ### Usage tracking

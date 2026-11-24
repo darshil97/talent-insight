@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.availability import router as availability_router
 from app.api.candidates import router as candidates_router
-from app.api.extraction import extraction_error_handler
+from app.api.extraction import BOT_CHECK_HEADER, extraction_error_handler
 from app.api.extraction import router as extraction_router
 from app.api.health import router as health_router
 from app.api.jobs import router as jobs_router
@@ -79,6 +79,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.resume_active = 0
     app.state.ai_active = 0
     app.state.ai_requests = deque()
+    app.state.ai_days = deque()
     app.state.usage = UsageRecorder(settings)
     capture_model_calls()
     app.state.voice_sessions = SessionStore(settings, recorder=app.state.usage)
@@ -104,7 +105,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_origins=list(settings.cors_allowed_origins),
         allow_credentials=False,
         allow_methods=["GET", "POST"],
-        allow_headers=["Content-Type"],
+        allow_headers=["Content-Type", BOT_CHECK_HEADER],
         expose_headers=[HEADER],
     )
     return app
