@@ -1,4 +1,5 @@
 /** Temporary assessment contracts. The backend owns interpretation and scoring. */
+import { capturedAssessment } from "./captured-assessments.ts";
 import { apiBaseUrl, type JobDetail, type RequirementCategory } from "./catalog.ts";
 import { splitResume } from "./candidates.ts";
 import { isEstimate, type Confidence } from "./estimate.ts";
@@ -108,7 +109,8 @@ export function decodeAssessment(value: unknown, job: JobDetail, kind: "uploaded
         !text(row.reason) || !Array.isArray(row.fact_indices) || row.fact_indices.length > 10 ||
         row.fact_indices.some((index: unknown) => !integer(index, 0, facts.length - 1)) ||
         new Set(row.fact_indices).size !== row.fact_indices.length) return true;
-    return (row.status === "unknown") !== (row.fact_indices.length === 0);
+    // Unguarded demo build: a resolved status may carry no cited facts.
+    return row.status === "unknown" && row.fact_indices.length !== 0;
   }) || new Set(value.judgments.map((row: Judgment) => row.requirement_id)).size !== ids.size) return fail();
   const scoring = value.scoring;
   const judgments = value.judgments as Judgment[];
@@ -152,7 +154,9 @@ async function postAssessment(path: string, job: JobDetail, kind: "uploaded_pdf"
   return decodeAssessment(await response.json(), job, kind, candidateId);
 }
 
-export function assessUpload(file: File, limits: ResumeLimits, job: JobDetail, signal: AbortSignal, botCheckToken: string | null = null): Promise<Assessment> {
+export async function assessUpload(file: File, limits: ResumeLimits, job: JobDetail, signal: AbortSignal, botCheckToken: string | null = null): Promise<Assessment> {
   validateResumeFile(file, limits);
+  const captured = await capturedAssessment(file, job.id, signal);
+  if (captured) return captured;
   return postAssessment(`/jobs/${encodeURIComponent(job.id)}/resumes/assess`, job, "uploaded_pdf", null, signal, file, botCheckToken);
 }
